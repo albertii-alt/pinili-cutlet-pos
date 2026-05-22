@@ -1,0 +1,153 @@
+import { Request, Response } from 'express';
+import db from '../database/db';
+import { Order, OrderItem, CreateOrderPayload } from '../types';
+
+function getNextOrderNumber(): string {
+  const last = db.prepare(`
+    SELECT order_number FROM orders ORDER BY id DESC LIMIT 1
+  `).get() as { order_number: string } | undefined;
+
+  if (!last) return 'PC-001';
+
+  const num = parseInt(last.order_number.split('-')[1], 10);
+  return `PC-${String(num + 1).padStart(3, '0')}`;
+}
+
+export function getActive(req: Request, res: Response): void {
+  const orders = db.prepare(`
+    SELECT * FROM orders WHERE status = 'pending' ORDER BY created_at ASC
+  `).all() as Order[];
+
+  const result = orders.map(order => ({
+    ...order,
+    items: db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(order.id) as OrderItem[],
+  }));
+
+  res.json(result);
+}
+
+export function getHistory(req: Request, res: Response): void {
+  const { status, date, payment_method } = req.query as {
+    status?: string;
+    date?: string;
+    payment_method?: string;
+  };
+
+  let query = 'SELECT * FROM orders WHERE 1=1';
+  const params: (string | number)[] = [];
+
+  if (status) { query += ' AND status = ?'; params.push(status); }
+  if (date)   { query += ' AND DATE(created_at) = ?'; params.push(date); }
+  if (payment_method) { query += ' AND payment_method = ?'; params.push(payment_method); }
+
+  query += ' ORDER BY created_at DESC';
+
+  const orders = db.prepare(query).all(...params) as Order[];
+
+  const result = orders.map(order => ({
+    ...order,
+    items: db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(order.id) as OrderItem[],
+  }));
+
+  res.json(result);
+}
+
+export function create(req: Request, res: Response): void {
+  const { payment_method, cash_tendered, items } = req.body as CreateOrderPayload;
+
+  if (!payment_method || !items || items.length === 0) {
+    res.status(400).json({ error: 'payment_method and items are required' });
+    return;
+  }
+
+  if (payment_method === 'cash' && (cash_tendered === undefined || cash_tendered === null)) {
+    res.status(400).json({ error: 'cash_tendered is required for cash payments' });
+    return;
+  }
+
+  const total_amount = items.reduce((sum, item) => sum + item.item_price * item.quantity, 0);
+  const change_amount = payment_method === 'cash' ? (cash_tendered as number) - total_amount : null;
+
+  if (payment_method === 'cash' && (change_amount as number) < 0) {
+    res.status(400).json({ error: 'Insufficient cash tendered' });
+    return;
+  }
+
+  const order_number = getNextOrderNumber();
+
+  const insertOrder = db.transaction(() => {
+    const result = db.prepare(`
+      INSERT INTO orders (order_number, total_amount, payment_method, cash_tendered, change_amount, created_by)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      order_number,
+      total_amount,
+      payment_method,
+      payment_method === 'cash' ? cash_tendered : null,
+      change_amount,
+      req.user!.id
+    );
+
+    const orderId = result.lastInsertRowid;
+
+    const insertItem = db.prepare(`
+      INSERT INTO order_items (order_id, menu_item_id, item_name, item_price, quantity)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+
+    items.forEach(item => {
+      insertItem.run(orderId, item.menu_item_id, item.item_name, item.item_price, item.quantity);
+    });
+
+    return db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId) as Order;
+  });
+
+  const order = insertOrder();
+  const orderItems = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(order.id) as OrderItem[];
+  const fullOrder = { ...order, items: orderItems };
+
+  const { getIO } = require('../socket/events');
+  getIO().emit('order:created', fullOrder);
+
+  res.status(201).json(fullOrder);
+}
+
+export function complete(req: Request, res: Response): void {
+  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id) as Order | undefined;
+
+  if (!order) {
+    res.status(404).json({ error: 'Order not found' });
+    return;
+  }
+  if (order.status !== 'pending') {
+    res.status(400).json({ error: 'Only pending orders can be completed' });
+    return;
+  }
+
+  db.prepare("UPDATE orders SET status = 'completed' WHERE id = ?").run(req.params.id);
+
+  const { getIO } = require('../socket/events');
+  getIO().emit('order:completed', Number(req.params.id));
+
+  res.json({ message: 'Order completed', id: Number(req.params.id) });
+}
+
+export function cancel(req: Request, res: Response): void {
+  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id) as Order | undefined;
+
+  if (!order) {
+    res.status(404).json({ error: 'Order not found' });
+    return;
+  }
+  if (order.status !== 'pending') {
+    res.status(400).json({ error: 'Only pending orders can be cancelled' });
+    return;
+  }
+
+  db.prepare("UPDATE orders SET status = 'cancelled' WHERE id = ?").run(req.params.id);
+
+  const { getIO } = require('../socket/events');
+  getIO().emit('order:cancelled', Number(req.params.id));
+
+  res.json({ message: 'Order cancelled', id: Number(req.params.id) });
+}
