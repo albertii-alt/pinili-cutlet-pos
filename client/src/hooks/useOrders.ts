@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getActiveOrders } from '../api/order.api';
-import { Order } from '../types';
+import type { Order } from '../types';
 import { onOrderCreated, onOrderCompleted, onOrderCancelled } from '../socket/socket';
 
 export function useOrders() {

@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { MenuItem } from '../types';
+import type { MenuItem } from '../types';
 
 export async function getMenuItems(): Promise<MenuItem[]> {
   const { data } = await apiClient.get('/api/menu');

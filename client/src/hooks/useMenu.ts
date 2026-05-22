@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getMenuItems } from '../api/menu.api';
 import { getCategories } from '../api/category.api';
-import { MenuItem, Category } from '../types';
+import type { MenuItem, Category } from '../types';
 import { onMenuUpdated, onItemAvailability } from '../socket/socket';
 
 export function useMenu() {

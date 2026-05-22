@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import { Order, MenuItem, Category } from '../types';
+import type { Order, MenuItem, Category } from '../types';
 
 const socket: Socket = io(import.meta.env.VITE_SOCKET_URL, {
   autoConnect: false,

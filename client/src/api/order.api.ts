@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { Order, CreateOrderPayload } from '../types';
+import type { Order, CreateOrderPayload } from '../types';
 
 export async function getActiveOrders(): Promise<Order[]> {
   const { data } = await apiClient.get('/api/orders/active');
