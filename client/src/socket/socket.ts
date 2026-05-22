@@ -1,7 +1,13 @@
 import { io, Socket } from 'socket.io-client';
 import type { Order, MenuItem, Category } from '../types';
 
-const socket: Socket = io(import.meta.env.VITE_SOCKET_URL, {
+function getSocketURL(): string {
+  const ip   = localStorage.getItem('server_ip')   ?? '127.0.0.1';
+  const port = localStorage.getItem('server_port') ?? '3000';
+  return `http://${ip}:${port}`;
+}
+
+let socket: Socket = io(getSocketURL(), {
   autoConnect: false,
   reconnection: true,
   reconnectionAttempts: Infinity,
@@ -14,6 +20,16 @@ export function connectSocket(): void {
 
 export function disconnectSocket(): void {
   socket.disconnect();
+}
+
+export function reconnectSocket(ip: string, port: string): void {
+  socket.disconnect();
+  socket = io(`http://${ip}:${port}`, {
+    autoConnect: false,
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 2000,
+  });
 }
 
 export function onOrderCreated(cb: (order: Order) => void): void {

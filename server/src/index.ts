@@ -3,6 +3,7 @@ import express from 'express';
 import http from 'http';
 import cors from 'cors';
 import path from 'path';
+import os from 'os';
 
 import db from './database/db';
 import { initSocket } from './socket/events';
@@ -24,6 +25,30 @@ app.use(express.json());
 
 // Static image files
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
+
+// Health check — used by client to test connection
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', name: 'Pinili Cutlet Server' });
+});
+
+// Network IP — returns LAN IP for QR code generation
+app.get('/api/network/ip', (req, res) => {
+  const interfaces = os.networkInterfaces();
+  let lanIP = '127.0.0.1';
+
+  for (const iface of Object.values(interfaces)) {
+    if (!iface) continue;
+    for (const config of iface) {
+      if (config.family === 'IPv4' && !config.internal) {
+        lanIP = config.address;
+        break;
+      }
+    }
+    if (lanIP !== '127.0.0.1') break;
+  }
+
+  res.json({ ip: lanIP, port: Number(process.env.PORT ?? 3000) });
+});
 
 // Routes
 app.use('/api/auth',       authRoutes);
