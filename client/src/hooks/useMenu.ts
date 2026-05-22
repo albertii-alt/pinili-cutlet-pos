@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getMenuItems } from '../api/menu.api';
 import { getCategories } from '../api/category.api';
 import type { MenuItem, Category } from '../types';
-import { onMenuUpdated, onItemAvailability } from '../socket/socket';
+import socket from '../socket/socket';
 
 export function useMenu() {
   const [menuItems, setMenuItems]   = useState<MenuItem[]>([]);
@@ -18,13 +18,20 @@ export function useMenu() {
       .catch(console.error)
       .finally(() => setLoading(false));
 
-    onMenuUpdated((item) => {
+    function handleMenuUpdated(item: MenuItem) {
       setMenuItems(prev => prev.map(i => i.id === item.id ? item : i));
-    });
-
-    onItemAvailability(({ id, is_available }) => {
+    }
+    function handleAvailability({ id, is_available }: { id: number; is_available: number }) {
       setMenuItems(prev => prev.map(i => i.id === id ? { ...i, is_available } : i));
-    });
+    }
+
+    socket.on('menu:updated', handleMenuUpdated);
+    socket.on('item:availability', handleAvailability);
+
+    return () => {
+      socket.off('menu:updated', handleMenuUpdated);
+      socket.off('item:availability', handleAvailability);
+    };
   }, []);
 
   return { menuItems, categories, loading };

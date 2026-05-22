@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getActiveOrders } from '../api/order.api';
 import type { Order } from '../types';
-import { onOrderCreated, onOrderCompleted, onOrderCancelled } from '../socket/socket';
+import socket from '../socket/socket';
 
 export function useOrders() {
   const [orders, setOrders]   = useState<Order[]>([]);
@@ -13,17 +13,25 @@ export function useOrders() {
       .catch(console.error)
       .finally(() => setLoading(false));
 
-    onOrderCreated((order) => {
+    function handleCreated(order: Order) {
       setOrders(prev => [...prev, order]);
-    });
-
-    onOrderCompleted((id) => {
+    }
+    function handleCompleted(id: number) {
       setOrders(prev => prev.filter(o => o.id !== id));
-    });
-
-    onOrderCancelled((id) => {
+    }
+    function handleCancelled(id: number) {
       setOrders(prev => prev.filter(o => o.id !== id));
-    });
+    }
+
+    socket.on('order:created', handleCreated);
+    socket.on('order:completed', handleCompleted);
+    socket.on('order:cancelled', handleCancelled);
+
+    return () => {
+      socket.off('order:created', handleCreated);
+      socket.off('order:completed', handleCompleted);
+      socket.off('order:cancelled', handleCancelled);
+    };
   }, []);
 
   return { orders, loading };

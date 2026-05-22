@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { getMenuItems } from '../api/menu.api';
 import { useMenuStore } from '../store/useMenuStore';
-import { onMenuUpdated, onItemAvailability } from '../socket/socket';
+import socket from '../socket/socket';
+import { MenuItem } from '../types';
 
 export function useMenu() {
   const { menuItems, setMenuItems, updateItem, updateAvailability } = useMenuStore();
@@ -9,13 +10,20 @@ export function useMenu() {
   useEffect(() => {
     getMenuItems().then(setMenuItems).catch(console.error);
 
-    onMenuUpdated((item) => {
+    function handleMenuUpdated(item: MenuItem) {
       updateItem(item);
-    });
-
-    onItemAvailability(({ id, is_available }) => {
+    }
+    function handleAvailability({ id, is_available }: { id: number; is_available: number }) {
       updateAvailability(id, is_available);
-    });
+    }
+
+    socket.on('menu:updated', handleMenuUpdated);
+    socket.on('item:availability', handleAvailability);
+
+    return () => {
+      socket.off('menu:updated', handleMenuUpdated);
+      socket.off('item:availability', handleAvailability);
+    };
   }, []);
 
   return { menuItems };
