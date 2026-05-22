@@ -1,6 +1,7 @@
 import { IconPlus, IconToolsKitchen2 } from '@tabler/icons-react';
 import type { MenuItem } from '../../types';
 import { formatCurrency } from '../../utils/formatCurrency';
+import { getImageUrl } from '../../utils/getServerUrl';
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -9,9 +10,7 @@ interface MenuItemCardProps {
 
 export default function MenuItemCard({ item, onAdd }: MenuItemCardProps) {
   const unavailable = item.is_available === 0;
-  const imageUrl = item.image_path
-    ? `${import.meta.env.VITE_API_URL}${item.image_path}`
-    : null;
+  const imageUrl = getImageUrl(item.image_path);
 
   return (
     <div className={`bg-card border border-border rounded-xl overflow-hidden flex flex-col ${unavailable ? 'opacity-50' : ''}`}>
