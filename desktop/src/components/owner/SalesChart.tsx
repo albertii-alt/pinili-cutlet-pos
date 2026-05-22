@@ -41,8 +41,8 @@ export default function SalesChart({ data }: SalesChartProps) {
             width={55}
           />
           <Tooltip
-            formatter={(value: number) => [formatCurrency(value), 'Sales']}
-            labelFormatter={formatDay}
+            formatter={(value) => [formatCurrency(Number(value)), 'Sales']}
+            labelFormatter={(label) => formatDay(String(label))}
             contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: 8 }}
             labelStyle={{ color: '#A0A0A0', fontSize: 11 }}
             itemStyle={{ color: '#ffffff', fontSize: 12 }}
