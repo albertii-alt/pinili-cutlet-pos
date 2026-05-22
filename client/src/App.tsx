@@ -22,55 +22,35 @@ function RequireCashier({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function DefaultRedirect() {
+type CheckState = 'checking' | 'no-server' | 'ready';
+
+function AppRoot() {
   const { isAuthenticated, user } = useAuthStore();
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-  return <Navigate to={user?.role === 'kitchen' ? '/queue' : '/order'} replace />;
-}
-
-const router = createBrowserRouter([
-  { path: '/connect', element: <ConnectPage /> },
-  { path: '/login',   element: <LoginPage /> },
-  { path: '/order',   element: <RequireCashier><OrderPage /></RequireCashier> },
-  { path: '/queue',   element: <RequireAuth><QueuePage /></RequireAuth> },
-  { path: '/',        element: <DefaultRedirect /> },
-  { path: '*',        element: <DefaultRedirect /> },
-]);
-
-type AppState = 'checking' | 'ready' | 'no-server';
-
-export default function App() {
-  const { isAuthenticated } = useAuthStore();
-  const [appState, setAppState] = useState<AppState>('checking');
+  const [state, setState]         = useState<CheckState>('checking');
   const [connectError, setConnectError] = useState('');
 
   useEffect(() => {
     const ip   = localStorage.getItem('server_ip');
     const port = localStorage.getItem('server_port') ?? '3000';
 
-    if (!ip) {
-      setAppState('no-server');
-      return;
-    }
+    if (!ip) { setState('no-server'); return; }
 
-    // Update Axios base URL from saved IP
     updateBaseURL(ip, port);
 
-    // Silently test connection
     axios.get(`http://${ip}:${port}/health`, { timeout: 5000 })
-      .then(() => setAppState('ready'))
+      .then(() => {
+        if (isAuthenticated) connectSocket();
+        setState('ready');
+      })
       .catch(() => {
         setConnectError('Cannot reach server. The network may have changed.');
-        setAppState('no-server');
+        setState('no-server');
       });
+
+    return () => { disconnectSocket(); };
   }, []);
 
-  useEffect(() => {
-    if (isAuthenticated && appState === 'ready') connectSocket();
-    return () => { disconnectSocket(); };
-  }, [isAuthenticated, appState]);
-
-  if (appState === 'checking') {
+  if (state === 'checking') {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -78,9 +58,24 @@ export default function App() {
     );
   }
 
-  if (appState === 'no-server') {
+  if (state === 'no-server') {
     return <ConnectPage error={connectError} />;
   }
 
+  // Server reachable — redirect based on auth state
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return <Navigate to={user?.role === 'kitchen' ? '/queue' : '/order'} replace />;
+}
+
+const router = createBrowserRouter([
+  { path: '/',        element: <AppRoot /> },
+  { path: '/connect', element: <ConnectPage /> },
+  { path: '/login',   element: <LoginPage /> },
+  { path: '/order',   element: <RequireCashier><OrderPage /></RequireCashier> },
+  { path: '/queue',   element: <RequireAuth><QueuePage /></RequireAuth> },
+  { path: '*',        element: <Navigate to="/" replace /> },
+]);
+
+export default function App() {
   return <RouterProvider router={router} />;
 }
