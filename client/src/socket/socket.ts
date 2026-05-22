@@ -3,8 +3,8 @@ import type { Order, MenuItem, Category } from '../types';
 
 function getSocketURL(): string {
   const ip   = localStorage.getItem('server_ip')   ?? '127.0.0.1';
-  const port = localStorage.getItem('server_port') ?? '3000';
-  return `http://${ip}:${port}`;
+  const port = localStorage.getItem('server_port') ?? '3001';
+  return `https://${ip}:${port}`;
 }
 
 let socket: Socket = io(getSocketURL(), {
@@ -24,7 +24,7 @@ export function disconnectSocket(): void {
 
 export function reconnectSocket(ip: string, port: string): void {
   socket.disconnect();
-  socket = io(`http://${ip}:${port}`, {
+  socket = io(`https://${ip}:${port}`, {
     autoConnect: false,
     reconnection: true,
     reconnectionAttempts: Infinity,

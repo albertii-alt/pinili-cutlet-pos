@@ -31,13 +31,13 @@ function AppRoot() {
 
   useEffect(() => {
     const ip   = localStorage.getItem('server_ip');
-    const port = localStorage.getItem('server_port') ?? '3000';
+    const port = localStorage.getItem('server_port') ?? '3001';
 
     if (!ip) { setState('no-server'); return; }
 
     updateBaseURL(ip, port);
 
-    axios.get(`http://${ip}:${port}/health`, { timeout: 5000 })
+    axios.get(`https://${ip}:${port}/health`, { timeout: 5000 })
       .then(() => {
         if (isAuthenticated) connectSocket();
         setState('ready');

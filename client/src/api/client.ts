@@ -2,8 +2,8 @@ import axios from 'axios';
 
 function getBaseURL(): string {
   const ip   = localStorage.getItem('server_ip')   ?? '127.0.0.1';
-  const port = localStorage.getItem('server_port') ?? '3000';
-  return `http://${ip}:${port}`;
+  const port = localStorage.getItem('server_port') ?? '3001';
+  return `https://${ip}:${port}`;
 }
 
 const apiClient = axios.create({
@@ -11,7 +11,7 @@ const apiClient = axios.create({
 });
 
 export function updateBaseURL(ip: string, port: string): void {
-  apiClient.defaults.baseURL = `http://${ip}:${port}`;
+  apiClient.defaults.baseURL = `https://${ip}:${port}`;
 }
 
 // Attach JWT token to every request

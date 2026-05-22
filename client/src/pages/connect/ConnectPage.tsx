@@ -11,7 +11,7 @@ export default function ConnectPage({ error: initialError }: { error?: string })
   const { isAuthenticated, user } = useAuthStore();
 
   const [ip, setIp]       = useState(localStorage.getItem('server_ip') ?? '');
-  const [port, setPort]   = useState(localStorage.getItem('server_port') ?? '3000');
+  const [port, setPort]   = useState(localStorage.getItem('server_port') ?? '3001');
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(initialError ?? '');
   const [scanning, setScanning] = useState(false);
@@ -81,7 +81,7 @@ export default function ConnectPage({ error: initialError }: { error?: string })
     setError('');
 
     try {
-      await axios.get(`http://${targetIp}:${targetPort}/health`, { timeout: 5000 });
+      await axios.get(`https://${targetIp}:${targetPort}/health`, { timeout: 5000 });
 
       // Save to localStorage
       localStorage.setItem('server_ip', targetIp);

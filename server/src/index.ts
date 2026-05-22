@@ -9,15 +9,17 @@ import db from './database/db';
 import { initSocket } from './socket/events';
 import { errorHandler } from './middleware/error.middleware';
 
-import authRoutes     from './routes/auth.routes';
-import categoryRoutes from './routes/category.routes';
-import menuRoutes     from './routes/menu.routes';
-import orderRoutes    from './routes/order.routes';
+import authRoutes      from './routes/auth.routes';
+import categoryRoutes  from './routes/category.routes';
+import menuRoutes      from './routes/menu.routes';
+import orderRoutes     from './routes/order.routes';
 import analyticsRoutes from './routes/analytics.routes';
 
 const app    = express();
 const server = http.createServer(app);
 const PORT   = process.env.PORT ?? 3000;
+// Proxy port — local-ssl-proxy runs on this port (HTTPS) and forwards to PORT
+const PROXY_PORT = process.env.PROXY_PORT ?? 3001;
 
 // Middleware
 app.use(cors({ origin: '*' }));
@@ -31,7 +33,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', name: 'Pinili Cutlet Server' });
 });
 
-// Network IP — returns LAN IP for QR code generation
+// Network IP — returns LAN IP and HTTPS proxy port for QR code
 app.get('/api/network/ip', (req, res) => {
   const interfaces = os.networkInterfaces();
   let lanIP = '127.0.0.1';
@@ -47,7 +49,7 @@ app.get('/api/network/ip', (req, res) => {
     if (lanIP !== '127.0.0.1') break;
   }
 
-  res.json({ ip: lanIP, port: Number(process.env.PORT ?? 3000) });
+  res.json({ ip: lanIP, port: Number(PROXY_PORT) });
 });
 
 // Routes
@@ -63,9 +65,10 @@ app.use(errorHandler);
 // Initialize Socket.io
 initSocket(server);
 
-// Initialize database (schema + seed run inside db.ts on import)
+// Initialize database
 console.log(`[DB] Database initialized at: ${db.name}`);
 
 server.listen(PORT, () => {
   console.log(`[Server] Pinili Cutlet server running on http://localhost:${PORT}`);
+  console.log(`[Server] HTTPS proxy expected on port ${PROXY_PORT} (run: local-ssl-proxy --source ${PROXY_PORT} --target ${PORT})`);
 });
