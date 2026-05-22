@@ -1,6 +1,7 @@
 import { Navigate, Outlet, RouteObject } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import LoginPage from '../pages/auth/LoginPage';
+import CashierLoginPage from '../pages/auth/CashierLoginPage';
 import OrderPage from '../pages/cashier/OrderPage';
 import QueuePage from '../pages/cashier/QueuePage';
 import DashboardPage from '../pages/owner/DashboardPage';
@@ -27,10 +28,25 @@ function OwnerShell() {
   );
 }
 
+function CashierShell() {
+  const { isAuthenticated, user } = useAuthStore();
+  if (!isAuthenticated || (user?.role !== 'cashier' && user?.role !== 'kitchen')) {
+    return <Navigate to="/cashier-login" replace />;
+  }
+  return <Outlet />;
+}
+
 export const routes: RouteObject[] = [
-  { path: '/',      element: <OrderPage /> },
-  { path: '/queue', element: <QueuePage /> },
-  { path: '/login', element: <LoginPage /> },
+  { path: '/cashier-login', element: <CashierLoginPage /> },
+  { path: '/login',         element: <LoginPage /> },
+  {
+    path: '/',
+    element: <CashierShell />,
+    children: [
+      { index: true,    element: <OrderPage /> },
+      { path: 'queue',  element: <QueuePage /> },
+    ],
+  },
   {
     path: '/owner',
     element: <OwnerShell />,

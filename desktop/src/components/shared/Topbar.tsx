@@ -2,14 +2,17 @@ import { IconLogout } from '@tabler/icons-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { logout } from '../../api/auth.api';
 import { disconnectSocket } from '../../socket/socket';
+import { useNavigate } from 'react-router-dom';
 
 export default function Topbar() {
   const { user, logout: clearAuth } = useAuthStore();
+  const navigate = useNavigate();
 
   async function handleLogout() {
     try { await logout(); } catch { /* ignore */ }
     disconnectSocket();
     clearAuth();
+    navigate('/cashier-login');
   }
 
   return (
@@ -25,7 +28,7 @@ export default function Topbar() {
             {user.role}
           </span>
         )}
-        {user?.role !== 'cashier' && user?.role !== 'kitchen' && (
+        {user && (
           <button
             onClick={handleLogout}
             className="flex items-center gap-1 text-xs text-textGray hover:text-white transition-colors"

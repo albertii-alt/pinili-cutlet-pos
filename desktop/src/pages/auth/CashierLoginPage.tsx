@@ -5,15 +5,15 @@ import { login } from '../../api/auth.api';
 import { useAuthStore } from '../../store/useAuthStore';
 import { connectSocket } from '../../socket/socket';
 
-export default function LoginPage() {
+export default function CashierLoginPage() {
   const navigate = useNavigate();
   const { login: setAuth } = useAuthStore();
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername]         = useState('');
+  const [password, setPassword]         = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [error, setError]               = useState('');
+  const [loading, setLoading]           = useState(false);
 
   async function handleLogin() {
     if (!username.trim() || !password) {
@@ -27,14 +27,14 @@ export default function LoginPage() {
     try {
       const { token, user } = await login(username.trim(), password);
 
-      if (user.role !== 'owner') {
-        setError('Only the owner can access this area');
+      if (user.role === 'owner') {
+        setError('Owner must use the Owner Login');
         return;
       }
 
       setAuth(token, user);
       connectSocket();
-      navigate('/owner/dashboard');
+      navigate('/');
     } catch {
       setError('Invalid username or password');
     } finally {
@@ -51,7 +51,7 @@ export default function LoginPage() {
             <span className="text-white">PINILI</span>{' '}
             <span className="text-primary">CUTLET</span>
           </h1>
-          <p className="text-textGray text-xs mt-1">Owner Access</p>
+          <p className="text-textGray text-xs mt-1">Staff Login</p>
         </div>
 
         {/* Fields */}
@@ -83,7 +83,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Error — always occupies space */}
+        {/* Error */}
         <p className="text-danger text-xs min-h-[16px] -mt-2">{error}</p>
 
         {/* Login button */}
@@ -95,12 +95,12 @@ export default function LoginPage() {
           {loading ? 'Logging in...' : 'Login'}
         </button>
 
-        {/* Back to cashier */}
+        {/* Owner login link */}
         <button
-          onClick={() => navigate('/cashier-login')}
+          onClick={() => navigate('/login')}
           className="text-textMuted text-xs text-center hover:text-white transition-colors"
         >
-          ← Back to Cashier
+          Owner? Login here →
         </button>
       </div>
     </div>
