@@ -131,6 +131,28 @@ export function getAverageOrderValue(req: Request, res: Response): void {
   res.json(row);
 }
 
+export function getDailyTarget(req: Request, res: Response): void {
+  const row = db.prepare(`SELECT value FROM settings WHERE key = 'daily_target'`).get() as { value: string } | undefined;
+  res.json({ daily_target: row ? parseFloat(row.value) : 0 });
+}
+
+export function setDailyTarget(req: Request, res: Response): void {
+  const { target } = req.body as { target: number };
+
+  if (target === undefined || target === null || isNaN(Number(target)) || Number(target) < 0) {
+    res.status(400).json({ error: 'target must be a non-negative number' });
+    return;
+  }
+
+  db.prepare(`
+    INSERT INTO settings (key, value, updated_at)
+    VALUES ('daily_target', ?, datetime('now','localtime'))
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+  `).run(String(target));
+
+  res.json({ daily_target: Number(target) });
+}
+
 export function getEndOfDaySummary(req: Request, res: Response): void {
   const today = `DATE('now', 'localtime')`;
 

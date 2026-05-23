@@ -58,4 +58,9 @@ export function runSeed(db: Database): void {
     const hashed = bcrypt.hashSync(password, 10);
     insertUser.run(username, hashed, role);
   });
+
+  // Default settings
+  db.prepare(`
+    INSERT OR IGNORE INTO settings (key, value) VALUES ('daily_target', '0')
+  `).run();
 }

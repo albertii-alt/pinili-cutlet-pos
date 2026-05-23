@@ -48,5 +48,11 @@ export function runSchema(db: Database): void {
       item_price   REAL    NOT NULL,
       quantity     INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key        TEXT PRIMARY KEY,
+      value      TEXT NOT NULL,
+      updated_at TEXT DEFAULT (datetime('now','localtime'))
+    );
   `);
 }

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   getSummary, getDailySales, getBestSellers, getRevenueByPayment,
   getPeakHours, getCategorySales, getAverageOrderValue, getEndOfDaySummary,
+  getDailyTarget, setDailyTarget,
 } from '../controllers/analytics.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
@@ -15,5 +16,7 @@ router.get('/peak-hours',          authenticate, authorize('owner'), getPeakHour
 router.get('/category-sales',      authenticate, authorize('owner'), getCategorySales);
 router.get('/average-order-value', authenticate, authorize('owner'), getAverageOrderValue);
 router.get('/end-of-day',          authenticate, authorize('owner'), getEndOfDaySummary);
+router.get('/daily-target',        authenticate,                    getDailyTarget);
+router.put('/daily-target',        authenticate, authorize('owner'), setDailyTarget);
 
 export default router;

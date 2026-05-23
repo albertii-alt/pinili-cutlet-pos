@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { IconReportMoney, IconShoppingCart, IconCash, IconDeviceMobile, IconMoon } from '@tabler/icons-react';
 import { useAnalytics, type AnalyticsPeriod } from '../../hooks/useAnalytics';
 import { formatCurrency } from '../../utils/formatCurrency';
@@ -6,6 +6,8 @@ import SalesCard from '../../components/owner/SalesCard';
 import SalesChart from '../../components/owner/SalesChart';
 import BestSellerList from '../../components/owner/BestSellerList';
 import EndOfDayModal from '../../components/owner/EndOfDayModal';
+import DailySalesTarget from '../../components/owner/DailySalesTarget';
+import { getDailyTarget } from '../../api/analytics.api';
 
 const periods: { label: string; value: AnalyticsPeriod }[] = [
   { label: 'Today',      value: 'today' },
@@ -14,9 +16,15 @@ const periods: { label: string; value: AnalyticsPeriod }[] = [
 ];
 
 export default function DashboardPage() {
-  const [period, setPeriod]       = useState<AnalyticsPeriod>('today');
-  const [showEOD, setShowEOD]     = useState(false);
+  const [period, setPeriod]         = useState<AnalyticsPeriod>('today');
+  const [showEOD, setShowEOD]       = useState(false);
+  const [dailyTarget, setDailyTarget] = useState<number>(0);
   const { summary, dailySales, bestSellers, loading } = useAnalytics(period);
+
+  // Fetch daily target once on mount
+  useEffect(() => {
+    getDailyTarget().then(setDailyTarget).catch(console.error);
+  }, []);
 
   return (
     <div className="flex flex-col gap-6 w-full">
@@ -76,6 +84,15 @@ export default function DashboardPage() {
             <SalesCard label="Cash Sales"   value={formatCurrency(summary?.cash_sales ?? 0)}   icon={IconCash} />
             <SalesCard label="GCash Sales"  value={formatCurrency(summary?.gcash_sales ?? 0)}  icon={IconDeviceMobile} />
           </div>
+
+          {/* Daily sales target — only shown on Today period */}
+          {period === 'today' && (
+            <DailySalesTarget
+              totalSales={summary?.total_sales ?? 0}
+              dailyTarget={dailyTarget}
+              onTargetUpdated={setDailyTarget}
+            />
+          )}
 
           {/* Chart + best sellers */}
           <div className="flex items-stretch gap-4">

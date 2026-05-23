@@ -67,3 +67,13 @@ export async function getEndOfDaySummary(): Promise<EndOfDaySummary> {
   const { data } = await apiClient.get('/api/analytics/end-of-day');
   return data;
 }
+
+export async function getDailyTarget(): Promise<number> {
+  const { data } = await apiClient.get('/api/analytics/daily-target');
+  return data.daily_target;
+}
+
+export async function setDailyTarget(target: number): Promise<number> {
+  const { data } = await apiClient.put('/api/analytics/daily-target', { target });
+  return data.daily_target;
+}
