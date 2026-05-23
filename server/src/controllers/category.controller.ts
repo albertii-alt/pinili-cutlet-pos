@@ -29,6 +29,34 @@ export function create(req: Request, res: Response): void {
   }
 }
 
+export function rename(req: Request, res: Response): void {
+  const { id } = req.params;
+  const { name } = req.body as { name: string };
+
+  if (!name || !name.trim()) {
+    res.status(400).json({ error: 'Category name is required' });
+    return;
+  }
+
+  const category = db.prepare('SELECT * FROM categories WHERE id = ?').get(id) as Category | undefined;
+  if (!category) {
+    res.status(404).json({ error: 'Category not found' });
+    return;
+  }
+
+  try {
+    db.prepare('UPDATE categories SET name = ? WHERE id = ?').run(name.trim(), id);
+    const updated = db.prepare('SELECT * FROM categories WHERE id = ?').get(id) as Category;
+
+    const { getIO } = require('../socket/events');
+    getIO().emit('category:renamed', updated);
+
+    res.json(updated);
+  } catch {
+    res.status(409).json({ error: 'Category name already exists' });
+  }
+}
+
 export function remove(req: Request, res: Response): void {
   const { id } = req.params;
 

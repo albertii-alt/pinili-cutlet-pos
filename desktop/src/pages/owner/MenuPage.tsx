@@ -46,6 +46,14 @@ export default function MenuPage() {
     return matchSearch && matchCat;
   });
 
+  // Item count per category — derived from menuItems, no extra API call
+  const itemCounts = menuItems.reduce<Record<number, number>>((acc, item) => {
+    if (item.category_id !== null) {
+      acc[item.category_id] = (acc[item.category_id] ?? 0) + 1;
+    }
+    return acc;
+  }, {});
+
   const selectedCatLabel = filterCat === null
     ? 'All Categories'
     : categories.find(c => c.id === filterCat)?.name ?? 'All Categories';
@@ -92,8 +100,10 @@ export default function MenuPage() {
       {/* Category manager */}
       <CategoryManager
         categories={categories}
+        itemCounts={itemCounts}
         onChanged={refresh}
         onBulkToggle={(category, isAvailable) => setBulkPending({ category, isAvailable })}
+        onViewItems={(categoryId) => { setFilterCat(categoryId); }}
       />
 
       {/* Search + custom category dropdown */}
