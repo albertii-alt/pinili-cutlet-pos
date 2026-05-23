@@ -4,15 +4,24 @@ import { Order, OrderItem, CreateOrderPayload } from '../types';
 
 function getNextOrderNumber(): string {
   const last = db.prepare(`
-    SELECT order_number, DATE(created_at) as order_date FROM orders ORDER BY id DESC LIMIT 1
-  `).get() as { order_number: string; order_date: string } | undefined;
+    SELECT order_number FROM orders
+    WHERE DATE(created_at) = DATE('now', 'localtime')
+    ORDER BY id DESC LIMIT 1
+  `).get() as { order_number: string } | undefined;
 
-  const today = new Date().toISOString().split('T')[0];
-
-  if (!last || last.order_date !== today) return 'PC-001';
+  if (!last) return 'PC-001';
 
   const num = parseInt(last.order_number.split('-')[1], 10);
-  return `PC-${String(num + 1).padStart(3, '0')}`;
+  let next = num + 1;
+
+  // Guard against duplicates — increment until unique
+  let candidate = `PC-${String(next).padStart(3, '0')}`;
+  while (db.prepare('SELECT 1 FROM orders WHERE order_number = ?').get(candidate)) {
+    next++;
+    candidate = `PC-${String(next).padStart(3, '0')}`;
+  }
+
+  return candidate;
 }
 
 export function getActive(req: Request, res: Response): void {

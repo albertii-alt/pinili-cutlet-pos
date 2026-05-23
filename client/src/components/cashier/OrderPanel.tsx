@@ -39,8 +39,9 @@ export default function OrderPanel() {
       setCashTendered('');
       setPaymentMethod('cash');
       setOpen(false);
-    } catch {
-      setError('Failed to place order. Try again.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(`Failed to place order: ${message}`);
     } finally {
       setLoading(false);
     }
