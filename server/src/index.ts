@@ -49,7 +49,7 @@ app.get('/api/network/ip', (req, res) => {
     if (lanIP !== '127.0.0.1') break;
   }
 
-  res.json({ ip: lanIP, port: Number(PROXY_PORT) });
+  res.json({ ip: lanIP, serverPort: Number(PROXY_PORT), clientPort: 4173 });
 });
 
 // Routes

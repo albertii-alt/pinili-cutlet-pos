@@ -1,7 +1,7 @@
+const SERVER_PORT = 3001;
+
 export function getServerUrl(): string {
-  const ip   = localStorage.getItem('server_ip')   ?? '';
-  const port = localStorage.getItem('server_port') ?? '3001';
-  return `https://${ip}:${port}`;
+  return `https://${window.location.hostname}:${SERVER_PORT}`;
 }
 
 export function getImageUrl(imagePath: string | null): string | null {

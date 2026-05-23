@@ -9,7 +9,8 @@ interface QRCodeModalProps {
 
 interface NetworkInfo {
   ip: string;
-  port: number;
+  serverPort: number;
+  clientPort: number;
 }
 
 export default function QRCodeModal({ onClose }: QRCodeModalProps) {
@@ -22,7 +23,7 @@ export default function QRCodeModal({ onClose }: QRCodeModalProps) {
       .catch(() => setError('Could not fetch server IP'));
   }, []);
 
-  const serverURL = network ? `http://${network.ip}:${network.port}` : '';
+  const clientURL = network ? `https://${network.ip}:${network.clientPort}` : '';
 
   return (
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
@@ -44,7 +45,7 @@ export default function QRCodeModal({ onClose }: QRCodeModalProps) {
           ) : (
             <>
               <QRCode
-                value={serverURL}
+                value={clientURL}
                 size={200}
                 bgColor="#1A1A1A"
                 fgColor="#FFFFFF"
@@ -52,9 +53,9 @@ export default function QRCodeModal({ onClose }: QRCodeModalProps) {
                 eyeRadius={6}
               />
               <div className="flex flex-col items-center gap-1">
-                <p className="text-white font-mono text-sm">{serverURL}</p>
+                <p className="text-white font-mono text-sm">{clientURL}</p>
                 <p className="text-textMuted text-xs text-center">
-                  Scan this QR code on your phone to connect
+                  Scan to open the cashier app on your device
                 </p>
               </div>
             </>

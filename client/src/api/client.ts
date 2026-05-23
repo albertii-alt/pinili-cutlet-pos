@@ -1,18 +1,9 @@
 import axios from 'axios';
 
-function getBaseURL(): string {
-  const ip   = localStorage.getItem('server_ip')   ?? '127.0.0.1';
-  const port = localStorage.getItem('server_port') ?? '3001';
-  return `https://${ip}:${port}`;
-}
+const SERVER_PORT = 3001;
+const baseURL = `https://${window.location.hostname}:${SERVER_PORT}`;
 
-const apiClient = axios.create({
-  baseURL: getBaseURL(),
-});
-
-export function updateBaseURL(ip: string, port: string): void {
-  apiClient.defaults.baseURL = `https://${ip}:${port}`;
-}
+const apiClient = axios.create({ baseURL });
 
 // Attach JWT token to every request
 apiClient.interceptors.request.use((config) => {

@@ -1,14 +1,12 @@
-import { io, Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
 import type { Order, MenuItem, Category } from '../types';
 
-function getSocketURL(): string {
-  const ip   = localStorage.getItem('server_ip')   ?? '127.0.0.1';
-  const port = localStorage.getItem('server_port') ?? '3001';
-  return `https://${ip}:${port}`;
-}
+const SERVER_PORT = 3001;
+const socketURL = `https://${window.location.hostname}:${SERVER_PORT}`;
 
-let socket: Socket = io(getSocketURL(), {
+const socket = io(socketURL, {
   autoConnect: false,
+  transports: ['polling'],
   reconnection: true,
   reconnectionAttempts: Infinity,
   reconnectionDelay: 2000,
@@ -20,16 +18,6 @@ export function connectSocket(): void {
 
 export function disconnectSocket(): void {
   socket.disconnect();
-}
-
-export function reconnectSocket(ip: string, port: string): void {
-  socket.disconnect();
-  socket = io(`https://${ip}:${port}`, {
-    autoConnect: false,
-    reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 2000,
-  });
 }
 
 export function onOrderCreated(cb: (order: Order) => void): void {
