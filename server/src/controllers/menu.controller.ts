@@ -118,6 +118,23 @@ export function toggleAvailability(req: Request, res: Response): void {
   res.json({ id: existing.id, is_available: newValue });
 }
 
+export function bulkToggleAvailability(req: Request, res: Response): void {
+  const { categoryId, isAvailable } = req.body as { categoryId: number; isAvailable: boolean };
+
+  if (categoryId === undefined || isAvailable === undefined) {
+    res.status(400).json({ error: 'categoryId and isAvailable are required' });
+    return;
+  }
+
+  db.prepare('UPDATE menu_items SET is_available = ? WHERE category_id = ?')
+    .run(isAvailable ? 1 : 0, categoryId);
+
+  const { getIO } = require('../socket/events');
+  getIO().emit('menu:bulk-availability', { categoryId, is_available: isAvailable ? 1 : 0 });
+
+  res.json({ message: 'Bulk availability updated', categoryId, is_available: isAvailable ? 1 : 0 });
+}
+
 export function uploadImage(req: Request, res: Response): void {
   if (!req.file) {
     res.status(400).json({ error: 'No image file provided' });

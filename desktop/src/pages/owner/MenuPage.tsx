@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { IconPlus, IconChevronDown } from '@tabler/icons-react';
+import { IconPlus, IconChevronDown, IconCheck } from '@tabler/icons-react';
 import { useMenu } from '../../hooks/useMenu';
 import { useCategories } from '../../hooks/useCategories';
-import { deleteMenuItem, toggleAvailability } from '../../api/menu.api';
-import { MenuItem } from '../../types';
+import { deleteMenuItem, toggleAvailability, bulkToggleAvailability } from '../../api/menu.api';
+import { MenuItem, Category } from '../../types';
 import MenuTable from '../../components/owner/MenuTable';
 import MenuItemModal from '../../components/owner/MenuItemModal';
 import CategoryManager from '../../components/owner/CategoryManager';
@@ -24,6 +24,10 @@ export default function MenuPage() {
   const [editItem, setEditItem]     = useState<MenuItem | null | undefined>(undefined);
   const [deleteItem, setDeleteItem] = useState<MenuItem | null>(null);
   const dropdownRef                 = useRef<HTMLDivElement>(null);
+
+  // Bulk toggle state
+  const [bulkPending, setBulkPending] = useState<{ category: Category; isAvailable: boolean } | null>(null);
+  const [toast, setToast]             = useState<string | null>(null);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -57,6 +61,14 @@ export default function MenuPage() {
     refresh();
   }
 
+  async function handleBulkToggle() {
+    if (!bulkPending) return;
+    await bulkToggleAvailability(bulkPending.category.id, bulkPending.isAvailable);
+    setBulkPending(null);
+    setToast(`All "${bulkPending.category.name}" items marked ${bulkPending.isAvailable ? 'available' : 'unavailable'}`);
+    refresh();
+  }
+
   async function refresh() {
     const [items, cats] = await Promise.all([getMenuItems(), getCategories()]);
     setMenuItems(items);
@@ -78,7 +90,11 @@ export default function MenuPage() {
       </div>
 
       {/* Category manager */}
-      <CategoryManager categories={categories} onChanged={refresh} />
+      <CategoryManager
+        categories={categories}
+        onChanged={refresh}
+        onBulkToggle={(category, isAvailable) => setBulkPending({ category, isAvailable })}
+      />
 
       {/* Search + custom category dropdown */}
       <div className="flex gap-3">
@@ -157,6 +173,48 @@ export default function MenuPage() {
           onCancel={() => setDeleteItem(null)}
         />
       )}
+
+      {bulkPending && (
+        <ConfirmDialog
+          title={bulkPending.isAvailable ? 'Mark All Available' : 'Mark All Unavailable'}
+          message={`Mark all "${bulkPending.category.name}" items as ${bulkPending.isAvailable ? 'available' : 'unavailable'}?`}
+          confirmLabel={bulkPending.isAvailable ? 'Mark Available' : 'Mark Unavailable'}
+          destructive={!bulkPending.isAvailable}
+          onConfirm={handleBulkToggle}
+          onCancel={() => setBulkPending(null)}
+        />
+      )}
+
+      {/* Success toast */}
+      {toast && (
+        <BulkToast message={toast} onDone={() => setToast(null)} />
+      )}
+    </div>
+  );
+}
+
+function BulkToast({ message, onDone }: { message: string; onDone: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDone, 3000);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <div
+      className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-3 rounded-xl z-50"
+      style={{
+        backgroundColor: '#111111',
+        border: '1px solid rgba(39,174,96,0.4)',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+      }}
+    >
+      <div
+        className="w-5 h-5 rounded-full flex items-center justify-center"
+        style={{ backgroundColor: 'rgba(39,174,96,0.2)' }}
+      >
+        <IconCheck size={12} color="#27AE60" />
+      </div>
+      <span style={{ fontSize: 13, color: '#27AE60' }}>{message}</span>
     </div>
   );
 }

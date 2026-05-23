@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { IconPlus, IconX, IconTag } from '@tabler/icons-react';
+import { useState, useRef, useEffect } from 'react';
+import { IconPlus, IconX, IconTag, IconChevronDown, IconEye, IconEyeOff } from '@tabler/icons-react';
 import { Category } from '../../types';
 import { addCategory, deleteCategory } from '../../api/category.api';
 import ConfirmDialog from '../shared/ConfirmDialog';
@@ -7,9 +7,10 @@ import ConfirmDialog from '../shared/ConfirmDialog';
 interface CategoryManagerProps {
   categories: Category[];
   onChanged: () => void;
+  onBulkToggle?: (category: Category, isAvailable: boolean) => void;
 }
 
-export default function CategoryManager({ categories, onChanged }: CategoryManagerProps) {
+export default function CategoryManager({ categories, onChanged, onBulkToggle }: CategoryManagerProps) {
   const [newName, setNewName]   = useState('');
   const [adding, setAdding]     = useState(false);
   const [toDelete, setToDelete] = useState<Category | null>(null);
@@ -65,7 +66,12 @@ export default function CategoryManager({ categories, onChanged }: CategoryManag
       {/* Category pills */}
       <div className="flex flex-wrap gap-2">
         {categories.map(cat => (
-          <CategoryPill key={cat.id} name={cat.name} onDelete={() => setToDelete(cat)} />
+          <CategoryPill
+            key={cat.id}
+            name={cat.name}
+            onDelete={() => setToDelete(cat)}
+            onBulkToggle={onBulkToggle ? (isAvailable) => onBulkToggle(cat, isAvailable) : undefined}
+          />
         ))}
         {categories.length === 0 && (
           <span style={{ fontSize: 13, color: '#606060' }}>No categories yet</span>
@@ -134,30 +140,109 @@ export default function CategoryManager({ categories, onChanged }: CategoryManag
   );
 }
 
-function CategoryPill({ name, onDelete }: { name: string; onDelete: () => void }) {
-  const [hovered, setHovered] = useState(false);
+function CategoryPill({
+  name,
+  onDelete,
+  onBulkToggle,
+}: {
+  name: string;
+  onDelete: () => void;
+  onBulkToggle?: (isAvailable: boolean) => void;
+}) {
+  const [hovered, setHovered]       = useState(false);
+  const [menuOpen, setMenuOpen]     = useState(false);
+  const containerRef                = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   return (
     <div
-      className="flex items-center gap-1.5 transition-all"
+      ref={containerRef}
+      className="relative flex items-center transition-all"
       style={{
         backgroundColor: '#242424',
-        border: `1px solid ${hovered ? '#C0392B' : '#2C2C2C'}`,
+        border: `1px solid ${hovered || menuOpen ? '#C0392B' : '#2C2C2C'}`,
         borderRadius: 20,
-        padding: '6px 12px',
         cursor: 'default',
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <span style={{ fontSize: 13, color: '#ffffff' }}>{name}</span>
+      {/* Pill label */}
+      <span style={{ fontSize: 13, color: '#ffffff', padding: '6px 8px 6px 12px' }}>{name}</span>
+
+      {/* Bulk toggle chevron — only shown when onBulkToggle is provided */}
+      {onBulkToggle && (
+        <button
+          onClick={() => setMenuOpen(o => !o)}
+          className="flex items-center justify-center transition-colors"
+          style={{
+            color: menuOpen ? '#C0392B' : hovered ? '#A0A0A0' : '#606060',
+            padding: '6px 4px',
+            lineHeight: 0,
+          }}
+          title="Bulk availability"
+        >
+          <IconChevronDown
+            size={12}
+            style={{ transform: menuOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}
+          />
+        </button>
+      )}
+
+      {/* Delete button */}
       <button
         onClick={onDelete}
         className="flex items-center justify-center transition-colors"
-        style={{ color: hovered ? '#C0392B' : '#606060', lineHeight: 0 }}
+        style={{ color: hovered ? '#C0392B' : '#606060', padding: '6px 10px 6px 2px', lineHeight: 0 }}
       >
         <IconX size={12} />
       </button>
+
+      {/* Dropdown menu */}
+      {menuOpen && onBulkToggle && (
+        <div
+          className="absolute top-full left-0 mt-1 z-30 overflow-hidden"
+          style={{
+            backgroundColor: '#1A1A1A',
+            border: '1px solid #2C2C2C',
+            borderRadius: 8,
+            minWidth: 190,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+          }}
+        >
+          <button
+            onClick={() => { onBulkToggle(true); setMenuOpen(false); }}
+            className="w-full flex items-center gap-2 px-3 py-2.5 text-sm transition-colors"
+            style={{ color: '#27AE60' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(39,174,96,0.08)')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <IconEye size={14} />
+            Mark all available
+          </button>
+          <div style={{ height: 1, backgroundColor: '#2C2C2C' }} />
+          <button
+            onClick={() => { onBulkToggle(false); setMenuOpen(false); }}
+            className="w-full flex items-center gap-2 px-3 py-2.5 text-sm transition-colors"
+            style={{ color: '#C0392B' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.08)')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <IconEyeOff size={14} />
+            Mark all unavailable
+          </button>
+        </div>
+      )}
     </div>
   );
 }
