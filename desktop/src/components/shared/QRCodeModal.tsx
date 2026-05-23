@@ -23,20 +23,17 @@ export default function QRCodeModal({ onClose }: QRCodeModalProps) {
       .catch(() => setError('Could not fetch server IP'));
   }, []);
 
-  const clientURL = network ? `https://${network.ip}:${network.clientPort}` : '';
+  const clientURL = network ? `http://${network.ip}:${network.clientPort}` : '';
 
   return (
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
       <div className="bg-card border border-border rounded-2xl w-[360px]">
-        {/* Header */}
         <div className="border-b border-border p-4 flex items-center justify-between">
           <h2 className="text-white font-semibold">Connect Phone</h2>
           <button onClick={onClose} className="text-textGray hover:text-white transition-colors">
             <IconX size={18} />
           </button>
         </div>
-
-        {/* Body */}
         <div className="p-6 flex flex-col items-center gap-4">
           {error ? (
             <p className="text-danger text-sm text-center">{error}</p>
