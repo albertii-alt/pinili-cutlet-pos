@@ -1,7 +1,7 @@
-const SERVER_PORT = 3001;
+const SERVER_PORT = 3000;
 
 export function getServerUrl(): string {
-  return `https://${window.location.hostname}:${SERVER_PORT}`;
+  return `http://${window.location.hostname}:${SERVER_PORT}`;
 }
 
 export function getImageUrl(imagePath: string | null): string | null {

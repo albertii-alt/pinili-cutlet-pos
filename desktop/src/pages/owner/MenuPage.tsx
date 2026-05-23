@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { IconPlus } from '@tabler/icons-react';
+import { useState, useRef, useEffect } from 'react';
+import { IconPlus, IconChevronDown } from '@tabler/icons-react';
 import { useMenu } from '../../hooks/useMenu';
 import { useCategories } from '../../hooks/useCategories';
 import { deleteMenuItem, toggleAvailability } from '../../api/menu.api';
@@ -18,16 +18,33 @@ export default function MenuPage() {
   const { categories } = useCategories();
   const { setMenuItems, setCategories } = useMenuStore();
 
-  const [search, setSearch]           = useState('');
-  const [filterCat, setFilterCat]     = useState<number | null>(null);
-  const [editItem, setEditItem]       = useState<MenuItem | null | undefined>(undefined);
-  const [deleteItem, setDeleteItem]   = useState<MenuItem | null>(null);
+  const [search, setSearch]         = useState('');
+  const [filterCat, setFilterCat]   = useState<number | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [editItem, setEditItem]     = useState<MenuItem | null | undefined>(undefined);
+  const [deleteItem, setDeleteItem] = useState<MenuItem | null>(null);
+  const dropdownRef                 = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   const filtered = menuItems.filter(item => {
     const matchSearch = item.name.toLowerCase().includes(search.toLowerCase());
     const matchCat    = filterCat === null || item.category_id === filterCat;
     return matchSearch && matchCat;
   });
+
+  const selectedCatLabel = filterCat === null
+    ? 'All Categories'
+    : categories.find(c => c.id === filterCat)?.name ?? 'All Categories';
 
   async function handleToggle(item: MenuItem) {
     await toggleAvailability(item.id);
@@ -47,7 +64,7 @@ export default function MenuPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 max-w-[960px]">
+    <div className="flex flex-col gap-4 w-full">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-white font-semibold text-lg">Menu</h1>
@@ -63,24 +80,49 @@ export default function MenuPage() {
       {/* Category manager */}
       <CategoryManager categories={categories} onChanged={refresh} />
 
-      {/* Search + filter */}
+      {/* Search + custom category dropdown */}
       <div className="flex gap-3">
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search menu items..."
-          className="flex-1 bg-card border border-border rounded-lg px-3 py-2 text-white text-sm placeholder:text-textMuted focus:border-primary outline-none"
+          className="flex-1 bg-cardLight border border-border rounded-lg px-3 py-2 text-white text-sm placeholder:text-textMuted focus:border-primary outline-none"
+          style={{ backgroundColor: '#1A1A1A' }}
         />
-        <select
-          value={filterCat ?? ''}
-          onChange={e => setFilterCat(e.target.value ? Number(e.target.value) : null)}
-          className="bg-card border border-border rounded-lg px-3 py-2 text-white text-sm focus:border-primary outline-none"
-        >
-          <option value="">All Categories</option>
-          {categories.map(c => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
+
+        {/* Custom dropdown */}
+        <div ref={dropdownRef} className="relative">
+          <button
+            onClick={() => setDropdownOpen(o => !o)}
+            className="flex items-center gap-2 border border-border rounded-lg px-3 py-2 text-white text-sm transition-colors hover:border-primary"
+            style={{ backgroundColor: '#1A1A1A', minWidth: 160 }}
+          >
+            <span className="flex-1 text-left">{selectedCatLabel}</span>
+            <IconChevronDown
+              size={14}
+              className="text-textGray transition-transform"
+              style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            />
+          </button>
+
+          {dropdownOpen && (
+            <div
+              className="absolute top-full left-0 mt-1 w-full border border-border rounded-lg overflow-hidden z-20"
+              style={{ backgroundColor: '#1A1A1A' }}
+            >
+              {[{ id: null, name: 'All Categories' }, ...categories].map(c => (
+                <button
+                  key={c.id ?? 'all'}
+                  onClick={() => { setFilterCat(c.id); setDropdownOpen(false); }}
+                  className="w-full text-left px-3 py-2 text-sm transition-colors hover:bg-cardLight"
+                  style={{ color: filterCat === c.id ? '#C0392B' : '#ffffff' }}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Table */}
@@ -96,7 +138,6 @@ export default function MenuPage() {
         />
       )}
 
-      {/* Add/Edit modal — editItem=null means add, editItem=MenuItem means edit */}
       {editItem !== undefined && (
         <MenuItemModal
           item={editItem}
@@ -106,7 +147,6 @@ export default function MenuPage() {
         />
       )}
 
-      {/* Delete confirm */}
       {deleteItem && (
         <ConfirmDialog
           title="Delete Item"

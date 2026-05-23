@@ -24,6 +24,7 @@ export function runSchema(db: Database): void {
       username   TEXT    NOT NULL UNIQUE,
       password   TEXT    NOT NULL,
       role       TEXT    DEFAULT 'cashier',
+      is_active  INTEGER DEFAULT 1,
       created_at TEXT    DEFAULT (datetime('now','localtime'))
     );
 

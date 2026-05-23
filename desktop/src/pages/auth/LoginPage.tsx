@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IconEye, IconEyeOff } from '@tabler/icons-react';
+import { IconEye, IconEyeOff, IconAlertCircle, IconArrowLeft } from '@tabler/icons-react';
 import { login } from '../../api/auth.api';
 import { useAuthStore } from '../../store/useAuthStore';
 import { connectSocket } from '../../socket/socket';
@@ -9,29 +9,27 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { login: setAuth } = useAuthStore();
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername]         = useState('');
+  const [password, setPassword]         = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [error, setError]               = useState('');
+  const [loading, setLoading]           = useState(false);
+  const [userFocused, setUserFocused]   = useState(false);
+  const [passFocused, setPassFocused]   = useState(false);
 
   async function handleLogin() {
     if (!username.trim() || !password) {
       setError('Username and password are required');
       return;
     }
-
     setLoading(true);
     setError('');
-
     try {
       const { token, user } = await login(username.trim(), password);
-
       if (user.role !== 'owner') {
         setError('Only the owner can access this area');
         return;
       }
-
       setAuth(token, user);
       connectSocket();
       navigate('/owner/dashboard');
@@ -42,67 +40,153 @@ export default function LoginPage() {
     }
   }
 
+  const inputStyle = (focused: boolean): React.CSSProperties => ({
+    backgroundColor: '#1A1A1A',
+    border: `1px solid ${focused ? '#C0392B' : '#2C2C2C'}`,
+    boxShadow: focused ? '0 0 0 3px rgba(192,57,43,0.15)' : 'none',
+    borderRadius: 8,
+    padding: '10px 12px',
+    color: '#ffffff',
+    fontSize: 14,
+    width: '100%',
+    outline: 'none',
+    transition: 'border-color 0.15s, box-shadow 0.15s',
+  });
+
   return (
-    <div className="min-h-screen bg-dark flex items-center justify-center">
-      <div className="bg-card border border-border rounded-2xl w-[360px] p-6 flex flex-col gap-5">
-        {/* Brand */}
-        <div className="text-center">
-          <h1 className="font-bold tracking-widest text-lg">
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ background: 'radial-gradient(ellipse at center, #1a0a0a 0%, #0A0A0A 70%)' }}
+    >
+      <div
+        style={{
+          backgroundColor: '#111111',
+          border: '1px solid #2C2C2C',
+          borderRadius: 16,
+          padding: '40px 36px',
+          width: 360,
+          boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+        }}
+      >
+        {/* Branding */}
+        <div className="flex flex-col items-center gap-2 mb-8">
+          <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '0.15em', lineHeight: 1 }}>
             <span className="text-white">PINILI</span>{' '}
-            <span className="text-primary">CUTLET</span>
+            <span style={{ color: '#C0392B' }}>CUTLET</span>
           </h1>
-          <p className="text-textGray text-xs mt-1">Owner Access</p>
+          <p style={{ fontSize: 11, color: '#606060', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+            Owner Access
+          </p>
+          <div style={{ width: 40, height: 2, backgroundColor: '#C0392B', borderRadius: 2, marginTop: 4 }} />
         </div>
 
-        {/* Fields */}
-        <div className="flex flex-col gap-3">
-          <input
-            value={username}
-            onChange={e => setUsername(e.target.value)}
-            placeholder="Username"
-            autoComplete="username"
-            className="bg-cardLight border border-border rounded-lg px-3 py-2 text-white text-sm placeholder:text-textMuted focus:border-primary outline-none"
-          />
-          <div className="relative">
+        {/* Form */}
+        <div className="flex flex-col gap-4">
+          {/* Username */}
+          <div className="flex flex-col gap-1.5">
+            <label style={{ fontSize: 12, color: '#606060', letterSpacing: '0.05em' }}>Username</label>
             <input
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleLogin()}
-              placeholder="Password"
-              autoComplete="current-password"
-              className="w-full bg-cardLight border border-border rounded-lg px-3 py-2 pr-10 text-white text-sm placeholder:text-textMuted focus:border-primary outline-none"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              placeholder="Enter username"
+              autoComplete="username"
+              style={inputStyle(userFocused)}
+              onFocus={() => setUserFocused(true)}
+              onBlur={() => setUserFocused(false)}
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(p => !p)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-textMuted hover:text-white transition-colors"
-            >
-              {showPassword ? <IconEyeOff size={15} /> : <IconEye size={15} />}
-            </button>
           </div>
+
+          {/* Password */}
+          <div className="flex flex-col gap-1.5">
+            <label style={{ fontSize: 12, color: '#606060', letterSpacing: '0.05em' }}>Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                placeholder="Enter password"
+                autoComplete="current-password"
+                style={{ ...inputStyle(passFocused), paddingRight: 40 }}
+                onFocus={() => setPassFocused(true)}
+                onBlur={() => setPassFocused(false)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(p => !p)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                style={{ color: '#606060' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#606060')}
+              >
+                {showPassword ? <IconEyeOff size={16} /> : <IconEye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Error row — always occupies space */}
+          <div style={{ minHeight: 20, display: 'flex', alignItems: 'center', gap: 6 }}>
+            {error && (
+              <>
+                <IconAlertCircle size={14} color="#C0392B" />
+                <span style={{ fontSize: 12, color: '#C0392B' }}>{error}</span>
+              </>
+            )}
+          </div>
+
+          {/* Login button */}
+          <button
+            onClick={handleLogin}
+            disabled={loading}
+            style={{
+              backgroundColor: loading ? '#2C2C2C' : '#C0392B',
+              color: loading ? '#606060' : '#ffffff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '12px',
+              fontSize: 14,
+              fontWeight: 700,
+              width: '100%',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              transition: 'background-color 0.15s',
+            }}
+            onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#96281B'; }}
+            onMouseLeave={e => { if (!loading) e.currentTarget.style.backgroundColor = '#C0392B'; }}
+          >
+            {loading ? (
+              <>
+                <div style={{
+                  width: 16, height: 16,
+                  border: '2px solid #606060',
+                  borderTopColor: '#ffffff',
+                  borderRadius: '50%',
+                  animation: 'spin 0.7s linear infinite',
+                }} />
+                Logging in...
+              </>
+            ) : 'Login'}
+          </button>
         </div>
-
-        {/* Error — always occupies space */}
-        <p className="text-danger text-xs min-h-[16px] -mt-2">{error}</p>
-
-        {/* Login button */}
-        <button
-          onClick={handleLogin}
-          disabled={loading}
-          className="w-full bg-primary hover:bg-primaryDark disabled:bg-cardLight disabled:text-textMuted text-white rounded-lg py-2.5 text-sm font-semibold transition-colors"
-        >
-          {loading ? 'Logging in...' : 'Login'}
-        </button>
 
         {/* Back to cashier */}
         <button
           onClick={() => navigate('/cashier-login')}
-          className="text-textMuted text-xs text-center hover:text-white transition-colors"
+          className="flex items-center justify-center gap-1.5 w-full mt-6 transition-colors"
+          style={{ color: '#606060', fontSize: 13 }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#606060')}
         >
-          ← Back to Cashier
+          <IconArrowLeft size={14} />
+          Back to Cashier
         </button>
       </div>
+
+      {/* Spinner keyframe */}
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

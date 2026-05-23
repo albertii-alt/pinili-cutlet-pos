@@ -53,13 +53,24 @@ function migrateOrdersTable(): void {
   db.pragma('foreign_keys = ON');
 
   console.log('[DB] Migration complete.');
+}
 
-  console.log('[DB] Migration complete.');
+// Migration: add is_active column to users if missing
+function migrateUsersTable(): void {
+  const cols = db.prepare("PRAGMA table_info(users)").all() as { name: string }[];
+  if (!cols.some(c => c.name === 'is_active')) {
+    console.log('[DB] Adding is_active column to users...');
+    db.prepare('ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1').run();
+    console.log('[DB] Migration complete.');
+  }
+  // Always ensure no NULL values — fix existing rows
+  db.prepare('UPDATE users SET is_active = 1 WHERE is_active IS NULL').run();
 }
 
 // Initialize schema and seed data
 runSchema(db);
 migrateOrdersTable();
+migrateUsersTable();
 runSeed(db);
 
 export default db;

@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AuthPayload } from '../types';
+import db from '../database/db';
 
-// Extend Express Request to carry the authenticated user
 declare global {
   namespace Express {
     interface Request {
@@ -23,6 +23,14 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET as string) as AuthPayload;
+
+    // Check if account is still active
+    const user = db.prepare('SELECT is_active FROM users WHERE id = ?').get(payload.id) as { is_active: number | null } | undefined;
+    if (!user || user.is_active === 0) {
+      res.status(403).json({ error: 'Account has been disabled' });
+      return;
+    }
+
     req.user = payload;
     next();
   } catch {

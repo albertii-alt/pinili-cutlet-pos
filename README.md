@@ -18,21 +18,15 @@ npm run dev
 ```
 Server runs on `http://localhost:3000`
 
-### Step 2 — Start the HTTPS proxy (required for phone camera access)
-```powershell
-local-ssl-proxy --source 3001 --target 3000
-```
-Proxy runs on `https://0.0.0.0:3001` and forwards to the server.
-
-### Step 3 — Build and start the client (for phones/tablets)
+### Step 2 — Build and start the client (for phones/tablets)
 ```powershell
 cd client
 npm run build
 npx vite preview --host --port 4173
 ```
-Client runs on `https://192.168.x.x:4173`
+Client runs on `http://192.168.x.x:4173`
 
-### Step 4 — Start the desktop app
+### Step 3 — Start the desktop app
 ```powershell
 cd desktop
 npm run tauri dev
@@ -40,11 +34,10 @@ npm run tauri dev
 
 ## First-time Phone Setup
 1. Connect phone to the same Wi-Fi as the laptop
-2. Open `https://192.168.x.x:4173` in Chrome
-3. Accept the security warning (self-signed cert)
-4. Also open `https://192.168.x.x:3001/health` and accept the warning there too
-5. On the Connect screen — tap **Scan QR Code** or enter the IP manually
-6. Login with your staff credentials
+2. On the desktop cashier view — click the **QR** button in the topbar
+3. Scan the QR code with your phone camera
+4. Chrome opens the app automatically
+5. Login with your staff credentials
 
 ## Default Credentials
 | Username | Password | Role    |
@@ -55,8 +48,7 @@ npm run tauri dev
 
 ## Network
 - Server: `http://localhost:3000` (laptop only)
-- HTTPS Proxy: `https://0.0.0.0:3001` (LAN accessible)
-- Client: `https://192.168.x.x:4173`
+- Client: `http://192.168.x.x:4173`
 - Desktop: connects to `http://localhost:3000` directly
 
 ## Docs

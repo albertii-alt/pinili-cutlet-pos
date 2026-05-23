@@ -89,6 +89,18 @@ export interface RevenueByPayment {
   count: number;
 }
 
+export interface PeakHour {
+  hour: string;
+  order_count: number;
+  revenue: number;
+}
+
+export interface CategorySales {
+  category: string;
+  total_quantity: number;
+  total_revenue: number;
+}
+
 // Order creation payload
 
 export interface CreateOrderPayload {

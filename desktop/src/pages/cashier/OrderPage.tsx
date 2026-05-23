@@ -32,11 +32,11 @@ export default function OrderPage() {
   }
 
   return (
-    <div className="flex h-screen bg-dark overflow-hidden">
-      <div className="flex flex-col flex-1 overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-dark">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Topbar />
 
-        <div className="flex-1 overflow-y-auto pt-[52px]">
+        <div className="flex-1 overflow-y-auto pt-[52px] hide-scrollbar">
           <div className="p-4 flex flex-col gap-4">
             {/* Category tabs + queue button */}
             <div className="flex items-center gap-3">

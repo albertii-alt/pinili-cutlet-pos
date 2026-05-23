@@ -1,12 +1,11 @@
 import { io } from 'socket.io-client';
 import type { Order, MenuItem, Category } from '../types';
 
-const SERVER_PORT = 3001;
-const socketURL = `https://${window.location.hostname}:${SERVER_PORT}`;
+const SERVER_PORT = 3000;
+const socketURL = `http://${window.location.hostname}:${SERVER_PORT}`;
 
 const socket = io(socketURL, {
   autoConnect: false,
-  transports: ['polling'],
   reconnection: true,
   reconnectionAttempts: Infinity,
   reconnectionDelay: 2000,

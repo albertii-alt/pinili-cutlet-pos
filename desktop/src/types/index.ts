@@ -23,6 +23,14 @@ export interface User {
   role: 'owner' | 'cashier' | 'kitchen';
 }
 
+export interface StaffUser {
+  id: number;
+  username: string;
+  role: 'cashier' | 'kitchen';
+  is_active: number;
+  created_at: string;
+}
+
 export interface Order {
   id: number;
   order_number: string;
@@ -68,6 +76,18 @@ export interface RevenueByPayment {
   payment_method: string;
   total: number;
   count: number;
+}
+
+export interface PeakHour {
+  hour: string;
+  order_count: number;
+  revenue: number;
+}
+
+export interface CategorySales {
+  category: string;
+  total_quantity: number;
+  total_revenue: number;
 }
 
 // Frontend-specific types

@@ -8,6 +8,7 @@ import DashboardPage from '../pages/owner/DashboardPage';
 import MenuPage from '../pages/owner/MenuPage';
 import HistoryPage from '../pages/owner/HistoryPage';
 import AnalyticsPage from '../pages/owner/AnalyticsPage';
+import SettingsPage from '../pages/owner/SettingsPage';
 import Topbar from '../components/shared/Topbar';
 import Sidebar from '../components/shared/Sidebar';
 
@@ -16,11 +17,11 @@ function OwnerShell() {
   if (!isAuthenticated || user?.role !== 'owner') return <Navigate to="/login" replace />;
 
   return (
-    <div className="flex min-h-screen bg-dark">
+    <div className="flex h-screen overflow-hidden bg-dark">
       <Sidebar />
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Topbar />
-        <main className="flex-1 overflow-y-auto pt-[52px] p-6">
+        <main className="flex-1 overflow-y-auto pt-[76px] p-6 hide-scrollbar">
           <Outlet />
         </main>
       </div>
@@ -56,6 +57,7 @@ export const routes: RouteObject[] = [
       { path: 'menu',      element: <MenuPage /> },
       { path: 'history',   element: <HistoryPage /> },
       { path: 'analytics', element: <AnalyticsPage /> },
+      { path: 'settings',  element: <SettingsPage /> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const SERVER_PORT = 3001;
-const baseURL = `https://${window.location.hostname}:${SERVER_PORT}`;
+const SERVER_PORT = 3000;
+const baseURL = `http://${window.location.hostname}:${SERVER_PORT}`;
 
 const apiClient = axios.create({ baseURL });
 

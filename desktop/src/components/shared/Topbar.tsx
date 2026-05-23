@@ -6,6 +6,43 @@ import { disconnectSocket } from '../../socket/socket';
 import { useNavigate } from 'react-router-dom';
 import QRCodeModal from './QRCodeModal';
 
+interface TopbarButtonProps {
+  onClick: () => void;
+  tooltip: string;
+  children: React.ReactNode;
+  danger?: boolean;
+}
+
+function TopbarButton({ onClick, tooltip, children, danger = false }: TopbarButtonProps) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={onClick}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        className="w-8 h-8 flex items-center justify-center rounded-lg border border-border transition-all duration-150"
+        style={{
+          backgroundColor: hovered
+            ? danger ? 'rgba(192,57,43,0.1)' : '#242424'
+            : '#1A1A1A',
+          color: hovered
+            ? danger ? '#C0392B' : '#ffffff'
+            : '#A0A0A0',
+        }}
+      >
+        {children}
+      </button>
+      {hovered && (
+        <div className="absolute top-full right-0 mt-1.5 px-2 py-1 bg-cardLight border border-border rounded-md text-xs text-white whitespace-nowrap z-50">
+          {tooltip}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Topbar() {
   const { user, logout: clearAuth } = useAuthStore();
   const navigate = useNavigate();
@@ -18,40 +55,45 @@ export default function Topbar() {
     navigate('/cashier-login');
   }
 
+  const avatarLetter = user?.username?.[0]?.toUpperCase() ?? '?';
+
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 h-[52px] bg-card border-b border-border flex items-center justify-between px-4 z-50">
-        <span className="font-bold tracking-widest text-sm">
-          <span className="text-white">PINILI</span>{' '}
-          <span className="text-primary">CUTLET</span>
-        </span>
+      <header
+        className="fixed top-0 left-0 right-0 h-[52px] border-b border-border flex items-center justify-between px-4 z-50"
+        style={{ backgroundColor: '#111111' }}
+      >
+        {/* Left — empty, brand is in sidebar */}
+        <div />
 
+        {/* Right — user info + action buttons */}
         <div className="flex items-center gap-3">
           {user && (
-            <span className="text-xs text-textGray capitalize bg-cardLight border border-border px-2 py-1 rounded-md">
-              {user.role}
-            </span>
+            <div className="flex items-center gap-2">
+              {/* Avatar */}
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                style={{ backgroundColor: '#C0392B' }}
+              >
+                {avatarLetter}
+              </div>
+              {/* Username */}
+              <span className="text-textGray text-sm">{user.username}</span>
+            </div>
           )}
 
-          {/* QR code button — visible for cashier role */}
+          {/* QR button — cashier only */}
           {user?.role === 'cashier' && (
-            <button
-              onClick={() => setShowQR(true)}
-              className="flex items-center gap-1 text-xs text-textGray hover:text-white transition-colors"
-            >
-              <IconQrcode size={15} />
-              QR
-            </button>
+            <TopbarButton onClick={() => setShowQR(true)} tooltip="Show QR Code">
+              <IconQrcode size={18} />
+            </TopbarButton>
           )}
 
+          {/* Logout button */}
           {user && (
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1 text-xs text-textGray hover:text-white transition-colors"
-            >
-              <IconLogout size={15} />
-              Logout
-            </button>
+            <TopbarButton onClick={handleLogout} tooltip="Logout" danger>
+              <IconLogout size={18} />
+            </TopbarButton>
           )}
         </div>
       </header>

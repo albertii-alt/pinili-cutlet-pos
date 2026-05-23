@@ -16,12 +16,16 @@ export default function MenuTable({ items, categories, onEdit, onDelete, onToggl
     categories.find(c => c.id === id)?.name ?? '—';
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
+    <div className="border border-border rounded-xl overflow-hidden" style={{ backgroundColor: '#1A1A1A' }}>
       <table className="w-full">
         <thead>
-          <tr className="border-b border-border">
+          <tr style={{ backgroundColor: '#1A1A1A', borderBottom: '1px solid #2C2C2C' }}>
             {['Item', 'Category', 'Price', 'Status', 'Actions'].map(h => (
-              <th key={h} className="text-left text-xs text-textGray uppercase tracking-wider px-4 py-3 font-medium">
+              <th
+                key={h}
+                className="text-left px-4 py-3 font-medium"
+                style={{ fontSize: 11, color: '#606060', textTransform: 'uppercase', letterSpacing: '0.08em' }}
+              >
                 {h}
               </th>
             ))}
@@ -34,7 +38,13 @@ export default function MenuTable({ items, categories, onEdit, onDelete, onToggl
               : null;
 
             return (
-              <tr key={item.id} className="border-b border-border last:border-0 hover:bg-cardLight transition-colors">
+              <tr
+                key={item.id}
+                className="border-b border-border last:border-0 transition-colors"
+                style={{ backgroundColor: '#1A1A1A' }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#242424')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1A1A1A')}
+              >
                 {/* Item */}
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
@@ -71,13 +81,37 @@ export default function MenuTable({ items, categories, onEdit, onDelete, onToggl
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => onEdit(item)}
-                      className="p-1.5 rounded-lg text-textGray hover:text-white hover:bg-cardLight transition-colors"
+                      className="flex items-center justify-center transition-colors"
+                      style={{
+                        width: 32, height: 32,
+                        backgroundColor: '#1A1A1A',
+                        border: '1px solid #2C2C2C',
+                        borderRadius: 6,
+                        color: '#A0A0A0',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.backgroundColor = '#242424';
+                        e.currentTarget.style.color = '#ffffff';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.backgroundColor = '#1A1A1A';
+                        e.currentTarget.style.color = '#A0A0A0';
+                      }}
                     >
                       <IconEdit size={15} />
                     </button>
                     <button
                       onClick={() => onDelete(item)}
-                      className="p-1.5 rounded-lg text-textGray hover:text-danger hover:bg-danger/10 transition-colors"
+                      className="flex items-center justify-center transition-colors"
+                      style={{
+                        width: 32, height: 32,
+                        backgroundColor: 'rgba(192,57,43,0.08)',
+                        border: '1px solid rgba(192,57,43,0.3)',
+                        borderRadius: 6,
+                        color: '#C0392B',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.15)')}
+                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.08)')}
                     >
                       <IconTrash size={15} />
                     </button>
