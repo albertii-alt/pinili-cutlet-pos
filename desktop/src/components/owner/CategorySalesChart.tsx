@@ -1,4 +1,5 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { IconTag } from '@tabler/icons-react';
 import { CategorySales } from '../../types';
 import { formatCurrency } from '../../utils/formatCurrency';
 
@@ -25,8 +26,9 @@ export default function CategorySalesChart({ data }: CategorySalesChartProps) {
       <p className="text-textGray text-xs uppercase tracking-wider mb-4">Revenue by Category</p>
 
       {data.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-textMuted text-sm">No data for this period</p>
+        <div className="flex-1 flex flex-col items-center justify-center gap-2">
+          <IconTag size={32} color="#606060" />
+          <p style={{ fontSize: 13, color: '#606060' }}>No category data for this period</p>
         </div>
       ) : (
         <div className="flex flex-col gap-4 flex-1">

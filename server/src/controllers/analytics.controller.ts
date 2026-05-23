@@ -37,6 +37,7 @@ export function getDailySales(req: Request, res: Response): void {
     FROM orders
     WHERE status = 'completed'
       AND DATE(created_at) >= DATE('now', '-6 days', 'localtime')
+      AND DATE(created_at) <= DATE('now', 'localtime')
     GROUP BY DATE(created_at)
     ORDER BY date ASC
   `).all() as DailySales[];
@@ -45,7 +46,8 @@ export function getDailySales(req: Request, res: Response): void {
 }
 
 export function getBestSellers(req: Request, res: Response): void {
-  const { limit } = req.query as { limit?: string };
+  const { limit, date, period, startDate, endDate } = req.query as Record<string, string | undefined>;
+  const { where, params } = buildWhereClause(period, date, startDate, endDate);
 
   const sellers = db.prepare(`
     SELECT
@@ -55,11 +57,11 @@ export function getBestSellers(req: Request, res: Response): void {
       SUM(oi.quantity * oi.item_price) AS total_revenue
     FROM order_items oi
     JOIN orders o ON o.id = oi.order_id
-    WHERE o.status = 'completed'
+    WHERE o.status = 'completed' AND ${where.replace(/created_at/g, 'o.created_at')}
     GROUP BY oi.menu_item_id, oi.item_name
     ORDER BY total_quantity DESC
     LIMIT ?
-  `).all(limit ? parseInt(limit, 10) : 10) as BestSeller[];
+  `).all(...params, limit ? parseInt(limit, 10) : 10) as BestSeller[];
 
   res.json(sellers);
 }

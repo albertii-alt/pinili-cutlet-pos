@@ -2,12 +2,20 @@ import apiClient from './client';
 import { AnalyticsSummary, DailySales, BestSeller, RevenueByPayment, PeakHour, CategorySales } from '../types';
 import { AnalyticsPeriod } from '../hooks/useAnalytics';
 
-function periodParams(period: AnalyticsPeriod) {
+export interface DateRangeParams {
+  startDate?: string;
+  endDate?: string;
+}
+
+function periodParams(period: AnalyticsPeriod, dateRange?: DateRangeParams) {
+  if (period === 'custom' && dateRange?.startDate && dateRange?.endDate) {
+    return { startDate: dateRange.startDate, endDate: dateRange.endDate };
+  }
   return period === 'today' ? {} : { period };
 }
 
-export async function getSummary(period: AnalyticsPeriod = 'today'): Promise<AnalyticsSummary> {
-  const { data } = await apiClient.get('/api/analytics/summary', { params: periodParams(period) });
+export async function getSummary(period: AnalyticsPeriod = 'today', dateRange?: DateRangeParams): Promise<AnalyticsSummary> {
+  const { data } = await apiClient.get('/api/analytics/summary', { params: periodParams(period, dateRange) });
   return data;
 }
 
@@ -16,8 +24,8 @@ export async function getDailySales(): Promise<DailySales[]> {
   return data;
 }
 
-export async function getBestSellers(limit?: number): Promise<BestSeller[]> {
-  const { data } = await apiClient.get('/api/analytics/best-sellers', { params: { limit } });
+export async function getBestSellers(limit?: number, period: AnalyticsPeriod = 'today', dateRange?: DateRangeParams): Promise<BestSeller[]> {
+  const { data } = await apiClient.get('/api/analytics/best-sellers', { params: { limit, ...periodParams(period, dateRange) } });
   return data;
 }
 
@@ -26,18 +34,18 @@ export async function getRevenueByPayment(): Promise<RevenueByPayment[]> {
   return data;
 }
 
-export async function getPeakHours(period: AnalyticsPeriod = 'today'): Promise<PeakHour[]> {
-  const { data } = await apiClient.get('/api/analytics/peak-hours', { params: periodParams(period) });
+export async function getPeakHours(period: AnalyticsPeriod = 'today', dateRange?: DateRangeParams): Promise<PeakHour[]> {
+  const { data } = await apiClient.get('/api/analytics/peak-hours', { params: periodParams(period, dateRange) });
   return data;
 }
 
-export async function getCategorySales(period: AnalyticsPeriod = 'today'): Promise<CategorySales[]> {
-  const { data } = await apiClient.get('/api/analytics/category-sales', { params: periodParams(period) });
+export async function getCategorySales(period: AnalyticsPeriod = 'today', dateRange?: DateRangeParams): Promise<CategorySales[]> {
+  const { data } = await apiClient.get('/api/analytics/category-sales', { params: periodParams(period, dateRange) });
   return data;
 }
 
-export async function getAverageOrderValue(period: AnalyticsPeriod = 'today'): Promise<{ avg_order_value: number; total_orders: number }> {
-  const { data } = await apiClient.get('/api/analytics/average-order-value', { params: periodParams(period) });
+export async function getAverageOrderValue(period: AnalyticsPeriod = 'today', dateRange?: DateRangeParams): Promise<{ avg_order_value: number; total_orders: number }> {
+  const { data } = await apiClient.get('/api/analytics/average-order-value', { params: periodParams(period, dateRange) });
   return data;
 }
 

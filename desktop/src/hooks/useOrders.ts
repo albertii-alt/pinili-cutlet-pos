@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { getActiveOrders } from '../api/order.api';
+import { getActiveOrders, getOrderHistory } from '../api/order.api';
 import { Order } from '../types';
 import socket from '../socket/socket';
 
+// Hook for the live active orders queue (cashier / kitchen view)
 export function useOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,6 +34,34 @@ export function useOrders() {
       socket.off('order:cancelled', handleCancelled);
     };
   }, []);
+
+  return { orders, loading };
+}
+
+export interface OrderHistoryParams {
+  status?: string;
+  date?: string;
+  payment_method?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+// Hook for fetching order history with optional date range support
+export function useOrderHistory(params: OrderHistoryParams) {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Don't fetch if custom range is implied but dates are missing
+    if (params.startDate !== undefined && !params.endDate) return;
+    if (params.endDate !== undefined && !params.startDate) return;
+
+    setLoading(true);
+    getOrderHistory(params)
+      .then(setOrders)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [params.status, params.date, params.payment_method, params.startDate, params.endDate]);
 
   return { orders, loading };
 }

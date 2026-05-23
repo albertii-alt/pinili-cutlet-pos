@@ -10,6 +10,8 @@ export async function getOrderHistory(params?: {
   status?: string;
   date?: string;
   payment_method?: string;
+  startDate?: string;
+  endDate?: string;
 }): Promise<Order[]> {
   const { data } = await apiClient.get('/api/orders', { params });
   return data;

@@ -1,4 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { IconClock } from '@tabler/icons-react';
 import { PeakHour } from '../../types';
 import { formatCurrency } from '../../utils/formatCurrency';
 
@@ -31,8 +32,9 @@ export default function PeakHoursChart({ data }: PeakHoursChartProps) {
     <div className="bg-card border border-border rounded-xl p-4 flex flex-col">
       <p className="text-textGray text-xs uppercase tracking-wider mb-4">Busiest Hours</p>
       {data.length === 0 ? (
-        <div className="flex items-center justify-center h-[140px]">
-          <p className="text-textMuted text-sm">No data for this period</p>
+        <div className="flex flex-col items-center justify-center h-[140px] gap-2">
+          <IconClock size={32} color="#606060" />
+          <p style={{ fontSize: 13, color: '#606060' }}>No orders recorded for this period</p>
         </div>
       ) : (
         <div style={{ height: 160 }}>

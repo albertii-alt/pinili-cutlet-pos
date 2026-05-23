@@ -5,9 +5,13 @@ interface SalesCardProps {
   value: string;
   accent?: boolean;
   icon?: Icon;
+  isZero?: boolean;
 }
 
-export default function SalesCard({ label, value, accent = false, icon: Icon }: SalesCardProps) {
+export default function SalesCard({ label, value, accent = false, icon: Icon, isZero = false }: SalesCardProps) {
+  // Zero values render muted regardless of accent — intentionally subdued, not broken
+  const valueColor = isZero ? '#606060' : accent ? '#C0392B' : '#ffffff';
+
   return (
     <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
       <div className="flex items-center justify-between">
@@ -15,13 +19,13 @@ export default function SalesCard({ label, value, accent = false, icon: Icon }: 
         {Icon && (
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: accent ? 'rgba(192,57,43,0.1)' : 'rgba(255,255,255,0.05)' }}
+            style={{ backgroundColor: accent && !isZero ? 'rgba(192,57,43,0.1)' : 'rgba(255,255,255,0.05)' }}
           >
-            <Icon size={20} color={accent ? '#C0392B' : '#606060'} />
+            <Icon size={20} color={accent && !isZero ? '#C0392B' : '#606060'} />
           </div>
         )}
       </div>
-      <span className={`font-bold text-2xl ${accent ? 'text-primary' : 'text-white'}`}>
+      <span className="font-bold text-2xl" style={{ color: valueColor }}>
         {value}
       </span>
     </div>

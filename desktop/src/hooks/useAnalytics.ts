@@ -5,9 +5,14 @@ import {
 } from '../api/analytics.api';
 import { AnalyticsSummary, DailySales, BestSeller, RevenueByPayment, PeakHour, CategorySales } from '../types';
 
-export type AnalyticsPeriod = 'today' | 'week' | 'month';
+export type AnalyticsPeriod = 'today' | 'week' | 'month' | 'custom';
 
-export function useAnalytics(period: AnalyticsPeriod = 'today') {
+export interface DateRange {
+  startDate: string;
+  endDate: string;
+}
+
+export function useAnalytics(period: AnalyticsPeriod = 'today', dateRange?: DateRange) {
   const [summary, setSummary]                   = useState<AnalyticsSummary | null>(null);
   const [dailySales, setDailySales]             = useState<DailySales[]>([]);
   const [bestSellers, setBestSellers]           = useState<BestSeller[]>([]);
@@ -18,16 +23,19 @@ export function useAnalytics(period: AnalyticsPeriod = 'today') {
   const [loading, setLoading]                   = useState(true);
 
   useEffect(() => {
+    // Don't fetch if custom period is selected but dates aren't set yet
+    if (period === 'custom' && (!dateRange?.startDate || !dateRange?.endDate)) return;
+
     setLoading(true);
 
     Promise.all([
-      getSummary(period),
+      getSummary(period, dateRange),
       getDailySales(),
-      getBestSellers(),
+      getBestSellers(undefined, period, dateRange),
       getRevenueByPayment(),
-      getPeakHours(period),
-      getCategorySales(period),
-      getAverageOrderValue(period),
+      getPeakHours(period, dateRange),
+      getCategorySales(period, dateRange),
+      getAverageOrderValue(period, dateRange),
     ])
       .then(([s, ds, bs, rp, ph, cs, aov]) => {
         setSummary(s);
@@ -40,7 +48,7 @@ export function useAnalytics(period: AnalyticsPeriod = 'today') {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [period]);
+  }, [period, dateRange?.startDate, dateRange?.endDate]);
 
   return { summary, dailySales, bestSellers, revenueByPayment, peakHours, categorySales, avgOrderValue, loading };
 }

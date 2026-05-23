@@ -2,19 +2,20 @@ import { useState, useEffect } from 'react';
 import { IconEye, IconShoppingCart, IconReportMoney, IconCash, IconDeviceMobile, IconFileExport, IconCheck, IconX } from '@tabler/icons-react';
 import { getOrderHistory } from '../../api/order.api';
 import { Order } from '../../types';
+import type { OrderFilter } from '../../types';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatDateTime, toDateParam } from '../../utils/formatDate';
 import Badge from '../../components/shared/Badge';
 import EmptyState from '../../components/shared/EmptyState';
 import SalesCard from '../../components/owner/SalesCard';
 import OrderDetailsModal from '../../components/owner/OrderDetailsModal';
+import DateRangePicker, { type DateRangeValue } from '../../components/shared/DateRangePicker';
 
-type Period = 'today' | 'week' | 'month';
-
-const periods: { label: string; value: Period }[] = [
-  { label: 'Today',      value: 'today' },
-  { label: 'This Week',  value: 'week'  },
-  { label: 'This Month', value: 'month' },
+const periods: { label: string; value: OrderFilter }[] = [
+  { label: 'Today',      value: 'today'  },
+  { label: 'This Week',  value: 'week'   },
+  { label: 'This Month', value: 'month'  },
+  { label: 'Custom',     value: 'custom' },
 ];
 
 function generateCSV(orders: Order[]): string {
@@ -70,17 +71,43 @@ function Toast({ message, type, onDone }: { message: string; type: 'success' | '
 }
 
 export default function HistoryPage() {
-  const [period, setPeriod]     = useState<Period>('today');
-  const [orders, setOrders]     = useState<Order[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [selected, setSelected] = useState<Order | null>(null);
-  const [exporting, setExporting] = useState(false);
-  const [toast, setToast]       = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [period, setPeriod]         = useState<OrderFilter>('today');
+  const [orders, setOrders]         = useState<Order[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [selected, setSelected]     = useState<Order | null>(null);
+  const [exporting, setExporting]   = useState(false);
+  const [toast, setToast]           = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Custom date range state
+  const [dateRange, setDateRange]         = useState<DateRangeValue>({ startDate: '', endDate: '' });
+  const [appliedRange, setAppliedRange]   = useState<DateRangeValue | null>(null);
+
+  // Reset applied range when switching away from custom
+  function handlePeriodChange(p: OrderFilter) {
+    setPeriod(p);
+    if (p !== 'custom') setAppliedRange(null);
+  }
 
   useEffect(() => {
+    // For custom period, only fetch once the user has applied a range
+    if (period === 'custom' && !appliedRange) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
-    const params: { status: string; date?: string } = { status: 'completed' };
-    if (period === 'today') params.date = toDateParam();
+
+    const params: Parameters<typeof getOrderHistory>[0] = { status: 'completed' };
+
+    if (period === 'custom' && appliedRange) {
+      params.startDate = appliedRange.startDate;
+      params.endDate   = appliedRange.endDate;
+    } else if (period === 'today') {
+      params.date = toDateParam();
+    }
+    // week / month: no date param — server returns all completed, we filter client-side
+    // (matches existing behaviour)
 
     getOrderHistory(params)
       .then(data => {
@@ -100,7 +127,7 @@ export default function HistoryPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [period]);
+  }, [period, appliedRange]);
 
   async function handleExport() {
     if (orders.length === 0 || exporting) return;
@@ -134,13 +161,13 @@ export default function HistoryPage() {
   return (
     <div className="flex flex-col gap-4 w-full">
       {/* Header + filters + export */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-white font-semibold text-lg">Order History</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {periods.map(p => (
             <button
               key={p.value}
-              onClick={() => setPeriod(p.value)}
+              onClick={() => handlePeriodChange(p.value)}
               className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
                 period === p.value
                   ? 'bg-primary text-white'
@@ -179,6 +206,15 @@ export default function HistoryPage() {
         </div>
       </div>
 
+      {/* Custom date range picker — shown only when Custom is selected */}
+      {period === 'custom' && (
+        <DateRangePicker
+          value={dateRange}
+          onChange={setDateRange}
+          onApply={range => setAppliedRange(range)}
+        />
+      )}
+
       {/* Summary cards */}
       <div className="grid grid-cols-4 gap-3">
         <SalesCard label="Orders"  value={String(orders.length)}        icon={IconShoppingCart} />
@@ -191,6 +227,8 @@ export default function HistoryPage() {
         <div className="flex justify-center py-16">
           <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
+      ) : period === 'custom' && !appliedRange ? (
+        <EmptyState emoji="📅" message="Select a date range" subtitle="Choose a start and end date, then press Apply" />
       ) : orders.length === 0 ? (
         <EmptyState emoji="📋" message="No orders found" subtitle="Completed orders will appear here" />
       ) : (

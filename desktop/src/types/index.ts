@@ -90,6 +90,10 @@ export interface CategorySales {
   total_revenue: number;
 }
 
+// Filter types
+
+export type OrderFilter = 'today' | 'week' | 'month' | 'custom';
+
 // Frontend-specific types
 
 export interface CartItem {
