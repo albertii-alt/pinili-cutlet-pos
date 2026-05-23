@@ -35,8 +35,9 @@ export default function LoginPage() {
       setAuth(token, user);
       connectSocket();
       navigate(user.role === 'kitchen' ? '/queue' : '/order');
-    } catch {
-      setError('Invalid username or password');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setError(msg ?? 'Invalid username or password');
     } finally {
       setLoading(false);
     }

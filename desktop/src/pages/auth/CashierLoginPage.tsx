@@ -35,8 +35,9 @@ export default function CashierLoginPage() {
       setAuth(token, user);
       connectSocket();
       navigate('/');
-    } catch {
-      setError('Invalid username or password');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setError(msg ?? 'Invalid username or password');
     } finally {
       setLoading(false);
     }

@@ -19,6 +19,11 @@ export function login(req: Request, res: Response): void {
     return;
   }
 
+  if ((user as User & { is_active: number }).is_active === 0) {
+    res.status(403).json({ error: 'Your account has been disabled. Contact the owner.' });
+    return;
+  }
+
   const payload: AuthPayload = { id: user.id, username: user.username, role: user.role };
   const token = jwt.sign(payload, process.env.JWT_SECRET as string, { expiresIn: '24h' });
 
