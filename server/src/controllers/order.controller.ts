@@ -14,9 +14,12 @@ function getNextOrderNumber(): string {
   const num = parseInt(last.order_number.split('-')[1], 10);
   let next = num + 1;
 
-  // Guard against duplicates — increment until unique
+  // Guard against duplicates — increment until unique per day
   let candidate = `PC-${String(next).padStart(3, '0')}`;
-  while (db.prepare('SELECT 1 FROM orders WHERE order_number = ?').get(candidate)) {
+  while (db.prepare(`
+    SELECT 1 FROM orders
+    WHERE order_number = ? AND DATE(created_at) = DATE('now', 'localtime')
+  `).get(candidate)) {
     next++;
     candidate = `PC-${String(next).padStart(3, '0')}`;
   }

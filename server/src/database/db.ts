@@ -17,8 +17,49 @@ const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
+// Migration: remove UNIQUE constraint from orders.order_number
+function migrateOrdersTable(): void {
+  const tableInfo = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='orders'").get() as { sql: string } | undefined;
+
+  // Only migrate if the UNIQUE constraint exists
+  if (!tableInfo || !tableInfo.sql.includes('UNIQUE')) return;
+
+  console.log('[DB] Migrating orders table — removing UNIQUE constraint from order_number...');
+
+  db.pragma('foreign_keys = OFF');
+
+  db.transaction(() => {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS orders_new (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_number   TEXT    NOT NULL,
+        total_amount   REAL    NOT NULL,
+        payment_method TEXT    NOT NULL,
+        cash_tendered  REAL,
+        change_amount  REAL,
+        status         TEXT    DEFAULT 'pending',
+        created_by     INTEGER REFERENCES users(id),
+        created_at     TEXT    DEFAULT (datetime('now','localtime'))
+      );
+
+      INSERT INTO orders_new SELECT * FROM orders;
+
+      DROP TABLE orders;
+
+      ALTER TABLE orders_new RENAME TO orders;
+    `);
+  })();
+
+  db.pragma('foreign_keys = ON');
+
+  console.log('[DB] Migration complete.');
+
+  console.log('[DB] Migration complete.');
+}
+
 // Initialize schema and seed data
 runSchema(db);
+migrateOrdersTable();
 runSeed(db);
 
 export default db;

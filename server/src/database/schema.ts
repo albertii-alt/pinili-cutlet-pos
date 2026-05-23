@@ -29,7 +29,7 @@ export function runSchema(db: Database): void {
 
     CREATE TABLE IF NOT EXISTS orders (
       id             INTEGER PRIMARY KEY AUTOINCREMENT,
-      order_number   TEXT    NOT NULL UNIQUE,
+      order_number   TEXT    NOT NULL,
       total_amount   REAL    NOT NULL,
       payment_method TEXT    NOT NULL,
       cash_tendered  REAL,
