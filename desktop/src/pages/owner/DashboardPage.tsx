@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { IconReportMoney, IconShoppingCart, IconCash, IconDeviceMobile } from '@tabler/icons-react';
+import { IconReportMoney, IconShoppingCart, IconCash, IconDeviceMobile, IconMoon } from '@tabler/icons-react';
 import { useAnalytics, type AnalyticsPeriod } from '../../hooks/useAnalytics';
 import { formatCurrency } from '../../utils/formatCurrency';
 import SalesCard from '../../components/owner/SalesCard';
 import SalesChart from '../../components/owner/SalesChart';
 import BestSellerList from '../../components/owner/BestSellerList';
+import EndOfDayModal from '../../components/owner/EndOfDayModal';
 
 const periods: { label: string; value: AnalyticsPeriod }[] = [
   { label: 'Today',      value: 'today' },
@@ -13,15 +14,16 @@ const periods: { label: string; value: AnalyticsPeriod }[] = [
 ];
 
 export default function DashboardPage() {
-  const [period, setPeriod] = useState<AnalyticsPeriod>('today');
+  const [period, setPeriod]       = useState<AnalyticsPeriod>('today');
+  const [showEOD, setShowEOD]     = useState(false);
   const { summary, dailySales, bestSellers, loading } = useAnalytics(period);
 
   return (
     <div className="flex flex-col gap-6 w-full">
-      {/* Header + period filter */}
+      {/* Header + filters + EOD button */}
       <div className="flex items-center justify-between">
         <h1 className="text-white font-semibold text-lg">Dashboard</h1>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           {periods.map(p => (
             <button
               key={p.value}
@@ -35,6 +37,29 @@ export default function DashboardPage() {
               {p.label}
             </button>
           ))}
+
+          {/* Divider */}
+          <div className="w-px h-5 bg-border mx-1" />
+
+          {/* End of Day button */}
+          <button
+            onClick={() => setShowEOD(true)}
+            className="flex items-center gap-1.5 transition-colors"
+            style={{
+              backgroundColor: '#1A1A1A',
+              border: '1px solid #2C2C2C',
+              borderRadius: 8,
+              padding: '6px 12px',
+              color: '#A0A0A0',
+              fontSize: 13,
+              cursor: 'pointer',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#242424'; e.currentTarget.style.color = '#ffffff'; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#1A1A1A'; e.currentTarget.style.color = '#A0A0A0'; }}
+          >
+            <IconMoon size={14} />
+            End of Day
+          </button>
         </div>
       </div>
 
@@ -63,6 +88,8 @@ export default function DashboardPage() {
           </div>
         </>
       )}
+
+      {showEOD && <EndOfDayModal onClose={() => setShowEOD(false)} />}
     </div>
   );
 }

@@ -1,0 +1,268 @@
+import { useState, useEffect } from 'react';
+import { IconX, IconMoon, IconDownload } from '@tabler/icons-react';
+import { getEndOfDaySummary, type EndOfDaySummary } from '../../api/analytics.api';
+import { formatCurrency } from '../../utils/formatCurrency';
+
+interface EndOfDayModalProps {
+  onClose: () => void;
+}
+
+function formatFullDate(dateStr: string): string {
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-PH', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  });
+}
+
+function SummaryCard({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className="flex flex-col gap-1 p-3 rounded-lg" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C' }}>
+      <span style={{ fontSize: 11, color: '#606060', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</span>
+      <span style={{ fontSize: 18, fontWeight: 700, color: accent ? '#C0392B' : '#ffffff' }}>{value}</span>
+    </div>
+  );
+}
+
+function generateCSV(data: EndOfDaySummary): string {
+  const lines: string[] = [
+    'PINILI CUTLET — END OF DAY SUMMARY',
+    `Date,${data.date}`,
+    '',
+    'SUMMARY',
+    `Total Orders,${data.total_orders}`,
+    `Completed Orders,${data.completed_orders}`,
+    `Cancelled Orders,${data.cancelled_orders}`,
+    `Total Revenue,${data.total_revenue.toFixed(2)}`,
+    `Average Order Value,${(data.average_order_value ?? 0).toFixed(2)}`,
+    '',
+    'PAYMENT BREAKDOWN',
+    `Cash Orders,${data.cash_orders}`,
+    `Cash Revenue,${data.cash_revenue.toFixed(2)}`,
+    `GCash Orders,${data.gcash_orders}`,
+    `GCash Revenue,${data.gcash_revenue.toFixed(2)}`,
+    '',
+    'TOP 5 ITEMS',
+    'Rank,Item,Qty Sold,Revenue',
+    ...data.top_items.map((item, i) =>
+      `${i + 1},${item.item_name},${item.total_quantity},${item.total_revenue.toFixed(2)}`
+    ),
+  ];
+  return lines.join('\n');
+}
+
+function downloadCSV(data: EndOfDaySummary): void {
+  const csv = generateCSV(data);
+  import('@tauri-apps/plugin-dialog').then(({ save }) =>
+    save({
+      defaultPath: `pinili-cutlet-summary-${data.date}.csv`,
+      filters: [{ name: 'CSV', extensions: ['csv'] }],
+    })
+  ).then(filePath => {
+    if (!filePath) return;
+    import('@tauri-apps/plugin-fs').then(({ writeTextFile }) =>
+      writeTextFile(filePath, csv)
+    );
+  });
+}
+
+export default function EndOfDayModal({ onClose }: EndOfDayModalProps) {
+  const [data, setData]     = useState<EndOfDaySummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]   = useState('');
+
+  useEffect(() => {
+    getEndOfDaySummary()
+      .then(setData)
+      .catch(() => setError('Failed to load summary'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const cashPct  = data && data.total_revenue > 0 ? (data.cash_revenue  / data.total_revenue) * 100 : 0;
+  const gcashPct = data && data.total_revenue > 0 ? (data.gcash_revenue / data.total_revenue) * 100 : 0;
+
+  return (
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
+      <div
+        className="w-[580px] max-h-[90vh] overflow-y-auto flex flex-col hide-scrollbar"
+        style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', borderRadius: 16 }}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center justify-between px-5 py-4 sticky top-0"
+          style={{ backgroundColor: '#111111', borderBottom: '1px solid #2C2C2C' }}
+        >
+          <div className="flex items-center gap-2">
+            <IconMoon size={16} color="#C0392B" />
+            <div>
+              <h2 className="text-white font-semibold text-sm">End of Day Summary</h2>
+              {data && <p style={{ fontSize: 11, color: '#606060' }}>{formatFullDate(data.date)}</p>}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{ color: '#606060' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#606060')}
+          >
+            <IconX size={17} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex flex-col gap-5 px-5 py-4">
+          {loading ? (
+            <div className="flex justify-center py-16">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : error ? (
+            <p style={{ color: '#C0392B', fontSize: 13, textAlign: 'center' }}>{error}</p>
+          ) : data ? (
+            <>
+              {/* Summary cards */}
+              <div className="grid grid-cols-4 gap-3">
+                <SummaryCard label="Total Orders"  value={String(data.total_orders)} />
+                <SummaryCard label="Revenue"       value={formatCurrency(data.total_revenue)} accent />
+                <SummaryCard label="Cash"          value={formatCurrency(data.cash_revenue)} />
+                <SummaryCard label="GCash"         value={formatCurrency(data.gcash_revenue)} />
+              </div>
+
+              {/* Orders breakdown */}
+              <div className="flex flex-col gap-3 p-4 rounded-lg" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C' }}>
+                <p style={{ fontSize: 11, color: '#606060', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Orders Breakdown</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: 'Completed',  value: data.completed_orders,  color: '#27AE60' },
+                    { label: 'Cancelled',  value: data.cancelled_orders,  color: '#C0392B' },
+                    { label: 'Avg Value',  value: formatCurrency(data.average_order_value ?? 0), color: '#ffffff' },
+                  ].map(({ label, value, color }) => (
+                    <div key={label} className="flex flex-col gap-0.5">
+                      <span style={{ fontSize: 11, color: '#606060' }}>{label}</span>
+                      <span style={{ fontSize: 16, fontWeight: 700, color }}>{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Payment breakdown */}
+              <div className="flex flex-col gap-3 p-4 rounded-lg" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C' }}>
+                <p style={{ fontSize: 11, color: '#606060', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Payment Breakdown</p>
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#27AE60' }} />
+                      <span style={{ fontSize: 13, color: '#ffffff' }}>Cash</span>
+                      <span style={{ fontSize: 12, color: '#606060' }}>{data.cash_orders} orders</span>
+                    </div>
+                    <span style={{ fontSize: 13, color: '#27AE60', fontWeight: 600 }}>{formatCurrency(data.cash_revenue)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#3498DB' }} />
+                      <span style={{ fontSize: 13, color: '#ffffff' }}>GCash</span>
+                      <span style={{ fontSize: 12, color: '#606060' }}>{data.gcash_orders} orders</span>
+                    </div>
+                    <span style={{ fontSize: 13, color: '#3498DB', fontWeight: 600 }}>{formatCurrency(data.gcash_revenue)}</span>
+                  </div>
+                  {/* Proportion bar */}
+                  <div className="flex h-2 rounded-full overflow-hidden mt-1" style={{ backgroundColor: '#2C2C2C' }}>
+                    <div style={{ width: `${cashPct}%`, backgroundColor: '#27AE60', transition: 'width 0.5s' }} />
+                    <div style={{ width: `${gcashPct}%`, backgroundColor: '#3498DB', transition: 'width 0.5s' }} />
+                  </div>
+                  <div className="flex justify-between">
+                    <span style={{ fontSize: 11, color: '#606060' }}>Cash {cashPct.toFixed(0)}%</span>
+                    <span style={{ fontSize: 11, color: '#606060' }}>GCash {gcashPct.toFixed(0)}%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top 5 items */}
+              <div className="flex flex-col gap-3 p-4 rounded-lg" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C' }}>
+                <p style={{ fontSize: 11, color: '#606060', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Top 5 Items Today</p>
+                {data.top_items.length === 0 ? (
+                  <p style={{ fontSize: 13, color: '#606060', textAlign: 'center', padding: '8px 0' }}>No items sold today</p>
+                ) : (
+                  <div className="flex flex-col">
+                    {data.top_items.map((item, i) => (
+                      <div
+                        key={item.menu_item_id}
+                        className="flex items-center gap-3 py-2 border-b border-border last:border-0"
+                        style={i === 0 ? { backgroundColor: 'rgba(244,196,48,0.04)', borderRadius: 6 } : undefined}
+                      >
+                        <span style={{ fontSize: 13, fontWeight: 700, color: i === 0 ? '#F4C430' : '#606060', width: 20, textAlign: 'center' }}>
+                          {i + 1}
+                        </span>
+                        <span style={{ flex: 1, fontSize: 13, color: i === 0 ? '#F4C430' : '#ffffff' }} className="truncate">
+                          {item.item_name}
+                        </span>
+                        <span style={{ fontSize: 12, color: '#606060' }}>×{item.total_quantity}</span>
+                        <span style={{ fontSize: 13, color: '#C0392B', fontWeight: 600, minWidth: 70, textAlign: 'right' }}>
+                          {formatCurrency(item.total_revenue)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Closing note */}
+              <div
+                className="flex items-start gap-3 p-4 rounded-lg"
+                style={{ backgroundColor: 'rgba(39,174,96,0.08)', border: '1px solid rgba(39,174,96,0.25)' }}
+              >
+                <div className="flex flex-col gap-0.5">
+                  <span style={{ fontSize: 12, color: '#27AE60', fontWeight: 600 }}>Closing Reminder</span>
+                  <span style={{ fontSize: 13, color: '#A0A0A0' }}>
+                    Please collect <span style={{ color: '#27AE60', fontWeight: 700 }}>{formatCurrency(data.cash_revenue)}</span> in cash from the register.
+                  </span>
+                </div>
+              </div>
+            </>
+          ) : null}
+        </div>
+
+        {/* Footer */}
+        <div
+          className="flex items-center justify-between px-5 py-4 sticky bottom-0"
+          style={{ backgroundColor: '#111111', borderTop: '1px solid #2C2C2C' }}
+        >
+          <button
+            onClick={() => data && downloadCSV(data)}
+            disabled={!data}
+            className="flex items-center gap-2 transition-colors"
+            style={{
+              backgroundColor: '#1A1A1A',
+              border: '1px solid #2C2C2C',
+              borderRadius: 8,
+              padding: '8px 16px',
+              color: data ? '#A0A0A0' : '#606060',
+              fontSize: 13,
+              cursor: data ? 'pointer' : 'not-allowed',
+            }}
+            onMouseEnter={e => { if (data) { e.currentTarget.style.backgroundColor = '#242424'; e.currentTarget.style.color = '#ffffff'; }}}
+            onMouseLeave={e => { if (data) { e.currentTarget.style.backgroundColor = '#1A1A1A'; e.currentTarget.style.color = '#A0A0A0'; }}}
+          >
+            <IconDownload size={14} />
+            Export as CSV
+          </button>
+
+          <button
+            onClick={onClose}
+            style={{
+              backgroundColor: '#C0392B',
+              border: 'none',
+              borderRadius: 8,
+              padding: '8px 24px',
+              color: '#ffffff',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#96281B')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#C0392B')}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

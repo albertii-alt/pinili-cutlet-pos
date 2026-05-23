@@ -40,3 +40,22 @@ export async function getAverageOrderValue(period: AnalyticsPeriod = 'today'): P
   const { data } = await apiClient.get('/api/analytics/average-order-value', { params: periodParams(period) });
   return data;
 }
+
+export interface EndOfDaySummary {
+  date: string;
+  total_orders: number;
+  completed_orders: number;
+  cancelled_orders: number;
+  total_revenue: number;
+  cash_orders: number;
+  cash_revenue: number;
+  gcash_orders: number;
+  gcash_revenue: number;
+  average_order_value: number;
+  top_items: { menu_item_id: number; item_name: string; total_quantity: number; total_revenue: number }[];
+}
+
+export async function getEndOfDaySummary(): Promise<EndOfDaySummary> {
+  const { data } = await apiClient.get('/api/analytics/end-of-day');
+  return data;
+}

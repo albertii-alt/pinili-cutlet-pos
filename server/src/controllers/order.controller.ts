@@ -41,18 +41,23 @@ export function getActive(req: Request, res: Response): void {
 }
 
 export function getHistory(req: Request, res: Response): void {
-  const { status, date, payment_method } = req.query as {
+  const { status, date, payment_method, startDate, endDate } = req.query as {
     status?: string;
     date?: string;
     payment_method?: string;
+    startDate?: string;
+    endDate?: string;
   };
 
   let query = 'SELECT * FROM orders WHERE 1=1';
   const params: (string | number)[] = [];
 
-  if (status) { query += ' AND status = ?'; params.push(status); }
-  if (date)   { query += ' AND DATE(created_at) = ?'; params.push(date); }
-  if (payment_method) { query += ' AND payment_method = ?'; params.push(payment_method); }
+  if (status)         { query += ' AND status = ?';                                    params.push(status); }
+  if (startDate && endDate) {
+    query += ' AND DATE(created_at) >= ? AND DATE(created_at) <= ?';
+    params.push(startDate, endDate);
+  } else if (date)    { query += ' AND DATE(created_at) = ?';                          params.push(date); }
+  if (payment_method) { query += ' AND payment_method = ?';                            params.push(payment_method); }
 
   query += ' ORDER BY created_at DESC';
 
