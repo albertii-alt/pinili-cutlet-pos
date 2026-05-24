@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import {
   IconEye, IconEyeOff, IconShieldLock, IconCheck,
   IconUsers, IconUserPlus, IconEdit, IconTrash, IconLock, IconLockOpen,
-  IconSettings2, IconPencil, IconPlus, IconStar, IconStarFilled,
+  IconSettings2, IconPencil, IconPlus, IconStar, IconStarFilled, IconUser,
 } from '@tabler/icons-react';
-import { changePassword } from '../../api/auth.api';
+import { changePassword, changeUsername } from '../../api/auth.api';
+import { useAuthStore } from '../../store/useAuthStore';
 import {
   getSettings, updateSetting,
   getPaymentMethods, addPaymentMethod, deletePaymentMethod,
@@ -112,6 +113,17 @@ export default function SettingsPage() {
   const [f2, setF2] = useState(false);
   const [f3, setF3] = useState(false);
   const strength = getStrength(newPass);
+
+  // Change username state
+  const { user, updateUsername } = useAuthStore();
+  const [unEditing, setUnEditing]       = useState(false);
+  const [newUsername, setNewUsername]   = useState('');
+  const [unPassword, setUnPassword]     = useState('');
+  const [unLoading, setUnLoading]       = useState(false);
+  const [unError, setUnError]           = useState('');
+  const [unSuccess, setUnSuccess]       = useState(false);
+  const [unF1, setUnF1] = useState(false);
+  const [unF2, setUnF2] = useState(false);
 
   // Staff state
   const { staff, loading: staffLoading, addStaff, editStaff, removeStaff, toggleStatus } = useStaff();
@@ -232,6 +244,29 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleChangeUsername() {
+    setUnError('');
+    const trimmed = newUsername.trim();
+    if (!trimmed || !unPassword) { setUnError('All fields are required'); return; }
+    if (trimmed.length < 3)      { setUnError('Username must be at least 3 characters'); return; }
+    if (/\s/.test(trimmed))      { setUnError('Username must not contain spaces'); return; }
+    setUnLoading(true);
+    try {
+      const { token, user: updated } = await changeUsername(unPassword, trimmed);
+      updateUsername(token, updated.username);
+      setUnEditing(false);
+      setNewUsername('');
+      setUnPassword('');
+      setUnSuccess(true);
+      setTimeout(() => setUnSuccess(false), 3000);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setUnError(msg ?? 'Failed to update username');
+    } finally {
+      setUnLoading(false);
+    }
+  }
+
   async function handleSaveStaff(data: { username: string; password: string; role: string }) {
     if (staffModal === null) {
       await addStaff(data.username, data.password, data.role);
@@ -280,6 +315,79 @@ export default function SettingsPage() {
         >
           {pwLoading ? 'Updating...' : 'Update Password'}
         </button>
+
+        {/* ── Username ── */}
+        <div className="flex flex-col gap-3 pt-4" style={{ borderTop: '1px solid #2C2C2C' }}>
+          <div className="flex items-center gap-2">
+            <IconUser size={14} color="#606060" />
+            <span style={{ fontSize: 12, color: '#606060', letterSpacing: '0.04em', fontWeight: 600, textTransform: 'uppercase' }}>Username</span>
+          </div>
+
+          {!unEditing ? (
+            <div className="flex items-center gap-3">
+              <span style={{ fontSize: 14, color: '#ffffff', fontWeight: 500 }}>{user?.username ?? '—'}</span>
+              <button
+                onClick={() => { setNewUsername(user?.username ?? ''); setUnError(''); setUnEditing(true); }}
+                className="flex items-center gap-1"
+                style={{ backgroundColor: 'transparent', border: '1px solid #2C2C2C', borderRadius: 6, padding: '4px 10px', color: '#606060', fontSize: 12, cursor: 'pointer' }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1A1A1A'; e.currentTarget.style.color = '#A0A0A0'; }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#606060'; }}
+              >
+                <IconEdit size={12} />
+                Edit
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {/* New username input */}
+              <div className="flex flex-col">
+                <label style={labelStyle}>New Username</label>
+                <input
+                  autoFocus
+                  value={newUsername}
+                  onChange={e => { setNewUsername(e.target.value); setUnError(''); }}
+                  placeholder="At least 3 characters, no spaces"
+                  style={inputStyle(unF1)}
+                  onFocus={() => setUnF1(true)}
+                  onBlur={() => setUnF1(false)}
+                />
+              </div>
+
+              {/* Password confirmation */}
+              <PasswordField
+                label="Current Password"
+                value={unPassword}
+                onChange={v => { setUnPassword(v); setUnError(''); }}
+                placeholder="Enter current password to confirm"
+                focused={unF2}
+                onFocus={() => setUnF2(true)}
+                onBlur={() => setUnF2(false)}
+              />
+
+              {unError && <p style={{ fontSize: 12, color: '#C0392B' }}>{unError}</p>}
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleChangeUsername}
+                  disabled={unLoading}
+                  style={{ backgroundColor: unLoading ? '#2C2C2C' : '#C0392B', border: 'none', borderRadius: 8, padding: '9px 18px', color: unLoading ? '#606060' : '#ffffff', fontSize: 13, fontWeight: 600, cursor: unLoading ? 'not-allowed' : 'pointer' }}
+                  onMouseEnter={e => { if (!unLoading) e.currentTarget.style.backgroundColor = '#96281B'; }}
+                  onMouseLeave={e => { if (!unLoading) e.currentTarget.style.backgroundColor = '#C0392B'; }}
+                >
+                  {unLoading ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  onClick={() => { setUnEditing(false); setNewUsername(''); setUnPassword(''); setUnError(''); }}
+                  style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: 8, padding: '9px 14px', color: '#A0A0A0', fontSize: 13, cursor: 'pointer' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#ffffff'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = '#A0A0A0'; }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Staff Management ── */}
@@ -612,6 +720,18 @@ export default function SettingsPage() {
             <IconCheck size={12} color="#27AE60" />
           </div>
           <span style={{ fontSize: 13, color: '#27AE60' }}>Password updated successfully</span>
+        </div>
+      )}
+
+      {unSuccess && (
+        <div
+          className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-3 rounded-xl z-50"
+          style={{ backgroundColor: '#111111', border: '1px solid rgba(39,174,96,0.4)', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}
+        >
+          <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(39,174,96,0.2)' }}>
+            <IconCheck size={12} color="#27AE60" />
+          </div>
+          <span style={{ fontSize: 13, color: '#27AE60' }}>Username updated successfully</span>
         </div>
       )}
 

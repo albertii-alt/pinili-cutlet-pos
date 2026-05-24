@@ -14,6 +14,11 @@ export async function changePassword(currentPassword: string, newPassword: strin
   await apiClient.put('/api/auth/change-password', { currentPassword, newPassword });
 }
 
+export async function changeUsername(currentPassword: string, newUsername: string): Promise<{ token: string; user: { id: number; username: string; role: string } }> {
+  const { data } = await apiClient.put('/api/auth/change-username', { currentPassword, newUsername });
+  return data;
+}
+
 export async function getAllStaff(): Promise<StaffUser[]> {
   const { data } = await apiClient.get('/api/auth/staff');
   return data;

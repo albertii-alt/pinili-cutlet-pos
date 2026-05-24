@@ -59,6 +59,44 @@ export function changePassword(req: Request, res: Response): void {
   res.json({ message: 'Password updated successfully' });
 }
 
+export function changeUsername(req: Request, res: Response): void {
+  const { currentPassword, newUsername } = req.body as { currentPassword: string; newUsername: string };
+
+  if (!currentPassword || !newUsername) {
+    res.status(400).json({ error: 'Current password and new username are required' });
+    return;
+  }
+
+  const trimmed = newUsername.trim();
+
+  if (trimmed.length < 3) {
+    res.status(400).json({ error: 'Username must be at least 3 characters' });
+    return;
+  }
+  if (/\s/.test(trimmed)) {
+    res.status(400).json({ error: 'Username must not contain spaces' });
+    return;
+  }
+
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user!.id) as User | undefined;
+  if (!user || !bcrypt.compareSync(currentPassword, user.password)) {
+    res.status(401).json({ error: 'Current password is incorrect' });
+    return;
+  }
+
+  try {
+    db.prepare('UPDATE users SET username = ? WHERE id = ?').run(trimmed, req.user!.id);
+  } catch {
+    res.status(409).json({ error: 'Username already taken' });
+    return;
+  }
+
+  const payload: AuthPayload = { id: user.id, username: trimmed, role: user.role };
+  const token = jwt.sign(payload, process.env.JWT_SECRET as string, { expiresIn: '24h' });
+
+  res.json({ token, user: payload });
+}
+
 export function getAllStaff(req: Request, res: Response): void {
   const staff = db.prepare(
     "SELECT id, username, role, is_active, created_at FROM users WHERE role != 'owner' ORDER BY created_at ASC"
