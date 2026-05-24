@@ -3,7 +3,7 @@ import {
   IconEye, IconEyeOff, IconShieldLock, IconCheck,
   IconUsers, IconUserPlus, IconEdit, IconTrash, IconLock, IconLockOpen,
   IconSettings2, IconPencil, IconPlus, IconStar, IconStarFilled, IconUser,
-  IconPalette,
+  IconPalette, IconReceipt,
 } from '@tabler/icons-react';
 import { changePassword, changeUsername } from '../../api/auth.api';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -159,11 +159,21 @@ export default function SettingsPage() {
   const [accentColor, setAccentColor]           = useState('#C0392B');
   const [showItemDesc, setShowItemDesc]         = useState(false);
 
+  // Order Settings state
+  const [orderPrefix, setOrderPrefix]           = useState('PC');
+  const [orderPrefixInput, setOrderPrefixInput] = useState('');
+  const [editingPrefix, setEditingPrefix]       = useState(false);
+  const [prefixSaving, setPrefixSaving]         = useState(false);
+  const [prefixError, setPrefixError]           = useState('');
+  const [orderConfirm, setOrderConfirm]         = useState(false);
+
   useEffect(() => {
     getSettings().then(s => {
       if (s.stall_name) setStallName(s.stall_name);
       if (s.accent_color) setAccentColor(s.accent_color);
       setShowItemDesc(s.show_item_description === 'true');
+      if (s.order_prefix) setOrderPrefix(s.order_prefix.trim().toUpperCase());
+      setOrderConfirm(s.order_confirmation === 'true');
     }).catch(() => {});
 
     getPaymentMethods().then(setPaymentMethods).catch(() => {});
@@ -312,6 +322,39 @@ export default function SettingsPage() {
       socket.emit('settings:updated');
     } catch {
       setShowItemDesc(!value); // revert on error
+    }
+  }
+
+  async function handleSaveOrderPrefix() {
+    const trimmed = orderPrefixInput.trim().toUpperCase();
+    if (!trimmed) return;
+    if (!/^[A-Z]{1,4}$/.test(trimmed)) {
+      setPrefixError('Prefix must be 1–4 letters only');
+      return;
+    }
+    setPrefixSaving(true);
+    setPrefixError('');
+    try {
+      await updateSetting('order_prefix', trimmed);
+      setOrderPrefix(trimmed);
+      setEditingPrefix(false);
+      socket.emit('settings:updated');
+      setSettingsToast('Order prefix updated');
+      setTimeout(() => setSettingsToast(''), 3000);
+    } catch {
+      setPrefixError('Failed to save. Try again.');
+    } finally {
+      setPrefixSaving(false);
+    }
+  }
+
+  async function handleToggleOrderConfirm(value: boolean) {
+    setOrderConfirm(value);
+    try {
+      await updateSetting('order_confirmation', value ? 'true' : 'false');
+      socket.emit('settings:updated');
+    } catch {
+      setOrderConfirm(!value); // revert on error
     }
   }
 
@@ -783,6 +826,121 @@ export default function SettingsPage() {
                 position: 'absolute',
                 top: 3,
                 left: showItemDesc ? 23 : 3,
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                backgroundColor: '#ffffff',
+                transition: 'left 0.2s',
+              }}
+            />
+          </button>
+        </div>
+      </div>
+
+      {/* ── Order Settings ── */}
+      <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C' }}>
+        <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
+          <IconReceipt size={16} color="#C0392B" />
+          <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 600 }}>Order Settings</span>
+        </div>
+
+        {/* Order Number Prefix */}
+        <div className="flex flex-col gap-2">
+          <label style={{ fontSize: 12, color: '#606060', letterSpacing: '0.04em' }}>Order Number Prefix</label>
+          {editingPrefix ? (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
+                <input
+                  autoFocus
+                  value={orderPrefixInput}
+                  onChange={e => {
+                    const v = e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 4);
+                    setOrderPrefixInput(v);
+                    setPrefixError('');
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleSaveOrderPrefix();
+                    if (e.key === 'Escape') { setEditingPrefix(false); setPrefixError(''); }
+                  }}
+                  maxLength={4}
+                  placeholder="1–4 letters"
+                  style={{
+                    flex: 1, backgroundColor: '#1A1A1A',
+                    border: `1px solid ${prefixError ? '#C0392B' : '#C0392B'}`,
+                    borderRadius: 8, padding: '8px 12px',
+                    color: '#ffffff', fontSize: 13, outline: 'none',
+                    textTransform: 'uppercase',
+                  }}
+                />
+                <button
+                  onClick={handleSaveOrderPrefix}
+                  disabled={prefixSaving || !orderPrefixInput.trim()}
+                  style={{
+                    backgroundColor: prefixSaving || !orderPrefixInput.trim() ? '#2C2C2C' : '#C0392B',
+                    border: 'none', borderRadius: 8, padding: '8px 14px',
+                    color: prefixSaving || !orderPrefixInput.trim() ? '#606060' : '#ffffff',
+                    fontSize: 13, fontWeight: 600,
+                    cursor: prefixSaving || !orderPrefixInput.trim() ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {prefixSaving ? 'Saving…' : 'Save'}
+                </button>
+                <button
+                  onClick={() => { setEditingPrefix(false); setPrefixError(''); }}
+                  style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: 8, padding: '8px 12px', color: '#A0A0A0', fontSize: 13, cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+              </div>
+              {prefixError && <p style={{ fontSize: 12, color: '#C0392B' }}>{prefixError}</p>}
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <span style={{ fontSize: 14, color: '#ffffff', fontWeight: 500 }}>{orderPrefix}</span>
+              <button
+                onClick={() => { setOrderPrefixInput(orderPrefix); setEditingPrefix(true); }}
+                className="flex items-center gap-1"
+                style={{ backgroundColor: 'transparent', border: '1px solid #2C2C2C', borderRadius: 6, padding: '4px 10px', color: '#606060', fontSize: 12, cursor: 'pointer' }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1A1A1A'; e.currentTarget.style.color = '#A0A0A0'; }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#606060'; }}
+              >
+                <IconPencil size={12} />
+                Edit
+              </button>
+            </div>
+          )}
+          <p style={{ fontSize: 11, color: '#606060' }}>
+            Orders will appear as <span style={{ color: '#A0A0A0', fontWeight: 500 }}>{orderPrefix}-001, {orderPrefix}-002…</span>
+          </p>
+        </div>
+
+        {/* Order Confirmation Dialog */}
+        <div className="flex items-center justify-between pt-3" style={{ borderTop: '1px solid #2C2C2C' }}>
+          <div className="flex flex-col gap-0.5">
+            <span style={{ fontSize: 13, color: '#ffffff' }}>Show confirmation before placing order</span>
+            <span style={{ fontSize: 11, color: '#606060' }}>Cashier must confirm before submitting each order.</span>
+          </div>
+          <button
+            role="switch"
+            aria-checked={orderConfirm}
+            onClick={() => handleToggleOrderConfirm(!orderConfirm)}
+            style={{
+              width: 44,
+              height: 24,
+              borderRadius: 12,
+              backgroundColor: orderConfirm ? '#C0392B' : '#2C2C2C',
+              border: 'none',
+              cursor: 'pointer',
+              position: 'relative',
+              flexShrink: 0,
+              transition: 'background-color 0.2s',
+            }}
+          >
+            <span
+              style={{
+                position: 'absolute',
+                top: 3,
+                left: orderConfirm ? 23 : 3,
                 width: 18,
                 height: 18,
                 borderRadius: '50%',

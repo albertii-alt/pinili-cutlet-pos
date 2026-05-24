@@ -3,28 +3,36 @@ import db from '../database/db';
 import { Order, OrderItem, CreateOrderPayload } from '../types';
 
 function getNextOrderNumber(): string {
+  const prefixRow = db.prepare(`SELECT value FROM settings WHERE key = 'order_prefix'`).get() as { value: string } | undefined;
+  const prefix = prefixRow?.value?.trim().toUpperCase() || 'PC';
+
   const last = db.prepare(`
     SELECT order_number FROM orders
     WHERE DATE(created_at) = DATE('now', 'localtime')
     ORDER BY id DESC LIMIT 1
   `).get() as { order_number: string } | undefined;
 
-  if (!last) return 'PC-001';
+  if (!last) return `${prefix}-001`;
 
-  const num = parseInt(last.order_number.split('-')[1], 10);
-  let next = num + 1;
+  const parts = last.order_number.split('-');
+  const num = parseInt(parts[parts.length - 1], 10);
+  let next = isNaN(num) ? 1 : num + 1;
 
   // Guard against duplicates — increment until unique per day
-  let candidate = `PC-${String(next).padStart(3, '0')}`;
+  let candidate = `${prefix}-${String(next).padStart(3, '0')}`;
   while (db.prepare(`
     SELECT 1 FROM orders
     WHERE order_number = ? AND DATE(created_at) = DATE('now', 'localtime')
   `).get(candidate)) {
     next++;
-    candidate = `PC-${String(next).padStart(3, '0')}`;
+    candidate = `${prefix}-${String(next).padStart(3, '0')}`;
   }
 
   return candidate;
+}
+
+export function getNextNumber(req: Request, res: Response): void {
+  res.json({ order_number: getNextOrderNumber() });
 }
 
 export function getActive(req: Request, res: Response): void {

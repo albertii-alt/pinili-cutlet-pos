@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { getActive, getHistory, create, complete, cancel, cancelCompleted } from '../controllers/order.controller';
+import { getActive, getHistory, getNextNumber, create, complete, cancel, cancelCompleted } from '../controllers/order.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
 const router = Router();
 
+router.get('/next-number',     authenticate, authorize('owner', 'cashier'), getNextNumber);
 router.get('/active',          authenticate, getActive);
 router.get('/',                authenticate, getHistory);
 router.post('/',               authenticate, authorize('owner', 'cashier'), create);

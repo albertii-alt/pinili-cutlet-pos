@@ -1,12 +1,217 @@
 import { useState, useEffect } from 'react';
 import { IconShoppingCart, IconChevronDown } from '@tabler/icons-react';
 import { useOrderStore } from '../../store/useOrderStore';
-import { createOrder } from '../../api/order.api';
+import { createOrder, getNextOrderNumber } from '../../api/order.api';
 import { getPaymentMethods, type PaymentMethod } from '../../api/settings.api';
 import { formatCurrency } from '../../utils/formatCurrency';
+import type { CartItem } from '../../types';
 import OrderItem from './OrderItem';
 import EmptyState from '../shared/EmptyState';
 import socket from '../../socket/socket';
+import { useOrderSettings } from '../../hooks/useOrderSettings';
+
+// ─── Order Confirmation Modal ─────────────────────────────────────────────────
+
+interface OrderConfirmModalProps {
+  items: CartItem[];
+  totalAmount: number;
+  paymentMethod: string;
+  cashTendered: string;
+  orderPrefix: string;
+  loading: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+function OrderConfirmModal({
+  items,
+  totalAmount,
+  paymentMethod,
+  cashTendered,
+  orderPrefix,
+  loading,
+  onConfirm,
+  onCancel,
+}: OrderConfirmModalProps) {
+  const isCash = paymentMethod.toLowerCase() === 'cash';
+  const tendered = parseFloat(cashTendered || '0');
+  const change = isCash ? tendered - totalAmount : 0;
+
+  // Bug 1 — fetch next order number on modal open
+  const [nextNumber, setNextNumber] = useState<string | null>(null);
+
+  useEffect(() => {
+    setNextNumber(null);
+    getNextOrderNumber()
+      .then(n => setNextNumber(n))
+      .catch(() => setNextNumber(`${orderPrefix}-???`));
+  }, [orderPrefix]);
+
+  return (
+    <div
+      className="fixed inset-0 flex items-center justify-center z-[60] px-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.8)', animation: 'fadeIn 0.15s ease' }}
+    >
+      <div
+        style={{
+          backgroundColor: '#1A1A1A',
+          border: '1px solid #2C2C2C',
+          borderRadius: 16,
+          width: '100%',
+          maxWidth: 420,
+          overflow: 'hidden',
+        }}
+      >
+        {/* Header */}
+        <div className="flex flex-col items-center gap-1 px-6 pt-6 pb-4">
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#ffffff', letterSpacing: '-0.01em' }}>
+            Confirm Order?
+          </h2>
+          {/* Bug 1 — order number, large + accent, loading skeleton */}
+          {nextNumber === null ? (
+            <span style={{ fontSize: 24, fontWeight: 800, color: '#404040', letterSpacing: '0.02em' }}>
+              ...
+            </span>
+          ) : (
+            <span style={{ fontSize: 24, fontWeight: 800, color: 'var(--accent-color, #C0392B)', letterSpacing: '0.02em' }}>
+              {nextNumber}
+            </span>
+          )}
+        </div>
+
+        <div style={{ height: 1, backgroundColor: '#2C2C2C' }} />
+
+        {/* Bug 3 — scrollable items list, fixed max height */}
+        <div
+          className="hide-scrollbar"
+          style={{ maxHeight: 200, overflowY: 'auto', padding: '0 24px' }}
+        >
+          {items.map((item, i) => (
+            <div key={item.menu_item_id}>
+              <div className="flex items-center gap-3 py-2">
+                <span
+                  style={{
+                    minWidth: 24,
+                    height: 24,
+                    borderRadius: 6,
+                    backgroundColor: 'var(--accent-color, #C0392B)',
+                    color: '#ffffff',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    padding: '0 5px',
+                  }}
+                >
+                  {item.quantity}×
+                </span>
+                <span style={{ flex: 1, fontSize: 13, color: '#ffffff' }}>{item.item_name}</span>
+                <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 500 }}>
+                  {formatCurrency(item.item_price * item.quantity)}
+                </span>
+              </div>
+              {i < items.length - 1 && (
+                <div style={{ height: 1, backgroundColor: '#242424' }} />
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ height: 1, backgroundColor: '#2C2C2C' }} />
+
+        {/* Payment details */}
+        <div className="flex flex-col gap-2 px-6 py-3">
+          <div className="flex items-center justify-between">
+            <span style={{ fontSize: 12, color: '#606060' }}>Payment</span>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: '#ffffff',
+                backgroundColor: '#2C2C2C',
+                borderRadius: 4,
+                padding: '2px 8px',
+              }}
+            >
+              {paymentMethod}
+            </span>
+          </div>
+          {isCash && (
+            <div className="flex items-center justify-between">
+              <span style={{ fontSize: 12, color: '#606060' }}>Cash Tendered</span>
+              <span style={{ fontSize: 12, color: '#ffffff' }}>{formatCurrency(tendered)}</span>
+            </div>
+          )}
+          {isCash && (
+            <div className="flex items-center justify-between">
+              <span style={{ fontSize: 12, color: '#606060' }}>Change</span>
+              <span style={{ fontSize: 12, color: '#27AE60', fontWeight: 600 }}>{formatCurrency(change)}</span>
+            </div>
+          )}
+        </div>
+
+        <div style={{ height: 1, backgroundColor: '#2C2C2C' }} />
+
+        {/* Total */}
+        <div className="flex items-center justify-between px-6 py-4">
+          <span style={{ fontSize: 11, color: '#606060', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>
+            Total
+          </span>
+          <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--accent-color, #C0392B)' }}>
+            {formatCurrency(totalAmount)}
+          </span>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex flex-col gap-2 px-6 pb-6">
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '14px',
+              borderRadius: 10,
+              border: 'none',
+              backgroundColor: loading ? '#2C2C2C' : 'var(--accent-color, #C0392B)',
+              color: loading ? '#606060' : '#ffffff',
+              fontSize: 15,
+              fontWeight: 700,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'opacity 0.15s',
+              minHeight: 48,
+            }}
+          >
+            {loading ? 'Placing Order...' : 'Place Order'}
+          </button>
+          <button
+            onClick={onCancel}
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '14px',
+              borderRadius: 10,
+              border: '1px solid #2C2C2C',
+              backgroundColor: '#111111',
+              color: '#A0A0A0',
+              fontSize: 15,
+              fontWeight: 500,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              minHeight: 48,
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      <style>{`@keyframes fadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } } .hide-scrollbar::-webkit-scrollbar { display: none; } .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }`}</style>
+    </div>
+  );
+}
+
+// ─── Order Panel ──────────────────────────────────────────────────────────────
 
 export default function OrderPanel() {
   const { cartItems, totalAmount, incrementItem, decrementItem, removeItem, clearCart } = useOrderStore();
@@ -16,6 +221,9 @@ export default function OrderPanel() {
   const [cashTendered, setCashTendered]     = useState('');
   const [loading, setLoading]               = useState(false);
   const [error, setError]                   = useState('');
+  const [confirmOpen, setConfirmOpen]       = useState(false);
+
+  const { orderPrefix, showConfirmation } = useOrderSettings();
 
   useEffect(() => {
     getPaymentMethods().then(methods => {
@@ -39,15 +247,22 @@ export default function OrderPanel() {
     return () => { socket.off('payment_methods:updated', handleUpdated); };
   }, []);
 
-  const isCash   = paymentMethod.toLowerCase() === 'cash';
-  const change   = isCash ? parseFloat(cashTendered || '0') - totalAmount : 0;
+  const isCash    = paymentMethod.toLowerCase() === 'cash';
+  const change    = isCash ? parseFloat(cashTendered || '0') - totalAmount : 0;
   const itemCount = cartItems.reduce((s, i) => s + i.quantity, 0);
 
-  async function handleConfirm() {
+  async function submitOrder() {
     if (cartItems.length === 0) return;
-    if (isCash && parseFloat(cashTendered) < totalAmount) {
-      setError('Insufficient cash tendered');
-      return;
+    if (isCash) {
+      const tendered = parseFloat(cashTendered);
+      if (!cashTendered || isNaN(tendered)) {
+        setError('Please enter cash tendered');
+        return;
+      }
+      if (tendered < totalAmount) {
+        setError(`Cash tendered must be at least ${formatCurrency(totalAmount)}`);
+        return;
+      }
     }
 
     setLoading(true);
@@ -63,14 +278,37 @@ export default function OrderPanel() {
       });
       clearCart();
       setCashTendered('');
+      setConfirmOpen(false);
+      setOpen(false);
       const def = paymentMethods.find(m => m.is_default) ?? paymentMethods[0];
       if (def) setPaymentMethod(def.name);
-      setOpen(false);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setError(`Failed to place order: ${message}`);
+      setConfirmOpen(false);
     } finally {
       setLoading(false);
+    }
+  }
+
+  function handleConfirm() {
+    if (cartItems.length === 0) return;
+    if (isCash) {
+      const tendered = parseFloat(cashTendered);
+      if (!cashTendered || isNaN(tendered)) {
+        setError('Please enter cash tendered');
+        return;
+      }
+      if (tendered < totalAmount) {
+        setError(`Cash tendered must be at least ${formatCurrency(totalAmount)}`);
+        return;
+      }
+    }
+    setError('');
+    if (showConfirmation) {
+      setConfirmOpen(true);
+    } else {
+      submitOrder();
     }
   }
 
@@ -178,6 +416,20 @@ export default function OrderPanel() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Order confirmation modal — z-[60] clears the bottom sheet z-50 */}
+      {confirmOpen && (
+        <OrderConfirmModal
+          items={cartItems}
+          totalAmount={totalAmount}
+          paymentMethod={paymentMethod}
+          cashTendered={cashTendered}
+          orderPrefix={orderPrefix}
+          loading={loading}
+          onConfirm={submitOrder}
+          onCancel={() => setConfirmOpen(false)}
+        />
       )}
     </>
   );

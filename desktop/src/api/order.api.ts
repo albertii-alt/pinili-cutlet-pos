@@ -22,6 +22,11 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
   return data;
 }
 
+export async function getNextOrderNumber(): Promise<string> {
+  const { data } = await apiClient.get('/api/orders/next-number');
+  return data.order_number as string;
+}
+
 export async function completeOrder(id: number): Promise<void> {
   await apiClient.patch(`/api/orders/${id}/complete`);
 }
