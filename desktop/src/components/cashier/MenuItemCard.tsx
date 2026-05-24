@@ -5,9 +5,10 @@ import { formatCurrency } from '../../utils/formatCurrency';
 interface MenuItemCardProps {
   item: MenuItem;
   onAdd: (item: MenuItem) => void;
+  showDescription?: boolean;
 }
 
-export default function MenuItemCard({ item, onAdd }: MenuItemCardProps) {
+export default function MenuItemCard({ item, onAdd, showDescription = false }: MenuItemCardProps) {
   const unavailable = item.is_available === 0;
   const imageUrl = item.image_path
     ? `${import.meta.env.VITE_API_URL}${item.image_path}`
@@ -52,6 +53,9 @@ export default function MenuItemCard({ item, onAdd }: MenuItemCardProps) {
       {/* Info */}
       <div className="p-3 flex flex-col gap-2 flex-1">
         <p className="text-white text-sm font-medium leading-tight">{item.name}</p>
+        {showDescription && item.description && (
+          <p style={{ fontSize: 11, color: '#A0A0A0', lineHeight: 1.4 }}>{item.description}</p>
+        )}
         {item.promo_price != null ? (
           <div className="flex flex-col gap-0.5">
             <span style={{ fontSize: 11, color: '#606060', textDecoration: 'line-through' }}>

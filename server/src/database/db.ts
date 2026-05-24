@@ -82,6 +82,8 @@ function migrateDefaultSettings(): void {
   db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('daily_target',    '0')`).run();
   db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('stall_name',      'Pinili Cutlet')`).run();
   db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('default_payment', 'cash')`).run();
+  db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('accent_color',    '#C0392B')`).run();
+  db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('show_item_description', 'false')`).run();
 }
 
 // Migration: seed default payment methods if table is empty

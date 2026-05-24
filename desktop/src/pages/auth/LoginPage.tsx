@@ -5,10 +5,13 @@ import { login } from '../../api/auth.api';
 import { useAuthStore } from '../../store/useAuthStore';
 import { connectSocket } from '../../socket/socket';
 import { getSettings } from '../../api/settings.api';
+import { useAccentColor } from '../../hooks/useAccentColor';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login: setAuth } = useAuthStore();
+
+  useAccentColor();
 
   const [stallName, setStallName]       = useState('Pinili Cutlet');
   const [username, setUsername]         = useState('');
@@ -52,7 +55,7 @@ export default function LoginPage() {
 
   const inputStyle = (focused: boolean): React.CSSProperties => ({
     backgroundColor: '#1A1A1A',
-    border: `1px solid ${focused ? '#C0392B' : '#2C2C2C'}`,
+    border: `1px solid ${focused ? 'var(--accent-color, #C0392B)' : '#2C2C2C'}`,
     boxShadow: focused ? '0 0 0 3px rgba(192,57,43,0.15)' : 'none',
     borderRadius: 8,
     padding: '10px 12px',
@@ -82,12 +85,12 @@ export default function LoginPage() {
         <div className="flex flex-col items-center gap-2 mb-8">
           <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '0.15em', lineHeight: 1 }}>
             <span className="text-white">{brandFirst.toUpperCase()}</span>
-            {brandRest && <>{' '}<span style={{ color: '#C0392B' }}>{brandRest.toUpperCase()}</span></>}
+            {brandRest && <>{' '}<span style={{ color: 'var(--accent-color, #C0392B)' }}>{brandRest.toUpperCase()}</span></>}
           </h1>
           <p style={{ fontSize: 11, color: '#606060', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
             Owner Access
           </p>
-          <div style={{ width: 40, height: 2, backgroundColor: '#C0392B', borderRadius: 2, marginTop: 4 }} />
+          <div style={{ width: 40, height: 2, backgroundColor: 'var(--accent-color, #C0392B)', borderRadius: 2, marginTop: 4 }} />
         </div>
 
         {/* Form */}
@@ -149,7 +152,7 @@ export default function LoginPage() {
             onClick={handleLogin}
             disabled={loading}
             style={{
-              backgroundColor: loading ? '#2C2C2C' : '#C0392B',
+              backgroundColor: loading ? '#2C2C2C' : 'var(--accent-color, #C0392B)',
               color: loading ? '#606060' : '#ffffff',
               border: 'none',
               borderRadius: 8,
@@ -164,8 +167,8 @@ export default function LoginPage() {
               gap: 8,
               transition: 'background-color 0.15s',
             }}
-            onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#96281B'; }}
-            onMouseLeave={e => { if (!loading) e.currentTarget.style.backgroundColor = '#C0392B'; }}
+            onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = 'var(--accent-color-dark, #96281B)'; }}
+            onMouseLeave={e => { if (!loading) e.currentTarget.style.backgroundColor = 'var(--accent-color, #C0392B)'; }}
           >
             {loading ? (
               <>

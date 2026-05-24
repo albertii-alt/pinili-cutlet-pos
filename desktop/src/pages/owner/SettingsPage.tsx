@@ -3,9 +3,11 @@ import {
   IconEye, IconEyeOff, IconShieldLock, IconCheck,
   IconUsers, IconUserPlus, IconEdit, IconTrash, IconLock, IconLockOpen,
   IconSettings2, IconPencil, IconPlus, IconStar, IconStarFilled, IconUser,
+  IconPalette,
 } from '@tabler/icons-react';
 import { changePassword, changeUsername } from '../../api/auth.api';
 import { useAuthStore } from '../../store/useAuthStore';
+import { applyAccentColor } from '../../utils/applyAccentColor';
 import {
   getSettings, updateSetting,
   getPaymentMethods, addPaymentMethod, deletePaymentMethod,
@@ -145,9 +147,23 @@ export default function SettingsPage() {
   const [addMethodError, setAddMethodError]   = useState('');
   const [deleteMethodTarget, setDeleteMethodTarget] = useState<PaymentMethod | null>(null);
 
+  // Display & Appearance state
+  const ACCENT_PRESETS = [
+    { color: '#C0392B', label: 'Red'    },
+    { color: '#2980B9', label: 'Blue'   },
+    { color: '#27AE60', label: 'Green'  },
+    { color: '#8E44AD', label: 'Purple' },
+    { color: '#E67E22', label: 'Orange' },
+    { color: '#2C3E50', label: 'Slate'  },
+  ];
+  const [accentColor, setAccentColor]           = useState('#C0392B');
+  const [showItemDesc, setShowItemDesc]         = useState(false);
+
   useEffect(() => {
     getSettings().then(s => {
       if (s.stall_name) setStallName(s.stall_name);
+      if (s.accent_color) setAccentColor(s.accent_color);
+      setShowItemDesc(s.show_item_description === 'true');
     }).catch(() => {});
 
     getPaymentMethods().then(setPaymentMethods).catch(() => {});
@@ -272,6 +288,30 @@ export default function SettingsPage() {
       await addStaff(data.username, data.password, data.role);
     } else if (staffModal) {
       await editStaff(staffModal.id, { username: data.username, password: data.password || undefined, role: data.role });
+    }
+  }
+
+  async function handleAccentColorChange(color: string) {
+    setAccentColor(color);
+    applyAccentColor(color);
+    try {
+      await updateSetting('accent_color', color);
+      socket.emit('settings:updated');
+      setSettingsToast('Accent color updated');
+      setTimeout(() => setSettingsToast(''), 3000);
+    } catch {
+      setSettingsToast('Failed to save accent color');
+      setTimeout(() => setSettingsToast(''), 3000);
+    }
+  }
+
+  async function handleToggleShowDesc(value: boolean) {
+    setShowItemDesc(value);
+    try {
+      await updateSetting('show_item_description', value ? 'true' : 'false');
+      socket.emit('settings:updated');
+    } catch {
+      setShowItemDesc(!value); // revert on error
     }
   }
 
@@ -675,6 +715,82 @@ export default function SettingsPage() {
           <p style={{ fontSize: 11, color: '#606060' }}>
             Click the ★ star to set the default. Default method is pre-selected in the cashier panel.
           </p>
+        </div>
+      </div>
+
+      {/* ── Display & Appearance ── */}
+      <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C' }}>
+        <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
+          <IconPalette size={16} color="#C0392B" />
+          <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 600 }}>Display &amp; Appearance</span>
+        </div>
+
+        {/* Accent Color */}
+        <div className="flex flex-col gap-3">
+          <label style={{ fontSize: 12, color: '#606060', letterSpacing: '0.04em' }}>Accent Color</label>
+          <div className="flex items-center gap-3">
+            {ACCENT_PRESETS.map(({ color, label }) => {
+              const selected = accentColor === color;
+              return (
+                <button
+                  key={color}
+                  title={label}
+                  onClick={() => handleAccentColorChange(color)}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    backgroundColor: color,
+                    border: selected ? '3px solid #ffffff' : '3px solid transparent',
+                    boxShadow: selected ? `0 0 0 2px ${color}` : 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    flexShrink: 0,
+                    transition: 'box-shadow 0.15s, border-color 0.15s',
+                  }}
+                />
+              );
+            })}
+          </div>
+          <p style={{ fontSize: 11, color: '#606060' }}>Applied to buttons, highlights, and interactive elements.</p>
+        </div>
+
+        {/* Show Item Descriptions */}
+        <div className="flex items-center justify-between pt-3" style={{ borderTop: '1px solid #2C2C2C' }}>
+          <div className="flex flex-col gap-0.5">
+            <span style={{ fontSize: 13, color: '#ffffff' }}>Show item descriptions on menu cards</span>
+            <span style={{ fontSize: 11, color: '#606060' }}>Displays the item description below the name in the cashier menu grid.</span>
+          </div>
+          {/* Toggle switch */}
+          <button
+            role="switch"
+            aria-checked={showItemDesc}
+            onClick={() => handleToggleShowDesc(!showItemDesc)}
+            style={{
+              width: 44,
+              height: 24,
+              borderRadius: 12,
+              backgroundColor: showItemDesc ? '#C0392B' : '#2C2C2C',
+              border: 'none',
+              cursor: 'pointer',
+              position: 'relative',
+              flexShrink: 0,
+              transition: 'background-color 0.2s',
+            }}
+          >
+            <span
+              style={{
+                position: 'absolute',
+                top: 3,
+                left: showItemDesc ? 23 : 3,
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                backgroundColor: '#ffffff',
+                transition: 'left 0.2s',
+              }}
+            />
+          </button>
         </div>
       </div>
 

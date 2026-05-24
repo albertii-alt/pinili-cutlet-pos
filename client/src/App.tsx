@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/useAuthStore';
 import { connectSocket, disconnectSocket } from './socket/socket';
+import { useAccentColor } from './hooks/useAccentColor';
 import LoginPage from './pages/auth/LoginPage';
 import OrderPage from './pages/cashier/OrderPage';
 import QueuePage from './pages/cashier/QueuePage';
@@ -35,6 +36,8 @@ const router = createBrowserRouter([
 
 export default function App() {
   const { isAuthenticated } = useAuthStore();
+
+  useAccentColor();
 
   useEffect(() => {
     if (isAuthenticated) connectSocket();
