@@ -17,11 +17,11 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response?.status;
-    const isLoginUrl = error.config?.url?.includes('/api/auth/login');
+    const isLoginUrl    = error.config?.url?.includes('/api/auth/login');
     if ((status === 401 || status === 403) && !isLoginUrl) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      window.location.href = '/app/login';
     }
     return Promise.reject(error);
   }

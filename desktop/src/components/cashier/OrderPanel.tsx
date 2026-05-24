@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useOrderStore } from '../../store/useOrderStore';
 import { createOrder } from '../../api/order.api';
+import { getSettings } from '../../api/settings.api';
 import { formatCurrency } from '../../utils/formatCurrency';
 import OrderItem from './OrderItem';
 import EmptyState from '../shared/EmptyState';
@@ -11,6 +12,15 @@ export default function OrderPanel() {
   const [cashTendered, setCashTendered] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Read default payment method from settings on mount
+  useEffect(() => {
+    getSettings()
+      .then(s => {
+        if (s.default_payment === 'gcash') setPaymentMethod('gcash');
+      })
+      .catch(() => {/* keep cash default */});
+  }, []);
 
   const change = paymentMethod === 'cash' ? parseFloat(cashTendered || '0') - totalAmount : 0;
 

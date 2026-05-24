@@ -9,11 +9,16 @@ import { formatCurrency } from '../../utils/formatCurrency';
 import { formatTime } from '../../utils/formatDate';
 import Badge from '../../components/shared/Badge';
 import EmptyState from '../../components/shared/EmptyState';
+import { useBrandName } from '../../hooks/useBrandName';
 
 export default function QueuePage() {
   const navigate = useNavigate();
   const { orders, loading } = useOrders();
   const { user, logout: clearAuth } = useAuthStore();
+  const stallName = useBrandName();
+  const brandParts = stallName.trim().split(/\s+/);
+  const brandFirst = brandParts[0] ?? stallName;
+  const brandRest  = brandParts.slice(1).join(' ');
 
   async function handleComplete(id: number) {
     try { await completeOrder(id); } catch { /* socket updates UI */ }
@@ -32,8 +37,8 @@ export default function QueuePage() {
       <header className="sticky top-0 bg-card border-b border-border px-4 h-[52px] flex items-center justify-between z-30">
         <div className="flex items-center gap-2">
           <span className="font-bold tracking-widest text-sm">
-            <span className="text-white">PINILI</span>{' '}
-            <span className="text-primary">CUTLET</span>
+            <span className="text-white">{brandFirst.toUpperCase()}</span>
+            {brandRest && <>{' '}<span className="text-primary">{brandRest.toUpperCase()}</span></>}
           </span>
           {orders.length > 0 && (
             <span className="bg-primary text-white text-xs font-bold px-2 py-0.5 rounded-full">

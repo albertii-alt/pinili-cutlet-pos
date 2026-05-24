@@ -77,7 +77,12 @@ function migrateOrdersColumns(): void {
   }
 }
 
-// Migration: add is_featured column to menu_items if missing
+// Migration: ensure default settings rows exist (INSERT OR IGNORE — safe to run always)
+function migrateDefaultSettings(): void {
+  db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('daily_target',    '0')`).run();
+  db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('stall_name',      'Pinili Cutlet')`).run();
+  db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('default_payment', 'cash')`).run();
+}
 function migrateMenuItemsTable(): void {
   const cols = db.prepare("PRAGMA table_info(menu_items)").all() as { name: string }[];
   if (!cols.some(c => c.name === 'is_featured')) {
@@ -103,6 +108,7 @@ migrateOrdersTable();
 migrateOrdersColumns();
 migrateUsersTable();
 migrateMenuItemsTable();
+migrateDefaultSettings();
 runSeed(db);
 
 export default db;

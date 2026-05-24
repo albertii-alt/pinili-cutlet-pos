@@ -60,7 +60,7 @@ export function runSeed(db: Database): void {
   });
 
   // Default settings
-  db.prepare(`
-    INSERT OR IGNORE INTO settings (key, value) VALUES ('daily_target', '0')
-  `).run();
+  db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('daily_target', '0')`).run();
+  db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('stall_name', 'Pinili Cutlet')`).run();
+  db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('default_payment', 'cash')`).run();
 }

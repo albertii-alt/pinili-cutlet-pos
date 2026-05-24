@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IconEye, IconEyeOff, IconAlertCircle, IconArrowLeft } from '@tabler/icons-react';
 import { login } from '../../api/auth.api';
 import { useAuthStore } from '../../store/useAuthStore';
 import { connectSocket } from '../../socket/socket';
+import { getSettings } from '../../api/settings.api';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login: setAuth } = useAuthStore();
 
+  const [stallName, setStallName]       = useState('Pinili Cutlet');
   const [username, setUsername]         = useState('');
   const [password, setPassword]         = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -16,6 +18,14 @@ export default function LoginPage() {
   const [loading, setLoading]           = useState(false);
   const [userFocused, setUserFocused]   = useState(false);
   const [passFocused, setPassFocused]   = useState(false);
+
+  useEffect(() => {
+    getSettings().then(s => { if (s.stall_name) setStallName(s.stall_name); }).catch(() => {});
+  }, []);
+
+  const brandParts = stallName.trim().split(/\s+/);
+  const brandFirst = brandParts[0] ?? stallName;
+  const brandRest  = brandParts.slice(1).join(' ');
 
   async function handleLogin() {
     if (!username.trim() || !password) {
@@ -71,8 +81,8 @@ export default function LoginPage() {
         {/* Branding */}
         <div className="flex flex-col items-center gap-2 mb-8">
           <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '0.15em', lineHeight: 1 }}>
-            <span className="text-white">PINILI</span>{' '}
-            <span style={{ color: '#C0392B' }}>CUTLET</span>
+            <span className="text-white">{brandFirst.toUpperCase()}</span>
+            {brandRest && <>{' '}<span style={{ color: '#C0392B' }}>{brandRest.toUpperCase()}</span></>}
           </h1>
           <p style={{ fontSize: 11, color: '#606060', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
             Owner Access

@@ -14,6 +14,7 @@ import categoryRoutes  from './routes/category.routes';
 import menuRoutes      from './routes/menu.routes';
 import orderRoutes     from './routes/order.routes';
 import analyticsRoutes from './routes/analytics.routes';
+import settingsRoutes  from './routes/settings.routes';
 
 const app    = express();
 const server = http.createServer(app);
@@ -74,6 +75,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/menu',       menuRoutes);
 app.use('/api/orders',     orderRoutes);
 app.use('/api/analytics',  analyticsRoutes);
+app.use('/api/settings',   settingsRoutes);
 
 // Global error handler
 app.use(errorHandler);

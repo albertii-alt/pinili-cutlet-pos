@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   IconEye, IconEyeOff, IconShieldLock, IconCheck,
   IconUsers, IconUserPlus, IconEdit, IconTrash, IconLock, IconLockOpen,
+  IconSettings2, IconPencil,
 } from '@tabler/icons-react';
 import { changePassword } from '../../api/auth.api';
+import { getSettings, updateSetting } from '../../api/settings.api';
 import { useStaff } from '../../hooks/useStaff';
 import { StaffUser } from '../../types';
 import StaffModal from '../../components/owner/StaffModal';
@@ -109,6 +111,58 @@ export default function SettingsPage() {
   const { staff, loading: staffLoading, addStaff, editStaff, removeStaff, toggleStatus } = useStaff();
   const [staffModal, setStaffModal] = useState<StaffUser | null | undefined>(undefined);
   const [deleteTarget, setDeleteTarget] = useState<StaffUser | null>(null);
+
+  // System settings state
+  const [stallName, setStallName]           = useState('Pinili Cutlet');
+  const [stallNameInput, setStallNameInput] = useState('');
+  const [editingStall, setEditingStall]     = useState(false);
+  const [stallSaving, setStallSaving]       = useState(false);
+  const [stallError, setStallError]         = useState('');
+  const [defaultPayment, setDefaultPayment] = useState<'cash' | 'gcash'>('cash');
+  const [paymentError, setPaymentError]     = useState('');
+  const [settingsToast, setSettingsToast]   = useState('');
+
+  useEffect(() => {
+    getSettings().then(s => {
+      if (s.stall_name)    setStallName(s.stall_name);
+      if (s.default_payment === 'gcash') setDefaultPayment('gcash');
+    }).catch(() => {});
+  }, []);
+
+  async function handleSaveStallName() {
+    const trimmed = stallNameInput.trim();
+    if (!trimmed) return;
+    setStallSaving(true);
+    setStallError('');
+    try {
+      await updateSetting('stall_name', trimmed);
+      setStallName(trimmed);
+      setEditingStall(false);
+      setSettingsToast('Stall name updated');
+      setTimeout(() => setSettingsToast(''), 3000);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setStallError(msg ?? 'Failed to save. Check your connection and try again.');
+    } finally {
+      setStallSaving(false);
+    }
+  }
+
+  async function handleDefaultPaymentToggle(method: 'cash' | 'gcash') {
+    if (method === defaultPayment) return;
+    const prev = defaultPayment;
+    setDefaultPayment(method);
+    setPaymentError('');
+    try {
+      await updateSetting('default_payment', method);
+      setSettingsToast(`Default payment set to ${method === 'gcash' ? 'GCash' : 'Cash'}`);
+      setTimeout(() => setSettingsToast(''), 3000);
+    } catch (err: unknown) {
+      setDefaultPayment(prev); // revert on error
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setPaymentError(msg ?? 'Failed to save. Check your connection and try again.');
+    }
+  }
 
   async function handleChangePassword() {
     setPwError('');
@@ -287,6 +341,97 @@ export default function SettingsPage() {
         )}
       </div>
 
+      {/* ── System Settings ── */}
+      <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C' }}>
+        <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
+          <IconSettings2 size={16} color="#C0392B" />
+          <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 600 }}>System Settings</span>
+        </div>
+
+        {/* Stall Name */}
+        <div className="flex flex-col gap-2">
+          <label style={{ fontSize: 12, color: '#606060', letterSpacing: '0.04em' }}>Stall Name</label>
+          {editingStall ? (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
+                <input
+                  autoFocus
+                  value={stallNameInput}
+                  onChange={e => { setStallNameInput(e.target.value); setStallError(''); }}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSaveStallName(); if (e.key === 'Escape') { setEditingStall(false); setStallError(''); } }}
+                  style={{
+                    flex: 1, backgroundColor: '#1A1A1A',
+                    border: `1px solid ${stallError ? '#C0392B' : '#C0392B'}`,
+                    borderRadius: 8, padding: '8px 12px',
+                    color: '#ffffff', fontSize: 13, outline: 'none',
+                  }}
+                />
+                <button
+                  onClick={handleSaveStallName}
+                  disabled={stallSaving || !stallNameInput.trim()}
+                  style={{
+                    backgroundColor: stallSaving || !stallNameInput.trim() ? '#2C2C2C' : '#C0392B',
+                    border: 'none', borderRadius: 8, padding: '8px 14px',
+                    color: stallSaving || !stallNameInput.trim() ? '#606060' : '#ffffff',
+                    fontSize: 13, fontWeight: 600, cursor: stallSaving || !stallNameInput.trim() ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {stallSaving ? 'Saving…' : 'Save'}
+                </button>
+                <button
+                  onClick={() => { setEditingStall(false); setStallError(''); }}
+                  style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: 8, padding: '8px 12px', color: '#A0A0A0', fontSize: 13, cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+              </div>
+              {stallError && <p style={{ fontSize: 12, color: '#C0392B' }}>{stallError}</p>}
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <span style={{ fontSize: 14, color: '#ffffff', fontWeight: 500 }}>{stallName}</span>
+              <button
+                onClick={() => { setStallNameInput(stallName); setEditingStall(true); }}
+                className="flex items-center gap-1"
+                style={{ backgroundColor: 'transparent', border: '1px solid #2C2C2C', borderRadius: 6, padding: '4px 10px', color: '#606060', fontSize: 12, cursor: 'pointer' }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1A1A1A'; e.currentTarget.style.color = '#A0A0A0'; }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#606060'; }}
+              >
+                <IconPencil size={12} />
+                Edit
+              </button>
+            </div>
+          )}
+          <p style={{ fontSize: 11, color: '#606060' }}>Displayed in the sidebar and cashier topbar.</p>
+        </div>
+
+        {/* Default Payment Method */}
+        <div className="flex flex-col gap-2">
+          <label style={{ fontSize: 12, color: '#606060', letterSpacing: '0.04em' }}>Default Payment Method</label>
+          <div className="flex gap-2" style={{ maxWidth: 240 }}>
+            {(['cash', 'gcash'] as const).map(method => (
+              <button
+                key={method}
+                onClick={() => handleDefaultPaymentToggle(method)}
+                style={{
+                  flex: 1, padding: '8px',
+                  backgroundColor: defaultPayment === method ? '#C0392B' : '#1A1A1A',
+                  border: `1px solid ${defaultPayment === method ? '#C0392B' : '#2C2C2C'}`,
+                  borderRadius: 8,
+                  color: defaultPayment === method ? '#ffffff' : '#A0A0A0',
+                  fontSize: 13, fontWeight: defaultPayment === method ? 600 : 400,
+                  cursor: 'pointer', transition: 'all 0.15s',
+                }}
+              >
+                {method === 'gcash' ? 'GCash' : 'Cash'}
+              </button>
+            ))}
+          </div>
+          <p style={{ fontSize: 11, color: '#606060' }}>Pre-selected payment method in the cashier order panel.</p>
+          {paymentError && <p style={{ fontSize: 12, color: '#C0392B' }}>{paymentError}</p>}
+        </div>
+      </div>
+
       {/* Staff modal */}
       {staffModal !== undefined && (
         <StaffModal
@@ -318,6 +463,18 @@ export default function SettingsPage() {
             <IconCheck size={12} color="#27AE60" />
           </div>
           <span style={{ fontSize: 13, color: '#27AE60' }}>Password updated successfully</span>
+        </div>
+      )}
+
+      {settingsToast && (
+        <div
+          className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-3 rounded-xl z-50"
+          style={{ backgroundColor: '#111111', border: '1px solid rgba(39,174,96,0.4)', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}
+        >
+          <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(39,174,96,0.2)' }}>
+            <IconCheck size={12} color="#27AE60" />
+          </div>
+          <span style={{ fontSize: 13, color: '#27AE60' }}>{settingsToast}</span>
         </div>
       )}
     </div>

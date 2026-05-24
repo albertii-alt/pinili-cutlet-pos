@@ -10,6 +10,7 @@ import type { MenuItem } from '../../types';
 import CategoryTabs from '../../components/cashier/CategoryTabs';
 import MenuGrid from '../../components/cashier/MenuGrid';
 import OrderPanel from '../../components/cashier/OrderPanel';
+import { useBrandName } from '../../hooks/useBrandName';
 
 export default function OrderPage() {
   const navigate = useNavigate();
@@ -17,6 +18,10 @@ export default function OrderPage() {
   const { addItem } = useOrderStore();
   const { user, logout: clearAuth } = useAuthStore();
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const stallName = useBrandName();
+  const brandParts = stallName.trim().split(/\s+/);
+  const brandFirst = brandParts[0] ?? stallName;
+  const brandRest  = brandParts.slice(1).join(' ');
 
   const filtered = selectedCategory === null
     ? menuItems
@@ -47,8 +52,8 @@ export default function OrderPage() {
       {/* Topbar */}
       <header className="sticky top-0 bg-card border-b border-border px-4 h-[52px] flex items-center justify-between z-30">
         <span className="font-bold tracking-widest text-sm">
-          <span className="text-white">PINILI</span>{' '}
-          <span className="text-primary">CUTLET</span>
+          <span className="text-white">{brandFirst.toUpperCase()}</span>
+          {brandRest && <>{' '}<span className="text-primary">{brandRest.toUpperCase()}</span></>}
         </span>
         <div className="flex items-center gap-3">
           {user && (

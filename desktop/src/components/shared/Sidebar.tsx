@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   IconLayoutDashboard,
@@ -6,6 +7,8 @@ import {
   IconChartBar,
   IconSettings,
 } from '@tabler/icons-react';
+import { getSettings } from '../../api/settings.api';
+import socket from '../../socket/socket';
 
 const navItems = [
   { to: '/owner/dashboard',  label: 'Dashboard',  icon: IconLayoutDashboard },
@@ -16,6 +19,24 @@ const navItems = [
 ];
 
 export default function Sidebar() {
+  const [stallName, setStallName] = useState('Pinili Cutlet');
+
+  useEffect(() => {
+    getSettings()
+      .then(s => { if (s.stall_name) setStallName(s.stall_name); })
+      .catch(() => {/* keep default */});
+
+    function handleSettingsUpdated({ key, value }: { key: string; value: string }) {
+      if (key === 'stall_name') setStallName(value);
+    }
+    socket.on('settings:updated', handleSettingsUpdated);
+    return () => { socket.off('settings:updated', handleSettingsUpdated); };
+  }, []);
+
+  // Split into two words for brand display; fallback gracefully
+  const parts = stallName.trim().split(/\s+/);
+  const first = parts[0] ?? stallName;
+  const rest  = parts.slice(1).join(' ');
   return (
     <aside
       className="w-[220px] h-screen flex flex-col shrink-0 overflow-hidden pt-[52px] border-r border-border"
@@ -24,8 +45,8 @@ export default function Sidebar() {
       {/* Brand */}
       <div className="px-5 py-5 border-b border-border">
         <div className="font-bold tracking-widest text-sm">
-          <span className="text-white">PINILI</span>{' '}
-          <span className="text-primary">CUTLET</span>
+          <span className="text-white">{first.toUpperCase()}</span>
+          {rest && <>{' '}<span className="text-primary">{rest.toUpperCase()}</span></>}
         </div>
         <p className="text-textMuted text-xs mt-0.5">POS System</p>
       </div>

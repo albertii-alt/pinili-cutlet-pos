@@ -4,16 +4,22 @@ import { IconEye, IconEyeOff } from '@tabler/icons-react';
 import { login } from '../../api/auth.api';
 import { useAuthStore } from '../../store/useAuthStore';
 import { connectSocket } from '../../socket/socket';
+import { useBrandName } from '../../hooks/useBrandName';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login: setAuth } = useAuthStore();
 
-  const [username, setUsername]       = useState('');
-  const [password, setPassword]       = useState('');
+  const stallName  = useBrandName();
+  const brandParts = stallName.trim().split(/\s+/);
+  const brandFirst = brandParts[0] ?? stallName;
+  const brandRest  = brandParts.slice(1).join(' ');
+
+  const [username, setUsername]         = useState('');
+  const [password, setPassword]         = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError]             = useState('');
-  const [loading, setLoading]         = useState(false);
+  const [error, setError]               = useState('');
+  const [loading, setLoading]           = useState(false);
 
   async function handleLogin() {
     if (!username.trim() || !password) {
@@ -49,8 +55,8 @@ export default function LoginPage() {
         {/* Brand */}
         <div className="text-center">
           <h1 className="font-bold tracking-widest text-xl">
-            <span className="text-white">PINILI</span>{' '}
-            <span className="text-primary">CUTLET</span>
+            <span className="text-white">{brandFirst.toUpperCase()}</span>
+            {brandRest && <>{' '}<span className="text-primary">{brandRest.toUpperCase()}</span></>}
           </h1>
           <p className="text-textGray text-xs mt-1">Staff Login</p>
         </div>
