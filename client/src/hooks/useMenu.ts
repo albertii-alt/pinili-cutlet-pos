@@ -12,6 +12,7 @@ export function useMenu() {
   useEffect(() => {
     Promise.all([getMenuItems(), getCategories()])
       .then(([items, cats]) => {
+        console.log('Menu items:', items.map(i => ({ id: i.id, name: i.name, is_featured: i.is_featured })));
         setMenuItems(items);
         setCategories(cats);
       })

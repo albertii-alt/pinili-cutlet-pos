@@ -118,6 +118,25 @@ export function toggleAvailability(req: Request, res: Response): void {
   res.json({ id: existing.id, is_available: newValue });
 }
 
+export function toggleFeatured(req: Request, res: Response): void {
+  const existing = db.prepare('SELECT * FROM menu_items WHERE id = ?').get(req.params.id) as MenuItem | undefined;
+  if (!existing) {
+    res.status(404).json({ error: 'Menu item not found' });
+    return;
+  }
+
+  db.prepare(`
+    UPDATE menu_items SET is_featured = CASE WHEN is_featured = 1 THEN 0 ELSE 1 END WHERE id = ?
+  `).run(req.params.id);
+
+  const updated = db.prepare('SELECT * FROM menu_items WHERE id = ?').get(req.params.id) as MenuItem;
+
+  const { getIO } = require('../socket/events');
+  getIO().emit('menu:updated', updated);
+
+  res.json({ id: updated.id, is_featured: updated.is_featured });
+}
+
 export function bulkToggleAvailability(req: Request, res: Response): void {
   const { categoryId, isAvailable } = req.body as { categoryId: number; isAvailable: boolean };
 

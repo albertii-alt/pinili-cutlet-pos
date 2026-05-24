@@ -1,4 +1,4 @@
-import { IconPlus, IconToolsKitchen2 } from '@tabler/icons-react';
+import { IconPlus, IconToolsKitchen2, IconStarFilled } from '@tabler/icons-react';
 import { MenuItem } from '../../types';
 import { formatCurrency } from '../../utils/formatCurrency';
 
@@ -14,7 +14,16 @@ export default function MenuItemCard({ item, onAdd }: MenuItemCardProps) {
     : null;
 
   return (
-    <div className={`bg-card border border-border rounded-xl overflow-hidden flex flex-col ${unavailable ? 'opacity-50' : ''}`}>
+    <div className={`bg-card border border-border rounded-xl overflow-hidden flex flex-col relative ${unavailable ? 'opacity-50' : ''}`}>
+      {/* Featured star badge */}
+      {item.is_featured === 1 && (
+        <div
+          className="absolute top-2 right-2 z-10 flex items-center justify-center rounded-full"
+          style={{ width: 20, height: 20, backgroundColor: 'rgba(0,0,0,0.55)' }}
+        >
+          <IconStarFilled size={10} color="#F4C430" />
+        </div>
+      )}
       {/* Image */}
       <div className="aspect-square bg-cardLight flex items-center justify-center overflow-hidden">
         {imageUrl ? (

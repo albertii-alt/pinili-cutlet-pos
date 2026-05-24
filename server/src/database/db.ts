@@ -67,10 +67,21 @@ function migrateUsersTable(): void {
   db.prepare('UPDATE users SET is_active = 1 WHERE is_active IS NULL').run();
 }
 
+// Migration: add is_featured column to menu_items if missing
+function migrateMenuItemsTable(): void {
+  const cols = db.prepare("PRAGMA table_info(menu_items)").all() as { name: string }[];
+  if (!cols.some(c => c.name === 'is_featured')) {
+    console.log('[DB] Adding is_featured column to menu_items...');
+    db.prepare('ALTER TABLE menu_items ADD COLUMN is_featured INTEGER DEFAULT 0').run();
+    console.log('[DB] Migration complete.');
+  }
+}
+
 // Initialize schema and seed data
 runSchema(db);
 migrateOrdersTable();
 migrateUsersTable();
+migrateMenuItemsTable();
 runSeed(db);
 
 export default db;

@@ -33,6 +33,11 @@ export async function bulkToggleAvailability(categoryId: number, isAvailable: bo
   await apiClient.patch('/api/menu/bulk-availability', { categoryId, isAvailable });
 }
 
+export async function toggleFeatured(id: number): Promise<{ id: number; is_featured: number }> {
+  const { data } = await apiClient.patch(`/api/menu/${id}/featured`);
+  return data;
+}
+
 export async function uploadImage(file: File): Promise<{ image_path: string }> {
   const form = new FormData();
   form.append('image', file);

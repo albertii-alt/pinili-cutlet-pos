@@ -22,6 +22,9 @@ export default function OrderPage() {
     ? menuItems
     : menuItems.filter(i => i.category_id === selectedCategory);
 
+  // Featured items appear first within the current view
+  const sorted = [...filtered].sort((a, b) => (b.is_featured ?? 0) - (a.is_featured ?? 0));
+
   function handleAdd(item: MenuItem) {
     addItem({
       menu_item_id: item.id,
@@ -67,6 +70,9 @@ export default function OrderPage() {
           onSelect={setSelectedCategory}
         />
       </div>
+      <p style={{ color: '#888', fontSize: 11, paddingLeft: 16 }}>
+        Featured: {menuItems.filter(i => i.is_featured === 1).map(i => i.name).join(', ') || 'none'}
+      </p>
 
       {/* Menu grid */}
       {loading ? (
@@ -74,7 +80,7 @@ export default function OrderPage() {
           <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
-        <MenuGrid items={filtered} onAdd={handleAdd} />
+        <MenuGrid items={sorted} onAdd={handleAdd} />
       )}
 
       {/* Bottom nav */}

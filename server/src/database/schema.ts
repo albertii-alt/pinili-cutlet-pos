@@ -16,6 +16,7 @@ export function runSchema(db: Database): void {
       category_id  INTEGER REFERENCES categories(id) ON DELETE SET NULL,
       image_path   TEXT,
       is_available INTEGER DEFAULT 1,
+      is_featured  INTEGER DEFAULT 0,
       created_at   TEXT    DEFAULT (datetime('now','localtime'))
     );
 

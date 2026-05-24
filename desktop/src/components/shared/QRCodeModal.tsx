@@ -10,7 +10,7 @@ interface QRCodeModalProps {
 interface NetworkInfo {
   ip: string;
   serverPort: number;
-  clientPort: number;
+  clientUrl: string;
 }
 
 export default function QRCodeModal({ onClose }: QRCodeModalProps) {
@@ -23,7 +23,7 @@ export default function QRCodeModal({ onClose }: QRCodeModalProps) {
       .catch(() => setError('Could not fetch server IP'));
   }, []);
 
-  const clientURL = network ? `http://${network.ip}:${network.clientPort}` : '';
+  const clientURL = network ? network.clientUrl : '';
 
   return (
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">

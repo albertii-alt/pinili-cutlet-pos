@@ -14,6 +14,7 @@ export interface MenuItem {
   category_id: number | null;
   image_path: string | null;
   is_available: number;
+  is_featured: number;
   created_at: string;
 }
 

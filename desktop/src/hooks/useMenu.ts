@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { getMenuItems } from '../api/menu.api';
+import { getMenuItems, toggleFeatured as apiToggleFeatured } from '../api/menu.api';
 import { useMenuStore } from '../store/useMenuStore';
 import socket from '../socket/socket';
 import { MenuItem } from '../types';
@@ -26,5 +26,10 @@ export function useMenu() {
     };
   }, []);
 
-  return { menuItems };
+  async function toggleFeatured(id: number) {
+    await apiToggleFeatured(id);
+    // Server emits menu:updated with the full updated item — store handles the rest
+  }
+
+  return { menuItems, toggleFeatured };
 }

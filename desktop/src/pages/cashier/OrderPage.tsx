@@ -21,6 +21,9 @@ export default function OrderPage() {
     ? menuItems
     : menuItems.filter(i => i.category_id === selectedCategory);
 
+  // Featured items appear first within the current view
+  const sorted = [...filtered].sort((a, b) => (b.is_featured ?? 0) - (a.is_featured ?? 0));
+
   function handleAdd(item: MenuItem) {
     addItem({
       menu_item_id: item.id,
@@ -56,7 +59,7 @@ export default function OrderPage() {
               </button>
             </div>
 
-            <MenuGrid items={filtered} onAdd={handleAdd} />
+            <MenuGrid items={sorted} onAdd={handleAdd} />
           </div>
         </div>
       </div>

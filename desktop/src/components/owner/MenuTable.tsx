@@ -1,4 +1,4 @@
-import { IconEdit, IconTrash, IconToolsKitchen2 } from '@tabler/icons-react';
+import { IconEdit, IconTrash, IconToolsKitchen2, IconStar, IconStarFilled } from '@tabler/icons-react';
 import { MenuItem, Category } from '../../types';
 import { formatCurrency } from '../../utils/formatCurrency';
 import Badge from '../shared/Badge';
@@ -9,9 +9,10 @@ interface MenuTableProps {
   onEdit: (item: MenuItem) => void;
   onDelete: (item: MenuItem) => void;
   onToggleAvailability: (item: MenuItem) => void;
+  onToggleFeatured: (item: MenuItem) => void;
 }
 
-export default function MenuTable({ items, categories, onEdit, onDelete, onToggleAvailability }: MenuTableProps) {
+export default function MenuTable({ items, categories, onEdit, onDelete, onToggleAvailability, onToggleFeatured }: MenuTableProps) {
   const getCategoryName = (id: number | null) =>
     categories.find(c => c.id === id)?.name ?? '—';
 
@@ -79,6 +80,32 @@ export default function MenuTable({ items, categories, onEdit, onDelete, onToggl
                 {/* Actions */}
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
+                    {/* Featured toggle */}
+                    <button
+                      onClick={() => onToggleFeatured(item)}
+                      className="flex items-center justify-center transition-colors"
+                      title={item.is_featured === 1 ? 'Remove from featured' : 'Mark as featured'}
+                      style={{
+                        width: 32, height: 32,
+                        backgroundColor: item.is_featured === 1 ? 'rgba(244,196,48,0.1)' : '#1A1A1A',
+                        border: `1px solid ${item.is_featured === 1 ? 'rgba(244,196,48,0.4)' : '#2C2C2C'}`,
+                        borderRadius: 6,
+                        color: item.is_featured === 1 ? '#F4C430' : '#606060',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.backgroundColor = item.is_featured === 1 ? 'rgba(244,196,48,0.2)' : '#242424';
+                        e.currentTarget.style.color = '#F4C430';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.backgroundColor = item.is_featured === 1 ? 'rgba(244,196,48,0.1)' : '#1A1A1A';
+                        e.currentTarget.style.color = item.is_featured === 1 ? '#F4C430' : '#606060';
+                      }}
+                    >
+                      {item.is_featured === 1
+                        ? <IconStarFilled size={15} />
+                        : <IconStar size={15} />
+                      }
+                    </button>
                     <button
                       onClick={() => onEdit(item)}
                       className="flex items-center justify-center transition-colors"

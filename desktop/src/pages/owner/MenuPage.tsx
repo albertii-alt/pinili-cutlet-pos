@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { IconPlus, IconChevronDown, IconCheck } from '@tabler/icons-react';
 import { useMenu } from '../../hooks/useMenu';
 import { useCategories } from '../../hooks/useCategories';
-import { deleteMenuItem, toggleAvailability, bulkToggleAvailability } from '../../api/menu.api';
+import { deleteMenuItem, toggleAvailability, bulkToggleAvailability, toggleFeatured as toggleFeaturedApi } from '../../api/menu.api';
 import { MenuItem, Category } from '../../types';
 import MenuTable from '../../components/owner/MenuTable';
 import MenuItemModal from '../../components/owner/MenuItemModal';
@@ -60,6 +60,10 @@ export default function MenuPage() {
 
   async function handleToggle(item: MenuItem) {
     await toggleAvailability(item.id);
+  }
+
+  async function handleToggleFeatured(item: MenuItem) {
+    await toggleFeaturedApi(item.id);
   }
 
   async function handleDelete() {
@@ -161,6 +165,7 @@ export default function MenuPage() {
           onEdit={item => setEditItem(item)}
           onDelete={item => setDeleteItem(item)}
           onToggleAvailability={handleToggle}
+          onToggleFeatured={handleToggleFeatured}
         />
       )}
 

@@ -31,7 +31,7 @@ const router = createBrowserRouter([
   { path: '/queue',  element: <RequireAuth><QueuePage /></RequireAuth> },
   { path: '/',       element: <DefaultRedirect /> },
   { path: '*',       element: <DefaultRedirect /> },
-]);
+], { basename: '/app' });
 
 export default function App() {
   const { isAuthenticated } = useAuthStore();

@@ -17,14 +17,36 @@ import analyticsRoutes from './routes/analytics.routes';
 
 const app    = express();
 const server = http.createServer(app);
-const PORT   = Number(process.env.PORT ?? 3000);
+const PORT = parseInt(process.env.PORT ?? '3000', 10) || 3000;
 
 // Middleware
+app.use((req, res, next) => {
+  console.log('[Express] incoming:', req.method, req.url);
+  next();
+});
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
 // Static image files
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
+
+// Serve client PWA from /app — built output of client/dist
+// __dirname at runtime = server/dist/ → ../../client/dist = client/dist
+const clientDist = path.resolve(__dirname, '../../client/dist');
+// Serve client PWA from /app — single middleware handles both assets and SPA routes
+app.use('/app', (req, res) => {
+  const filePath = path.join(clientDist, req.path);
+  const ext = path.extname(req.path);
+  if (ext) {
+    // Has extension — serve the actual file (JS, CSS, PNG, etc.)
+    res.sendFile(filePath, (err) => {
+      if (err) res.status(404).send('File not found');
+    });
+  } else {
+    // No extension — SPA route, serve index.html
+    res.sendFile(path.join(clientDist, 'index.html'));
+  }
+});
 
 // Health check
 app.get('/health', (req, res) => {
@@ -47,7 +69,7 @@ app.get('/api/network/ip', (req, res) => {
     if (lanIP !== '127.0.0.1') break;
   }
 
-  res.json({ ip: lanIP, serverPort: PORT, clientPort: 4173 });
+  res.json({ ip: lanIP, serverPort: PORT, clientUrl: `http://${lanIP}:${PORT}/app` });
 });
 
 // Routes
