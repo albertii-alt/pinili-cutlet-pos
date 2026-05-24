@@ -10,7 +10,6 @@ import EmptyState from '../../components/shared/EmptyState';
 import SalesCard from '../../components/owner/SalesCard';
 import OrderDetailsModal from '../../components/owner/OrderDetailsModal';
 import DateRangePicker, { type DateRangeValue } from '../../components/shared/DateRangePicker';
-
 const periods: { label: string; value: OrderFilter }[] = [
   { label: 'Today',      value: 'today'  },
   { label: 'This Week',  value: 'week'   },
@@ -78,6 +77,14 @@ export default function HistoryPage() {
   const [exporting, setExporting]   = useState(false);
   const [toast, setToast]           = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
+  function handleOrderCancelled(id: number) {
+    setOrders(prev => prev.map(o =>
+      o.id === id ? { ...o, status: 'cancelled' as const } : o
+    ));
+    setSelected(prev => prev?.id === id ? { ...prev, status: 'cancelled' as const } : prev);
+    setToast({ message: 'Order cancelled successfully', type: 'success' });
+  }
+
   // Custom date range state
   const [dateRange, setDateRange]         = useState<DateRangeValue>({ startDate: '', endDate: '' });
   const [appliedRange, setAppliedRange]   = useState<DateRangeValue | null>(null);
@@ -98,7 +105,7 @@ export default function HistoryPage() {
 
     setLoading(true);
 
-    const params: Parameters<typeof getOrderHistory>[0] = { status: 'completed' };
+    const params: Parameters<typeof getOrderHistory>[0] = {};
 
     if (period === 'custom' && appliedRange) {
       params.startDate = appliedRange.startDate;
@@ -106,23 +113,23 @@ export default function HistoryPage() {
     } else if (period === 'today') {
       params.date = toDateParam();
     }
-    // week / month: no date param — server returns all completed, we filter client-side
-    // (matches existing behaviour)
 
     getOrderHistory(params)
       .then(data => {
+        // Keep completed + cancelled, exclude pending
+        const filtered = data.filter(o => o.status !== 'pending');
         if (period === 'week') {
           const cutoff = new Date();
           cutoff.setDate(cutoff.getDate() - 6);
-          setOrders(data.filter(o => new Date(o.created_at) >= cutoff));
+          setOrders(filtered.filter(o => new Date(o.created_at) >= cutoff));
         } else if (period === 'month') {
           const now = new Date();
-          setOrders(data.filter(o => {
+          setOrders(filtered.filter(o => {
             const d = new Date(o.created_at);
             return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
           }));
         } else {
-          setOrders(data);
+          setOrders(filtered);
         }
       })
       .catch(console.error)
@@ -154,9 +161,10 @@ export default function HistoryPage() {
     }
   }
 
-  const totalRevenue = orders.reduce((s, o) => s + o.total_amount, 0);
-  const cashRevenue  = orders.filter(o => o.payment_method === 'cash').reduce((s, o) => s + o.total_amount, 0);
-  const gcashRevenue = orders.filter(o => o.payment_method === 'gcash').reduce((s, o) => s + o.total_amount, 0);
+  const completedOrders = orders.filter(o => o.status === 'completed');
+  const totalRevenue = completedOrders.reduce((s, o) => s + o.total_amount, 0);
+  const cashRevenue  = completedOrders.filter(o => o.payment_method === 'cash').reduce((s, o) => s + o.total_amount, 0);
+  const gcashRevenue = completedOrders.filter(o => o.payment_method === 'gcash').reduce((s, o) => s + o.total_amount, 0);
 
   return (
     <div className="flex flex-col gap-4 w-full">
@@ -236,7 +244,7 @@ export default function HistoryPage() {
           <table className="w-full">
             <thead>
               <tr style={{ backgroundColor: '#1A1A1A', borderBottom: '1px solid #2C2C2C' }}>
-                {['Order #', 'Date & Time', 'Payment', 'Items', 'Total', 'Actions'].map(h => (
+                {['Order #', 'Date & Time', 'Payment', 'Status', 'Items', 'Total', 'Actions'].map(h => (
                   <th
                     key={h}
                     className="text-left px-4 py-3 font-medium"
@@ -259,8 +267,14 @@ export default function HistoryPage() {
                   <td className="px-4 py-3" style={{ color: '#C0392B', fontWeight: 600, fontSize: 13 }}>{order.order_number}</td>
                   <td className="px-4 py-3" style={{ color: '#A0A0A0', fontSize: 13 }}>{formatDateTime(order.created_at)}</td>
                   <td className="px-4 py-3"><Badge variant={order.payment_method === 'cash' ? 'cash' : 'gcash'} /></td>
+                  <td className="px-4 py-3">
+                    {order.status === 'cancelled'
+                      ? <span style={{ fontSize: 11, fontWeight: 600, color: '#C0392B', backgroundColor: 'rgba(192,57,43,0.1)', border: '1px solid rgba(192,57,43,0.3)', borderRadius: 4, padding: '2px 7px' }}>Cancelled</span>
+                      : <span style={{ fontSize: 11, fontWeight: 600, color: '#27AE60', backgroundColor: 'rgba(39,174,96,0.1)', border: '1px solid rgba(39,174,96,0.3)', borderRadius: 4, padding: '2px 7px' }}>Completed</span>
+                    }
+                  </td>
                   <td className="px-4 py-3" style={{ color: '#A0A0A0', fontSize: 13 }}>{order.items.length} item{order.items.length !== 1 ? 's' : ''}</td>
-                  <td className="px-4 py-3" style={{ color: '#ffffff', fontWeight: 500, fontSize: 13 }}>{formatCurrency(order.total_amount)}</td>
+                  <td className="px-4 py-3" style={{ color: order.status === 'cancelled' ? '#606060' : '#ffffff', fontWeight: 500, fontSize: 13, textDecoration: order.status === 'cancelled' ? 'line-through' : 'none' }}>{formatCurrency(order.total_amount)}</td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => setSelected(order)}
@@ -280,7 +294,7 @@ export default function HistoryPage() {
         </div>
       )}
 
-      {selected && <OrderDetailsModal order={selected} onClose={() => setSelected(null)} />}
+      {selected && <OrderDetailsModal order={selected} onClose={() => setSelected(null)} onCancelled={handleOrderCancelled} />}
 
       {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
     </div>

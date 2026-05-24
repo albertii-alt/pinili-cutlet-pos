@@ -67,6 +67,16 @@ function migrateUsersTable(): void {
   db.prepare('UPDATE users SET is_active = 1 WHERE is_active IS NULL').run();
 }
 
+// Migration: add cancel_reason column to orders if missing
+function migrateOrdersColumns(): void {
+  const cols = db.prepare("PRAGMA table_info(orders)").all() as { name: string }[];
+  if (!cols.some(c => c.name === 'cancel_reason')) {
+    console.log('[DB] Adding cancel_reason column to orders...');
+    db.prepare('ALTER TABLE orders ADD COLUMN cancel_reason TEXT DEFAULT NULL').run();
+    console.log('[DB] Migration complete.');
+  }
+}
+
 // Migration: add is_featured column to menu_items if missing
 function migrateMenuItemsTable(): void {
   const cols = db.prepare("PRAGMA table_info(menu_items)").all() as { name: string }[];
@@ -90,6 +100,7 @@ function migrateMenuItemsTable(): void {
 // Initialize schema and seed data
 runSchema(db);
 migrateOrdersTable();
+migrateOrdersColumns();
 migrateUsersTable();
 migrateMenuItemsTable();
 runSeed(db);

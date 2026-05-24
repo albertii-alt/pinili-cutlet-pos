@@ -29,3 +29,7 @@ export async function completeOrder(id: number): Promise<void> {
 export async function cancelOrder(id: number): Promise<void> {
   await apiClient.patch(`/api/orders/${id}/cancel`);
 }
+
+export async function cancelCompletedOrder(id: number, reason: string): Promise<void> {
+  await apiClient.patch(`/api/orders/${id}/cancel-completed`, { reason });
+}

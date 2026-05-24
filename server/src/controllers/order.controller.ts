@@ -170,3 +170,30 @@ export function cancel(req: Request, res: Response): void {
 
   res.json({ message: 'Order cancelled', id: Number(req.params.id) });
 }
+
+export function cancelCompleted(req: Request, res: Response): void {
+  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id) as Order | undefined;
+
+  if (!order) {
+    res.status(404).json({ error: 'Order not found' });
+    return;
+  }
+  if (order.status !== 'completed') {
+    res.status(400).json({ error: 'Only completed orders can be cancelled this way' });
+    return;
+  }
+
+  const { reason } = req.body as { reason?: string };
+  if (!reason || reason.trim().length < 5) {
+    res.status(400).json({ error: 'A reason of at least 5 characters is required' });
+    return;
+  }
+
+  db.prepare("UPDATE orders SET status = 'cancelled', cancel_reason = ? WHERE id = ?")
+    .run(reason.trim(), req.params.id);
+
+  const { getIO } = require('../socket/events');
+  getIO().emit('order:cancelled', Number(req.params.id));
+
+  res.json({ message: 'Order cancelled', id: Number(req.params.id) });
+}

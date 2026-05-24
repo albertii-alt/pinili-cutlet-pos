@@ -42,6 +42,7 @@ export interface Order {
   cash_tendered: number | null;
   change_amount: number | null;
   status: 'pending' | 'completed' | 'cancelled';
+  cancel_reason: string | null;
   created_by: number;
   created_at: string;
   items: OrderItem[];

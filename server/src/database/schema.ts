@@ -39,6 +39,7 @@ export function runSchema(db: Database): void {
       cash_tendered  REAL,
       change_amount  REAL,
       status         TEXT    DEFAULT 'pending',
+      cancel_reason  TEXT    DEFAULT NULL,
       created_by     INTEGER REFERENCES users(id),
       created_at     TEXT    DEFAULT (datetime('now','localtime'))
     );
