@@ -20,10 +20,6 @@ const server = http.createServer(app);
 const PORT = parseInt(process.env.PORT ?? '3000', 10) || 3000;
 
 // Middleware
-app.use((req, res, next) => {
-  console.log('[Express] incoming:', req.method, req.url);
-  next();
-});
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 

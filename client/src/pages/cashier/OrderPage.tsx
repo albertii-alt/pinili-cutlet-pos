@@ -70,9 +70,6 @@ export default function OrderPage() {
           onSelect={setSelectedCategory}
         />
       </div>
-      <p style={{ color: '#888', fontSize: 11, paddingLeft: 16 }}>
-        Featured: {menuItems.filter(i => i.is_featured === 1).map(i => i.name).join(', ') || 'none'}
-      </p>
 
       {/* Menu grid */}
       {loading ? (
