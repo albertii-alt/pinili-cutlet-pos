@@ -58,5 +58,14 @@ export function runSchema(db: Database): void {
       value      TEXT NOT NULL,
       updated_at TEXT DEFAULT (datetime('now','localtime'))
     );
+
+    CREATE TABLE IF NOT EXISTS payment_methods (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      name       TEXT    NOT NULL UNIQUE,
+      is_active  INTEGER DEFAULT 1,
+      is_default INTEGER DEFAULT 0,
+      sort_order INTEGER DEFAULT 0,
+      created_at TEXT    DEFAULT (datetime('now','localtime'))
+    );
   `);
 }

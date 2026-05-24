@@ -38,7 +38,7 @@ export interface Order {
   id: number;
   order_number: string;
   total_amount: number;
-  payment_method: 'cash' | 'gcash';
+  payment_method: string;
   cash_tendered: number | null;
   change_amount: number | null;
   status: 'pending' | 'completed' | 'cancelled';
@@ -115,7 +115,7 @@ export interface AuthState {
 }
 
 export interface CreateOrderPayload {
-  payment_method: 'cash' | 'gcash';
+  payment_method: string;
   cash_tendered?: number;
   items: {
     menu_item_id: number;

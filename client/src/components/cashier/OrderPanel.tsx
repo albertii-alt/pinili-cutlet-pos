@@ -2,34 +2,50 @@ import { useState, useEffect } from 'react';
 import { IconShoppingCart, IconChevronDown } from '@tabler/icons-react';
 import { useOrderStore } from '../../store/useOrderStore';
 import { createOrder } from '../../api/order.api';
-import { getSettings } from '../../api/settings.api';
+import { getPaymentMethods, type PaymentMethod } from '../../api/settings.api';
 import { formatCurrency } from '../../utils/formatCurrency';
 import OrderItem from './OrderItem';
 import EmptyState from '../shared/EmptyState';
+import socket from '../../socket/socket';
 
 export default function OrderPanel() {
   const { cartItems, totalAmount, incrementItem, decrementItem, removeItem, clearCart } = useOrderStore();
-  const [open, setOpen]               = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'gcash'>('cash');
-  const [cashTendered, setCashTendered]   = useState('');
-  const [loading, setLoading]             = useState(false);
-  const [error, setError]                 = useState('');
+  const [open, setOpen]                     = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [paymentMethod, setPaymentMethod]   = useState('');
+  const [cashTendered, setCashTendered]     = useState('');
+  const [loading, setLoading]               = useState(false);
+  const [error, setError]                   = useState('');
 
-  // Read default payment method from settings on mount
   useEffect(() => {
-    getSettings()
-      .then(s => {
-        if (s.default_payment === 'gcash') setPaymentMethod('gcash');
-      })
-      .catch(() => {/* keep cash default */});
+    getPaymentMethods().then(methods => {
+      const active = methods.filter(m => m.is_active);
+      setPaymentMethods(active);
+      const def = active.find(m => m.is_default) ?? active[0];
+      if (def) setPaymentMethod(def.name);
+    }).catch(() => {});
+
+    function handleUpdated(methods: PaymentMethod[]) {
+      const active = methods.filter(m => m.is_active);
+      setPaymentMethods(active);
+      setPaymentMethod(prev => {
+        const stillExists = active.find(m => m.name === prev);
+        if (stillExists) return prev;
+        const def = active.find(m => m.is_default) ?? active[0];
+        return def?.name ?? '';
+      });
+    }
+    socket.on('payment_methods:updated', handleUpdated);
+    return () => { socket.off('payment_methods:updated', handleUpdated); };
   }, []);
 
-  const change = paymentMethod === 'cash' ? parseFloat(cashTendered || '0') - totalAmount : 0;
+  const isCash   = paymentMethod.toLowerCase() === 'cash';
+  const change   = isCash ? parseFloat(cashTendered || '0') - totalAmount : 0;
   const itemCount = cartItems.reduce((s, i) => s + i.quantity, 0);
 
   async function handleConfirm() {
     if (cartItems.length === 0) return;
-    if (paymentMethod === 'cash' && parseFloat(cashTendered) < totalAmount) {
+    if (isCash && parseFloat(cashTendered) < totalAmount) {
       setError('Insufficient cash tendered');
       return;
     }
@@ -40,14 +56,15 @@ export default function OrderPanel() {
     try {
       await createOrder({
         payment_method: paymentMethod,
-        cash_tendered: paymentMethod === 'cash' ? parseFloat(cashTendered) : undefined,
+        cash_tendered: isCash ? parseFloat(cashTendered) : undefined,
         items: cartItems.map(({ menu_item_id, item_name, item_price, quantity }) => ({
           menu_item_id, item_name, item_price, quantity,
         })),
       });
       clearCart();
       setCashTendered('');
-      setPaymentMethod('cash');
+      const def = paymentMethods.find(m => m.is_default) ?? paymentMethods[0];
+      if (def) setPaymentMethod(def.name);
       setOpen(false);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
@@ -114,23 +131,23 @@ export default function OrderPanel() {
                   <span className="text-white font-bold text-xl">{formatCurrency(totalAmount)}</span>
                 </div>
 
-                <div className="flex gap-2">
-                  {(['cash', 'gcash'] as const).map(method => (
+                <div className="flex gap-2 flex-wrap">
+                  {paymentMethods.map(m => (
                     <button
-                      key={method}
-                      onClick={() => setPaymentMethod(method)}
+                      key={m.id}
+                      onClick={() => setPaymentMethod(m.name)}
                       className={`flex-1 py-2.5 rounded-lg text-sm min-h-[44px] transition-colors ${
-                        paymentMethod === method
+                        paymentMethod === m.name
                           ? 'bg-primary text-white'
                           : 'bg-cardLight border border-border text-textGray'
                       }`}
                     >
-                      {method === 'gcash' ? 'GCash' : 'Cash'}
+                      {m.name}
                     </button>
                   ))}
                 </div>
 
-                {paymentMethod === 'cash' && (
+                {isCash && (
                   <div className="flex flex-col gap-1">
                     <input
                       type="number"

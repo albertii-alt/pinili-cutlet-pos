@@ -83,6 +83,15 @@ function migrateDefaultSettings(): void {
   db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('stall_name',      'Pinili Cutlet')`).run();
   db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('default_payment', 'cash')`).run();
 }
+
+// Migration: seed default payment methods if table is empty
+function migratePaymentMethods(): void {
+  const count = (db.prepare('SELECT COUNT(*) as c FROM payment_methods').get() as { c: number }).c;
+  if (count === 0) {
+    db.prepare(`INSERT OR IGNORE INTO payment_methods (name, is_default, sort_order) VALUES ('Cash',  1, 0)`).run();
+    db.prepare(`INSERT OR IGNORE INTO payment_methods (name, is_default, sort_order) VALUES ('GCash', 0, 1)`).run();
+  }
+}
 function migrateMenuItemsTable(): void {
   const cols = db.prepare("PRAGMA table_info(menu_items)").all() as { name: string }[];
   if (!cols.some(c => c.name === 'is_featured')) {
@@ -109,6 +118,7 @@ migrateOrdersColumns();
 migrateUsersTable();
 migrateMenuItemsTable();
 migrateDefaultSettings();
+migratePaymentMethods();
 runSeed(db);
 
 export default db;

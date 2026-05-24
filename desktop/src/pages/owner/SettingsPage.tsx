@@ -2,14 +2,20 @@ import { useState, useEffect } from 'react';
 import {
   IconEye, IconEyeOff, IconShieldLock, IconCheck,
   IconUsers, IconUserPlus, IconEdit, IconTrash, IconLock, IconLockOpen,
-  IconSettings2, IconPencil,
+  IconSettings2, IconPencil, IconPlus, IconStar, IconStarFilled,
 } from '@tabler/icons-react';
 import { changePassword } from '../../api/auth.api';
-import { getSettings, updateSetting } from '../../api/settings.api';
+import {
+  getSettings, updateSetting,
+  getPaymentMethods, addPaymentMethod, deletePaymentMethod,
+  setDefaultPaymentMethod, togglePaymentMethod,
+  type PaymentMethod,
+} from '../../api/settings.api';
 import { useStaff } from '../../hooks/useStaff';
 import { StaffUser } from '../../types';
 import StaffModal from '../../components/owner/StaffModal';
 import ConfirmDialog from '../../components/shared/ConfirmDialog';
+import socket from '../../socket/socket';
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 
@@ -118,15 +124,27 @@ export default function SettingsPage() {
   const [editingStall, setEditingStall]     = useState(false);
   const [stallSaving, setStallSaving]       = useState(false);
   const [stallError, setStallError]         = useState('');
-  const [defaultPayment, setDefaultPayment] = useState<'cash' | 'gcash'>('cash');
-  const [paymentError, setPaymentError]     = useState('');
   const [settingsToast, setSettingsToast]   = useState('');
+
+  // Payment methods state
+  const [paymentMethods, setPaymentMethods]   = useState<PaymentMethod[]>([]);
+  const [newMethodName, setNewMethodName]     = useState('');
+  const [addingMethod, setAddingMethod]       = useState(false);
+  const [addMethodError, setAddMethodError]   = useState('');
+  const [deleteMethodTarget, setDeleteMethodTarget] = useState<PaymentMethod | null>(null);
 
   useEffect(() => {
     getSettings().then(s => {
-      if (s.stall_name)    setStallName(s.stall_name);
-      if (s.default_payment === 'gcash') setDefaultPayment('gcash');
+      if (s.stall_name) setStallName(s.stall_name);
     }).catch(() => {});
+
+    getPaymentMethods().then(setPaymentMethods).catch(() => {});
+
+    function handlePaymentMethodsUpdated(methods: PaymentMethod[]) {
+      setPaymentMethods(methods);
+    }
+    socket.on('payment_methods:updated', handlePaymentMethodsUpdated);
+    return () => { socket.off('payment_methods:updated', handlePaymentMethodsUpdated); };
   }, []);
 
   async function handleSaveStallName() {
@@ -148,19 +166,50 @@ export default function SettingsPage() {
     }
   }
 
-  async function handleDefaultPaymentToggle(method: 'cash' | 'gcash') {
-    if (method === defaultPayment) return;
-    const prev = defaultPayment;
-    setDefaultPayment(method);
-    setPaymentError('');
+  async function handleAddPaymentMethod() {
+    const trimmed = newMethodName.trim();
+    if (!trimmed) return;
+    setAddingMethod(true);
+    setAddMethodError('');
     try {
-      await updateSetting('default_payment', method);
-      setSettingsToast(`Default payment set to ${method === 'gcash' ? 'GCash' : 'Cash'}`);
+      await addPaymentMethod(trimmed);
+      setNewMethodName('');
+      setSettingsToast(`"${trimmed}" added`);
       setTimeout(() => setSettingsToast(''), 3000);
     } catch (err: unknown) {
-      setDefaultPayment(prev); // revert on error
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      setPaymentError(msg ?? 'Failed to save. Check your connection and try again.');
+      setAddMethodError(msg ?? 'Failed to add payment method.');
+    } finally {
+      setAddingMethod(false);
+    }
+  }
+
+  async function handleSetDefault(id: number) {
+    try {
+      await setDefaultPaymentMethod(id);
+    } catch { /* socket will update state */ }
+  }
+
+  async function handleToggleMethod(id: number, isActive: boolean) {
+    try {
+      await togglePaymentMethod(id, isActive);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setSettingsToast(msg ?? 'Failed to update');
+      setTimeout(() => setSettingsToast(''), 3000);
+    }
+  }
+
+  async function handleDeleteMethod() {
+    if (!deleteMethodTarget) return;
+    try {
+      await deletePaymentMethod(deleteMethodTarget.id);
+      setDeleteMethodTarget(null);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setSettingsToast(msg ?? 'Failed to delete');
+      setTimeout(() => setSettingsToast(''), 3000);
+      setDeleteMethodTarget(null);
     }
   }
 
@@ -406,29 +455,118 @@ export default function SettingsPage() {
         </div>
 
         {/* Default Payment Method */}
-        <div className="flex flex-col gap-2">
-          <label style={{ fontSize: 12, color: '#606060', letterSpacing: '0.04em' }}>Default Payment Method</label>
-          <div className="flex gap-2" style={{ maxWidth: 240 }}>
-            {(['cash', 'gcash'] as const).map(method => (
-              <button
-                key={method}
-                onClick={() => handleDefaultPaymentToggle(method)}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <label style={{ fontSize: 12, color: '#606060', letterSpacing: '0.04em' }}>Payment Methods</label>
+          </div>
+
+          {/* Method list */}
+          <div className="flex flex-col gap-2">
+            {paymentMethods.map(m => (
+              <div
+                key={m.id}
+                className="flex items-center gap-3 p-3 rounded-lg"
                 style={{
-                  flex: 1, padding: '8px',
-                  backgroundColor: defaultPayment === method ? '#C0392B' : '#1A1A1A',
-                  border: `1px solid ${defaultPayment === method ? '#C0392B' : '#2C2C2C'}`,
-                  borderRadius: 8,
-                  color: defaultPayment === method ? '#ffffff' : '#A0A0A0',
-                  fontSize: 13, fontWeight: defaultPayment === method ? 600 : 400,
-                  cursor: 'pointer', transition: 'all 0.15s',
+                  backgroundColor: '#1A1A1A',
+                  border: `1px solid ${m.is_default ? 'rgba(192,57,43,0.4)' : '#2C2C2C'}`,
+                  opacity: m.is_active ? 1 : 0.5,
                 }}
               >
-                {method === 'gcash' ? 'GCash' : 'Cash'}
-              </button>
+                {/* Default star */}
+                <button
+                  onClick={() => handleSetDefault(m.id)}
+                  title={m.is_default ? 'Default method' : 'Set as default'}
+                  style={{ lineHeight: 0, color: m.is_default ? '#F4C430' : '#606060', cursor: m.is_default ? 'default' : 'pointer' }}
+                  onMouseEnter={e => { if (!m.is_default) e.currentTarget.style.color = '#F4C430'; }}
+                  onMouseLeave={e => { if (!m.is_default) e.currentTarget.style.color = '#606060'; }}
+                >
+                  {m.is_default ? <IconStarFilled size={15} /> : <IconStar size={15} />}
+                </button>
+
+                {/* Name */}
+                <span style={{ flex: 1, fontSize: 13, color: m.is_active ? '#ffffff' : '#606060', fontWeight: m.is_default ? 600 : 400 }}>
+                  {m.name}
+                </span>
+
+                {/* Default badge */}
+                {m.is_default && (
+                  <span style={{ fontSize: 10, color: '#C0392B', backgroundColor: 'rgba(192,57,43,0.1)', border: '1px solid rgba(192,57,43,0.3)', borderRadius: 4, padding: '1px 6px', fontWeight: 600 }}>
+                    Default
+                  </span>
+                )}
+
+                {/* Toggle active */}
+                <button
+                  onClick={() => handleToggleMethod(m.id, !m.is_active)}
+                  style={{
+                    width: 28, height: 28, borderRadius: 6, cursor: 'pointer', lineHeight: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: m.is_active ? 'rgba(243,156,18,0.1)' : 'rgba(39,174,96,0.1)',
+                    border: `1px solid ${m.is_active ? 'rgba(243,156,18,0.3)' : 'rgba(39,174,96,0.3)'}`,
+                    color: m.is_active ? '#F39C12' : '#27AE60',
+                  }}
+                  title={m.is_active ? 'Disable' : 'Enable'}
+                >
+                  {m.is_active ? <IconLock size={12} /> : <IconLockOpen size={12} />}
+                </button>
+
+                {/* Delete */}
+                <button
+                  onClick={() => setDeleteMethodTarget(m)}
+                  style={{
+                    width: 28, height: 28, borderRadius: 6, cursor: 'pointer', lineHeight: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.3)', color: '#C0392B',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.15)')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.08)')}
+                >
+                  <IconTrash size={12} />
+                </button>
+              </div>
             ))}
           </div>
-          <p style={{ fontSize: 11, color: '#606060' }}>Pre-selected payment method in the cashier order panel.</p>
-          {paymentError && <p style={{ fontSize: 12, color: '#C0392B' }}>{paymentError}</p>}
+
+          {/* Add new method */}
+          <div className="flex flex-col gap-1.5">
+            <div className="flex gap-2">
+              <input
+                value={newMethodName}
+                onChange={e => { setNewMethodName(e.target.value); setAddMethodError(''); }}
+                onKeyDown={e => e.key === 'Enter' && handleAddPaymentMethod()}
+                placeholder="New payment method name"
+                style={{
+                  flex: 1, backgroundColor: '#1A1A1A',
+                  border: `1px solid ${addMethodError ? '#C0392B' : '#2C2C2C'}`,
+                  borderRadius: 8, padding: '7px 12px',
+                  color: '#ffffff', fontSize: 13, outline: 'none',
+                }}
+                onFocus={e => (e.currentTarget.style.borderColor = addMethodError ? '#C0392B' : '#C0392B')}
+                onBlur={e => (e.currentTarget.style.borderColor = addMethodError ? '#C0392B' : '#2C2C2C')}
+              />
+              <button
+                onClick={handleAddPaymentMethod}
+                disabled={addingMethod || !newMethodName.trim()}
+                className="flex items-center gap-1"
+                style={{
+                  backgroundColor: addingMethod || !newMethodName.trim() ? '#2C2C2C' : '#C0392B',
+                  border: 'none', borderRadius: 8, padding: '7px 14px',
+                  color: addingMethod || !newMethodName.trim() ? '#606060' : '#ffffff',
+                  fontSize: 13, fontWeight: 600, cursor: addingMethod || !newMethodName.trim() ? 'not-allowed' : 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={e => { if (!addingMethod && newMethodName.trim()) e.currentTarget.style.backgroundColor = '#96281B'; }}
+                onMouseLeave={e => { if (!addingMethod && newMethodName.trim()) e.currentTarget.style.backgroundColor = '#C0392B'; }}
+              >
+                <IconPlus size={13} />
+                Add
+              </button>
+            </div>
+            {addMethodError && <p style={{ fontSize: 12, color: '#C0392B' }}>{addMethodError}</p>}
+          </div>
+          <p style={{ fontSize: 11, color: '#606060' }}>
+            Click the ★ star to set the default. Default method is pre-selected in the cashier panel.
+          </p>
         </div>
       </div>
 
@@ -450,6 +588,17 @@ export default function SettingsPage() {
           destructive
           onConfirm={async () => { await removeStaff(deleteTarget.id); setDeleteTarget(null); }}
           onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {deleteMethodTarget && (
+        <ConfirmDialog
+          title="Delete Payment Method"
+          message={`Delete "${deleteMethodTarget.name}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          destructive
+          onConfirm={handleDeleteMethod}
+          onCancel={() => setDeleteMethodTarget(null)}
         />
       )}
 
