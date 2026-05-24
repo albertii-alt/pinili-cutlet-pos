@@ -17,6 +17,8 @@ export function runSchema(db: Database): void {
       image_path   TEXT,
       is_available INTEGER DEFAULT 1,
       is_featured  INTEGER DEFAULT 0,
+      promo_price  REAL    DEFAULT NULL,
+      promo_label  TEXT    DEFAULT NULL,
       created_at   TEXT    DEFAULT (datetime('now','localtime'))
     );
 

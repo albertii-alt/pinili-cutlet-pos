@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
-import { getAll, getById, create, update, remove, toggleAvailability, toggleFeatured, uploadImage, bulkToggleAvailability } from '../controllers/menu.controller';
+import { getAll, getById, create, update, remove, toggleAvailability, toggleFeatured, setPromoPrice, uploadImage, bulkToggleAvailability } from '../controllers/menu.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
 const storage = multer.diskStorage({
@@ -30,6 +30,7 @@ router.put('/:id',                 authenticate, authorize('owner'), upload.sing
 router.delete('/:id',              authenticate, authorize('owner'), remove);
 router.patch('/:id/availability',  authenticate, authorize('owner', 'cashier'), toggleAvailability);
 router.patch('/:id/featured',      authenticate, authorize('owner'), toggleFeatured);
+router.patch('/:id/promo',         authenticate, authorize('owner'), setPromoPrice);
 router.patch('/bulk-availability', authenticate, authorize('owner'), bulkToggleAvailability);
 router.post('/upload',             authenticate, authorize('owner'), upload.single('image'), uploadImage);
 

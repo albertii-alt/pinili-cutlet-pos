@@ -75,6 +75,16 @@ function migrateMenuItemsTable(): void {
     db.prepare('ALTER TABLE menu_items ADD COLUMN is_featured INTEGER DEFAULT 0').run();
     console.log('[DB] Migration complete.');
   }
+  if (!cols.some(c => c.name === 'promo_price')) {
+    console.log('[DB] Adding promo_price column to menu_items...');
+    db.prepare('ALTER TABLE menu_items ADD COLUMN promo_price REAL DEFAULT NULL').run();
+    console.log('[DB] Migration complete.');
+  }
+  if (!cols.some(c => c.name === 'promo_label')) {
+    console.log('[DB] Adding promo_label column to menu_items...');
+    db.prepare('ALTER TABLE menu_items ADD COLUMN promo_label TEXT DEFAULT NULL').run();
+    console.log('[DB] Migration complete.');
+  }
 }
 
 // Initialize schema and seed data

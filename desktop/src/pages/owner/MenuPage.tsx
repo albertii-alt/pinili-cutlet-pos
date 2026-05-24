@@ -6,6 +6,7 @@ import { deleteMenuItem, toggleAvailability, bulkToggleAvailability, toggleFeatu
 import { MenuItem, Category } from '../../types';
 import MenuTable from '../../components/owner/MenuTable';
 import MenuItemModal from '../../components/owner/MenuItemModal';
+import PromoModal from '../../components/owner/PromoModal';
 import CategoryManager from '../../components/owner/CategoryManager';
 import ConfirmDialog from '../../components/shared/ConfirmDialog';
 import EmptyState from '../../components/shared/EmptyState';
@@ -14,7 +15,7 @@ import { getMenuItems } from '../../api/menu.api';
 import { getCategories } from '../../api/category.api';
 
 export default function MenuPage() {
-  const { menuItems } = useMenu();
+  const { menuItems, setPromoPrice } = useMenu();
   const { categories } = useCategories();
   const { setMenuItems, setCategories } = useMenuStore();
 
@@ -28,6 +29,7 @@ export default function MenuPage() {
   // Bulk toggle state
   const [bulkPending, setBulkPending] = useState<{ category: Category; isAvailable: boolean } | null>(null);
   const [toast, setToast]             = useState<string | null>(null);
+  const [promoItem, setPromoItem]     = useState<MenuItem | null>(null);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -166,6 +168,7 @@ export default function MenuPage() {
           onDelete={item => setDeleteItem(item)}
           onToggleAvailability={handleToggle}
           onToggleFeatured={handleToggleFeatured}
+          onSetPromo={item => setPromoItem(item)}
         />
       )}
 
@@ -203,6 +206,16 @@ export default function MenuPage() {
       {/* Success toast */}
       {toast && (
         <BulkToast message={toast} onDone={() => setToast(null)} />
+      )}
+
+      {promoItem && (
+        <PromoModal
+          item={promoItem}
+          onSave={async (promoPrice, promoLabel) => {
+            await setPromoPrice(promoItem.id, promoPrice, promoLabel);
+          }}
+          onClose={() => setPromoItem(null)}
+        />
       )}
     </div>
   );

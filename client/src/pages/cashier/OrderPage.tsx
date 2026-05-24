@@ -29,7 +29,7 @@ export default function OrderPage() {
     addItem({
       menu_item_id: item.id,
       item_name: item.name,
-      item_price: item.price,
+      item_price: item.promo_price ?? item.price,
       quantity: 1,
       image_path: item.image_path,
     });

@@ -24,6 +24,22 @@ export default function MenuItemCard({ item, onAdd }: MenuItemCardProps) {
           <IconStarFilled size={10} color="#F4C430" />
         </div>
       )}
+      {/* Promo label badge */}
+      {item.promo_price != null && item.promo_label && (
+        <div
+          className="absolute top-2 left-2 z-10"
+          style={{
+            backgroundColor: 'rgba(243,156,18,0.9)',
+            borderRadius: 4,
+            padding: '2px 6px',
+            fontSize: 10,
+            fontWeight: 700,
+            color: '#000000',
+          }}
+        >
+          {item.promo_label}
+        </div>
+      )}
       {/* Image */}
       <div className="aspect-square bg-cardLight flex items-center justify-center overflow-hidden">
         {imageUrl ? (
@@ -36,7 +52,18 @@ export default function MenuItemCard({ item, onAdd }: MenuItemCardProps) {
       {/* Info */}
       <div className="p-3 flex flex-col gap-2 flex-1">
         <p className="text-white text-sm font-medium leading-tight">{item.name}</p>
-        <p className="text-primary text-sm font-semibold">{formatCurrency(item.price)}</p>
+        {item.promo_price != null ? (
+          <div className="flex flex-col gap-0.5">
+            <span style={{ fontSize: 11, color: '#606060', textDecoration: 'line-through' }}>
+              {formatCurrency(item.price)}
+            </span>
+            <span style={{ fontSize: 13, color: '#C0392B', fontWeight: 700 }}>
+              {formatCurrency(item.promo_price)}
+            </span>
+          </div>
+        ) : (
+          <p className="text-primary text-sm font-semibold">{formatCurrency(item.price)}</p>
+        )}
 
         <button
           onClick={() => !unavailable && onAdd(item)}

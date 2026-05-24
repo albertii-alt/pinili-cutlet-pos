@@ -15,6 +15,8 @@ export interface MenuItem {
   image_path: string | null;
   is_available: number; // 1 = available, 0 = unavailable
   is_featured: number;  // 1 = featured, 0 = not featured
+  promo_price: number | null;
+  promo_label: string | null;
   created_at: string;
 }
 

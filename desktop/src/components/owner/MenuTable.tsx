@@ -1,4 +1,4 @@
-import { IconEdit, IconTrash, IconToolsKitchen2, IconStar, IconStarFilled } from '@tabler/icons-react';
+import { IconEdit, IconTrash, IconToolsKitchen2, IconStar, IconStarFilled, IconTag } from '@tabler/icons-react';
 import { MenuItem, Category } from '../../types';
 import { formatCurrency } from '../../utils/formatCurrency';
 import Badge from '../shared/Badge';
@@ -10,9 +10,10 @@ interface MenuTableProps {
   onDelete: (item: MenuItem) => void;
   onToggleAvailability: (item: MenuItem) => void;
   onToggleFeatured: (item: MenuItem) => void;
+  onSetPromo: (item: MenuItem) => void;
 }
 
-export default function MenuTable({ items, categories, onEdit, onDelete, onToggleAvailability, onToggleFeatured }: MenuTableProps) {
+export default function MenuTable({ items, categories, onEdit, onDelete, onToggleAvailability, onToggleFeatured, onSetPromo }: MenuTableProps) {
   const getCategoryName = (id: number | null) =>
     categories.find(c => c.id === id)?.name ?? '—';
 
@@ -68,8 +69,29 @@ export default function MenuTable({ items, categories, onEdit, onDelete, onToggl
                   <Badge variant="category" label={getCategoryName(item.category_id)} />
                 </td>
                 {/* Price */}
-                <td className="px-4 py-3 text-primary text-sm font-medium">
-                  {formatCurrency(item.price)}
+                <td className="px-4 py-3">
+                  {item.promo_price != null ? (
+                    <div className="flex flex-col gap-0.5">
+                      <span style={{ fontSize: 11, color: '#606060', textDecoration: 'line-through' }}>
+                        {formatCurrency(item.price)}
+                      </span>
+                      <span style={{ fontSize: 13, color: '#C0392B', fontWeight: 600 }}>
+                        {formatCurrency(item.promo_price)}
+                      </span>
+                      {item.promo_label && (
+                        <span style={{
+                          fontSize: 10, color: '#F39C12', fontWeight: 600,
+                          backgroundColor: 'rgba(243,156,18,0.12)',
+                          border: '1px solid rgba(243,156,18,0.3)',
+                          borderRadius: 4, padding: '1px 5px', alignSelf: 'flex-start',
+                        }}>
+                          {item.promo_label}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-primary text-sm font-medium">{formatCurrency(item.price)}</span>
+                  )}
                 </td>
                 {/* Status */}
                 <td className="px-4 py-3">
@@ -80,6 +102,29 @@ export default function MenuTable({ items, categories, onEdit, onDelete, onToggl
                 {/* Actions */}
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
+                    {/* Promo price button */}
+                    <button
+                      onClick={() => onSetPromo(item)}
+                      className="flex items-center justify-center transition-colors"
+                      title={item.promo_price != null ? 'Edit promo price' : 'Set promo price'}
+                      style={{
+                        width: 32, height: 32,
+                        backgroundColor: item.promo_price != null ? 'rgba(243,156,18,0.1)' : '#1A1A1A',
+                        border: `1px solid ${item.promo_price != null ? 'rgba(243,156,18,0.4)' : '#2C2C2C'}`,
+                        borderRadius: 6,
+                        color: item.promo_price != null ? '#F39C12' : '#606060',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.backgroundColor = item.promo_price != null ? 'rgba(243,156,18,0.2)' : '#242424';
+                        e.currentTarget.style.color = '#F39C12';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.backgroundColor = item.promo_price != null ? 'rgba(243,156,18,0.1)' : '#1A1A1A';
+                        e.currentTarget.style.color = item.promo_price != null ? '#F39C12' : '#606060';
+                      }}
+                    >
+                      <IconTag size={15} />
+                    </button>
                     {/* Featured toggle */}
                     <button
                       onClick={() => onToggleFeatured(item)}

@@ -38,6 +38,15 @@ export async function toggleFeatured(id: number): Promise<{ id: number; is_featu
   return data;
 }
 
+export async function setPromoPrice(
+  id: number,
+  promoPrice: number | null,
+  promoLabel?: string | null,
+): Promise<MenuItem> {
+  const { data } = await apiClient.patch(`/api/menu/${id}/promo`, { promoPrice, promoLabel });
+  return data;
+}
+
 export async function uploadImage(file: File): Promise<{ image_path: string }> {
   const form = new FormData();
   form.append('image', file);

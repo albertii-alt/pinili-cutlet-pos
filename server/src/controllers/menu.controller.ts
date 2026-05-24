@@ -137,6 +137,43 @@ export function toggleFeatured(req: Request, res: Response): void {
   res.json({ id: updated.id, is_featured: updated.is_featured });
 }
 
+export function setPromoPrice(req: Request, res: Response): void {
+  const existing = db.prepare('SELECT * FROM menu_items WHERE id = ?').get(req.params.id) as MenuItem | undefined;
+  if (!existing) {
+    res.status(404).json({ error: 'Menu item not found' });
+    return;
+  }
+
+  const { promoPrice, promoLabel } = req.body as { promoPrice: number | null; promoLabel?: string | null };
+
+  // null promoPrice = clear the promo
+  if (promoPrice !== null && promoPrice !== undefined) {
+    if (typeof promoPrice !== 'number' || isNaN(promoPrice) || promoPrice <= 0) {
+      res.status(400).json({ error: 'promoPrice must be a positive number' });
+      return;
+    }
+    if (promoPrice >= existing.price) {
+      res.status(400).json({ error: 'Promo price must be less than the original price' });
+      return;
+    }
+  }
+
+  db.prepare(`
+    UPDATE menu_items SET promo_price = ?, promo_label = ? WHERE id = ?
+  `).run(
+    promoPrice ?? null,
+    promoPrice !== null && promoPrice !== undefined ? (promoLabel ?? null) : null,
+    req.params.id
+  );
+
+  const updated = db.prepare('SELECT * FROM menu_items WHERE id = ?').get(req.params.id) as MenuItem;
+
+  const { getIO } = require('../socket/events');
+  getIO().emit('menu:updated', updated);
+
+  res.json(updated);
+}
+
 export function bulkToggleAvailability(req: Request, res: Response): void {
   const { categoryId, isAvailable } = req.body as { categoryId: number; isAvailable: boolean };
 

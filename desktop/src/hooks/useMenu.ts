@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { getMenuItems, toggleFeatured as apiToggleFeatured } from '../api/menu.api';
+import { getMenuItems, toggleFeatured as apiToggleFeatured, setPromoPrice as apiSetPromoPrice } from '../api/menu.api';
 import { useMenuStore } from '../store/useMenuStore';
 import socket from '../socket/socket';
 import { MenuItem } from '../types';
@@ -28,8 +28,12 @@ export function useMenu() {
 
   async function toggleFeatured(id: number) {
     await apiToggleFeatured(id);
-    // Server emits menu:updated with the full updated item — store handles the rest
   }
 
-  return { menuItems, toggleFeatured };
+  async function setPromoPrice(id: number, promoPrice: number | null, promoLabel?: string | null) {
+    await apiSetPromoPrice(id, promoPrice, promoLabel);
+    // Server emits menu:updated — store handles the rest
+  }
+
+  return { menuItems, toggleFeatured, setPromoPrice };
 }

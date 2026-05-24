@@ -15,6 +15,8 @@ export interface MenuItem {
   image_path: string | null;
   is_available: number;
   is_featured: number;
+  promo_price: number | null;
+  promo_label: string | null;
   created_at: string;
 }
 
