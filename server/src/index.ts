@@ -28,7 +28,7 @@ app.use('/images', express.static(path.join(__dirname, '../public/images')));
 
 // Serve client PWA from /app — built output of client/dist
 // __dirname at runtime = server/dist/ → ../../client/dist = client/dist
-const clientDist = path.resolve(__dirname, '../../client/dist');
+const clientDist = path.resolve(process.cwd(), '../client/dist');
 // Serve client PWA from /app — single middleware handles both assets and SPA routes
 app.use('/app', (req, res) => {
   const filePath = path.join(clientDist, req.path);
