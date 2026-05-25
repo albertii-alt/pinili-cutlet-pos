@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { IconEye, IconShoppingCart, IconReportMoney, IconCash, IconDeviceMobile, IconFileExport, IconCheck, IconX } from '@tabler/icons-react';
+import { IconEye, IconShoppingCart, IconReportMoney, IconCreditCard, IconFileExport, IconCheck, IconX } from '@tabler/icons-react';
 import { getOrderHistory } from '../../api/order.api';
 import { Order } from '../../types';
 import type { OrderFilter } from '../../types';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatDateTime, toDateParam } from '../../utils/formatDate';
-import Badge from '../../components/shared/Badge';
+import Badge, { PaymentBadge } from '../../components/shared/Badge';
 import EmptyState from '../../components/shared/EmptyState';
 import SalesCard from '../../components/owner/SalesCard';
 import OrderDetailsModal from '../../components/owner/OrderDetailsModal';
@@ -163,8 +163,12 @@ export default function HistoryPage() {
 
   const completedOrders = orders.filter(o => o.status === 'completed');
   const totalRevenue = completedOrders.reduce((s, o) => s + o.total_amount, 0);
-  const cashRevenue  = completedOrders.filter(o => o.payment_method === 'cash').reduce((s, o) => s + o.total_amount, 0);
-  const gcashRevenue = completedOrders.filter(o => o.payment_method === 'gcash').reduce((s, o) => s + o.total_amount, 0);
+
+  // Dynamic payment breakdown from completed orders
+  const paymentBreakdown = completedOrders.reduce<Record<string, number>>((acc, o) => {
+    acc[o.payment_method] = (acc[o.payment_method] ?? 0) + o.total_amount;
+    return acc;
+  }, {});
 
   return (
     <div className="flex flex-col gap-4 w-full">
@@ -224,11 +228,17 @@ export default function HistoryPage() {
       )}
 
       {/* Summary cards */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${2 + Object.keys(paymentBreakdown).length}, minmax(0, 1fr))` }}>
         <SalesCard label="Orders"  value={String(orders.length)}        icon={IconShoppingCart} />
         <SalesCard label="Revenue" value={formatCurrency(totalRevenue)} icon={IconReportMoney} accent />
-        <SalesCard label="Cash"    value={formatCurrency(cashRevenue)}  icon={IconCash} />
-        <SalesCard label="GCash"   value={formatCurrency(gcashRevenue)} icon={IconDeviceMobile} />
+        {Object.entries(paymentBreakdown).map(([method, revenue]) => (
+          <SalesCard
+            key={method}
+            label={method.charAt(0).toUpperCase() + method.slice(1)}
+            value={formatCurrency(revenue)}
+            icon={IconCreditCard}
+          />
+        ))}
       </div>
 
       {loading ? (
@@ -266,7 +276,7 @@ export default function HistoryPage() {
                 >
                   <td className="px-4 py-3" style={{ color: '#C0392B', fontWeight: 600, fontSize: 13 }}>{order.order_number}</td>
                   <td className="px-4 py-3" style={{ color: '#A0A0A0', fontSize: 13 }}>{formatDateTime(order.created_at)}</td>
-                  <td className="px-4 py-3"><Badge variant={order.payment_method === 'cash' ? 'cash' : 'gcash'} /></td>
+                  <td className="px-4 py-3"><PaymentBadge method={order.payment_method} /></td>
                   <td className="px-4 py-3">
                     {order.status === 'cancelled'
                       ? <span style={{ fontSize: 11, fontWeight: 600, color: '#C0392B', backgroundColor: 'rgba(192,57,43,0.1)', border: '1px solid rgba(192,57,43,0.3)', borderRadius: 4, padding: '2px 7px' }}>Cancelled</span>

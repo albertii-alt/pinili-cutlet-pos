@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { AnalyticsSummary, DailySales, BestSeller, RevenueByPayment, PeakHour, CategorySales } from '../types';
+import { AnalyticsSummary, DailySales, BestSeller, RevenueByPayment, PeakHour, CategorySales, PaymentBreakdown } from '../types';
 import { AnalyticsPeriod } from '../hooks/useAnalytics';
 
 export interface DateRangeParams {
@@ -55,11 +55,8 @@ export interface EndOfDaySummary {
   completed_orders: number;
   cancelled_orders: number;
   total_revenue: number;
-  cash_orders: number;
-  cash_revenue: number;
-  gcash_orders: number;
-  gcash_revenue: number;
   average_order_value: number;
+  payment_breakdown: PaymentBreakdown[];
   top_items: { menu_item_id: number; item_name: string; total_quantity: number; total_revenue: number }[];
 }
 

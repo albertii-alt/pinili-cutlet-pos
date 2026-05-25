@@ -82,20 +82,22 @@ export function getHistory(req: Request, res: Response): void {
 export function create(req: Request, res: Response): void {
   const { payment_method, cash_tendered, items } = req.body as CreateOrderPayload;
 
+  const isCash = payment_method.toLowerCase() === 'cash';
+
   if (!payment_method || !items || items.length === 0) {
     res.status(400).json({ error: 'payment_method and items are required' });
     return;
   }
 
-  if (payment_method === 'cash' && (cash_tendered === undefined || cash_tendered === null)) {
+  if (isCash && (cash_tendered === undefined || cash_tendered === null)) {
     res.status(400).json({ error: 'cash_tendered is required for cash payments' });
     return;
   }
 
   const total_amount = items.reduce((sum, item) => sum + item.item_price * item.quantity, 0);
-  const change_amount = payment_method === 'cash' ? (cash_tendered as number) - total_amount : null;
+  const change_amount = isCash ? (cash_tendered as number) - total_amount : null;
 
-  if (payment_method === 'cash' && (change_amount as number) < 0) {
+  if (isCash && (change_amount as number) < 0) {
     res.status(400).json({ error: 'Insufficient cash tendered' });
     return;
   }
@@ -110,7 +112,7 @@ export function create(req: Request, res: Response): void {
       order_number,
       total_amount,
       payment_method,
-      payment_method === 'cash' ? cash_tendered : null,
+      isCash ? cash_tendered : null,
       change_amount,
       req.user!.id
     );

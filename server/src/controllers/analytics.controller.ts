@@ -16,17 +16,25 @@ export function getSummary(req: Request, res: Response): void {
   const { date, period, startDate, endDate } = req.query as Record<string, string | undefined>;
   const { where, params } = buildWhereClause(period, date, startDate, endDate);
 
-  const summary = db.prepare(`
+  const totals = db.prepare(`
     SELECT
       COALESCE(SUM(total_amount), 0) AS total_sales,
-      COUNT(*) AS total_orders,
-      COALESCE(SUM(CASE WHEN payment_method = 'cash'  THEN total_amount END), 0) AS cash_sales,
-      COALESCE(SUM(CASE WHEN payment_method = 'gcash' THEN total_amount END), 0) AS gcash_sales
+      COUNT(*) AS total_orders
     FROM orders
     WHERE status = 'completed' AND ${where}
-  `).get(...params) as AnalyticsSummary;
+  `).get(...params) as { total_sales: number; total_orders: number };
 
-  res.json(summary);
+  const breakdown = db.prepare(`
+    SELECT
+      payment_method,
+      COUNT(*) AS order_count,
+      COALESCE(SUM(total_amount), 0) AS revenue
+    FROM orders
+    WHERE status = 'completed' AND ${where}
+    GROUP BY payment_method
+  `).all(...params) as { payment_method: string; order_count: number; revenue: number }[];
+
+  res.json({ ...totals, payment_breakdown: breakdown });
 }
 
 export function getDailySales(req: Request, res: Response): void {
@@ -163,18 +171,23 @@ export function getEndOfDaySummary(req: Request, res: Response): void {
       COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0) as completed_orders,
       COALESCE(SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END), 0) as cancelled_orders,
       COALESCE(SUM(CASE WHEN status = 'completed' THEN total_amount END), 0) as total_revenue,
-      COALESCE(SUM(CASE WHEN status = 'completed' AND payment_method = 'cash' THEN 1 ELSE 0 END), 0) as cash_orders,
-      COALESCE(SUM(CASE WHEN status = 'completed' AND payment_method = 'cash' THEN total_amount END), 0) as cash_revenue,
-      COALESCE(SUM(CASE WHEN status = 'completed' AND payment_method = 'gcash' THEN 1 ELSE 0 END), 0) as gcash_orders,
-      COALESCE(SUM(CASE WHEN status = 'completed' AND payment_method = 'gcash' THEN total_amount END), 0) as gcash_revenue,
       ROUND(AVG(CASE WHEN status = 'completed' THEN total_amount END), 2) as average_order_value
     FROM orders
     WHERE DATE(created_at) = ${today}
   `).get() as {
     date: string; total_orders: number; completed_orders: number; cancelled_orders: number;
-    total_revenue: number; cash_orders: number; cash_revenue: number;
-    gcash_orders: number; gcash_revenue: number; average_order_value: number;
+    total_revenue: number; average_order_value: number;
   };
+
+  const payment_breakdown = db.prepare(`
+    SELECT
+      payment_method,
+      COUNT(*) AS order_count,
+      COALESCE(SUM(total_amount), 0) AS revenue
+    FROM orders
+    WHERE status = 'completed' AND DATE(created_at) = ${today}
+    GROUP BY payment_method
+  `).all() as { payment_method: string; order_count: number; revenue: number }[];
 
   const topItems = db.prepare(`
     SELECT oi.menu_item_id, oi.item_name,
@@ -188,5 +201,5 @@ export function getEndOfDaySummary(req: Request, res: Response): void {
     LIMIT 5
   `).all() as BestSeller[];
 
-  res.json({ ...summary, top_items: topItems });
+  res.json({ ...summary, payment_breakdown, top_items: topItems });
 }

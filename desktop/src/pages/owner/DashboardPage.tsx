@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { IconReportMoney, IconShoppingCart, IconCash, IconDeviceMobile, IconMoon } from '@tabler/icons-react';
+import { IconReportMoney, IconShoppingCart, IconCreditCard, IconMoon } from '@tabler/icons-react';
 import { useAnalytics, type AnalyticsPeriod } from '../../hooks/useAnalytics';
 import { formatCurrency } from '../../utils/formatCurrency';
 import SalesCard from '../../components/owner/SalesCard';
@@ -78,11 +78,17 @@ export default function DashboardPage() {
       ) : (
         <>
           {/* Stat cards */}
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${2 + (summary?.payment_breakdown?.length ?? 0)}, minmax(0, 1fr))` }}>
             <SalesCard label="Total Sales"  value={formatCurrency(summary?.total_sales ?? 0)}  accent icon={IconReportMoney} />
             <SalesCard label="Total Orders" value={String(summary?.total_orders ?? 0)}          icon={IconShoppingCart} />
-            <SalesCard label="Cash Sales"   value={formatCurrency(summary?.cash_sales ?? 0)}   icon={IconCash} />
-            <SalesCard label="GCash Sales"  value={formatCurrency(summary?.gcash_sales ?? 0)}  icon={IconDeviceMobile} />
+            {(summary?.payment_breakdown ?? []).map(b => (
+              <SalesCard
+                key={b.payment_method}
+                label={`${b.payment_method.charAt(0).toUpperCase() + b.payment_method.slice(1)} Sales`}
+                value={formatCurrency(b.revenue)}
+                icon={IconCreditCard}
+              />
+            ))}
           </div>
 
           {/* Daily sales target — only shown on Today period */}

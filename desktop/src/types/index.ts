@@ -57,11 +57,16 @@ export interface OrderItem {
   quantity: number;
 }
 
+export interface PaymentBreakdown {
+  payment_method: string;
+  order_count: number;
+  revenue: number;
+}
+
 export interface AnalyticsSummary {
   total_sales: number;
   total_orders: number;
-  cash_sales: number;
-  gcash_sales: number;
+  payment_breakdown: PaymentBreakdown[];
 }
 
 export interface DailySales {

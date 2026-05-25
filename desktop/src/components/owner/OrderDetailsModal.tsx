@@ -3,7 +3,7 @@ import { IconX, IconAlertCircle } from '@tabler/icons-react';
 import { Order } from '../../types';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatDateTime } from '../../utils/formatDate';
-import Badge from '../shared/Badge';
+import Badge, { PaymentBadge } from '../shared/Badge';
 import { cancelCompletedOrder } from '../../api/order.api';
 
 interface OrderDetailsModalProps {
@@ -91,7 +91,7 @@ export default function OrderDetailsModal({ order, onClose, onCancelled }: Order
             </div>
             <div className="flex justify-between items-center">
               <span style={{ fontSize: 12, color: '#606060' }}>Payment</span>
-              <Badge variant={order.payment_method === 'cash' ? 'cash' : 'gcash'} />
+              <PaymentBadge method={order.payment_method} />
             </div>
           </div>
 
@@ -109,7 +109,7 @@ export default function OrderDetailsModal({ order, onClose, onCancelled }: Order
           )}
 
           {/* Cash payment details */}
-          {order.payment_method === 'cash' && order.cash_tendered !== null && (
+          {order.payment_method.toLowerCase() === 'cash' && order.cash_tendered !== null && (
             <div
               className="flex flex-col gap-2 p-3 rounded-lg"
               style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C' }}

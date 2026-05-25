@@ -5,7 +5,7 @@ import { completeOrder } from '../../api/order.api';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatTime } from '../../utils/formatDate';
 import Topbar from '../../components/shared/Topbar';
-import Badge from '../../components/shared/Badge';
+import Badge, { PaymentBadge } from '../../components/shared/Badge';
 import EmptyState from '../../components/shared/EmptyState';
 
 export default function QueuePage() {
@@ -50,7 +50,7 @@ export default function QueuePage() {
                 {/* Order header */}
                 <div className="flex items-center justify-between">
                   <span className="text-primary font-bold text-lg">{order.order_number}</span>
-                  <Badge variant={order.payment_method === 'cash' ? 'cash' : 'gcash'} />
+                  <PaymentBadge method={order.payment_method} />
                 </div>
 
                 <p className="text-textMuted text-xs">{formatTime(order.created_at)}</p>
