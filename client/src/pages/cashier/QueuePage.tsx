@@ -7,7 +7,7 @@ import { logout } from '../../api/auth.api';
 import { disconnectSocket } from '../../socket/socket';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatTime } from '../../utils/formatDate';
-import Badge from '../../components/shared/Badge';
+import { PaymentBadge } from '../../components/shared/Badge';
 import EmptyState from '../../components/shared/EmptyState';
 import { useBrandName } from '../../hooks/useBrandName';
 
@@ -73,7 +73,7 @@ export default function QueuePage() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <span className="text-primary font-bold text-xl">{order.order_number}</span>
-                  <Badge variant={order.payment_method === 'cash' ? 'cash' : 'gcash'} />
+                  <PaymentBadge method={order.payment_method} />
                 </div>
 
                 <p className="text-textMuted text-xs">{formatTime(order.created_at)}</p>
