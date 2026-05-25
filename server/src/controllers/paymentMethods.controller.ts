@@ -7,6 +7,7 @@ interface PaymentMethod {
   is_active: number;
   is_default: number;
   sort_order: number;
+  color: string | null;
   created_at: string;
 }
 
@@ -98,6 +99,28 @@ export function setDefaultPaymentMethod(req: Request, res: Response): void {
   const all = db.prepare('SELECT * FROM payment_methods ORDER BY sort_order ASC, id ASC').all();
   emit('payment_methods:updated', all);
   res.json({ message: 'Default payment method updated' });
+}
+
+export function updatePaymentMethodColor(req: Request, res: Response): void {
+  const { id } = req.params;
+  const { color } = req.body as { color: string };
+
+  if (!color || !/^#[0-9A-Fa-f]{6}$/.test(color)) {
+    res.status(400).json({ error: 'Invalid color format. Use hex e.g. #FF0000' });
+    return;
+  }
+
+  const method = db.prepare('SELECT * FROM payment_methods WHERE id = ?').get(id) as PaymentMethod | undefined;
+  if (!method) {
+    res.status(404).json({ error: 'Payment method not found' });
+    return;
+  }
+
+  db.prepare('UPDATE payment_methods SET color = ? WHERE id = ?').run(color, id);
+
+  const all = db.prepare('SELECT * FROM payment_methods ORDER BY sort_order ASC, id ASC').all();
+  emit('payment_methods:updated', all);
+  res.json({ message: 'Color updated' });
 }
 
 export function togglePaymentMethod(req: Request, res: Response): void {

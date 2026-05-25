@@ -10,12 +10,14 @@ import { formatTime } from '../../utils/formatDate';
 import { PaymentBadge } from '../../components/shared/Badge';
 import EmptyState from '../../components/shared/EmptyState';
 import { useBrandName } from '../../hooks/useBrandName';
+import { usePaymentMethods } from '../../hooks/usePaymentMethods';
 
 export default function QueuePage() {
   const navigate = useNavigate();
   const { orders, loading } = useOrders();
   const { user, logout: clearAuth } = useAuthStore();
   const stallName = useBrandName();
+  const { getMethodColor } = usePaymentMethods();
   const brandParts = stallName.trim().split(/\s+/);
   const brandFirst = brandParts[0] ?? stallName;
   const brandRest  = brandParts.slice(1).join(' ');
@@ -73,7 +75,7 @@ export default function QueuePage() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <span className="text-primary font-bold text-xl">{order.order_number}</span>
-                  <PaymentBadge method={order.payment_method} />
+                  <PaymentBadge method={order.payment_method} color={getMethodColor(order.payment_method)} />
                 </div>
 
                 <p className="text-textMuted text-xs">{formatTime(order.created_at)}</p>

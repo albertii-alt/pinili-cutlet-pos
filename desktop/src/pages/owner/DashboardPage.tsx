@@ -8,6 +8,7 @@ import BestSellerList from '../../components/owner/BestSellerList';
 import EndOfDayModal from '../../components/owner/EndOfDayModal';
 import DailySalesTarget from '../../components/owner/DailySalesTarget';
 import { getDailyTarget } from '../../api/analytics.api';
+import { usePaymentMethods } from '../../hooks/usePaymentMethods';
 
 const periods: { label: string; value: AnalyticsPeriod }[] = [
   { label: 'Today',      value: 'today' },
@@ -20,6 +21,7 @@ export default function DashboardPage() {
   const [showEOD, setShowEOD]       = useState(false);
   const [dailyTarget, setDailyTarget] = useState<number>(0);
   const { summary, dailySales, bestSellers, loading } = useAnalytics(period);
+  const { getMethodColor } = usePaymentMethods();
 
   // Fetch daily target once on mount
   useEffect(() => {
@@ -87,6 +89,8 @@ export default function DashboardPage() {
                 label={`${b.payment_method.charAt(0).toUpperCase() + b.payment_method.slice(1)} Sales`}
                 value={formatCurrency(b.revenue)}
                 icon={IconCreditCard}
+                accent
+                accentColor={getMethodColor(b.payment_method)}
               />
             ))}
           </div>

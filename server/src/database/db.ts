@@ -92,8 +92,21 @@ function migrateDefaultSettings(): void {
 function migratePaymentMethods(): void {
   const count = (db.prepare('SELECT COUNT(*) as c FROM payment_methods').get() as { c: number }).c;
   if (count === 0) {
-    db.prepare(`INSERT OR IGNORE INTO payment_methods (name, is_default, sort_order) VALUES ('Cash',  1, 0)`).run();
-    db.prepare(`INSERT OR IGNORE INTO payment_methods (name, is_default, sort_order) VALUES ('GCash', 0, 1)`).run();
+    db.prepare(`INSERT OR IGNORE INTO payment_methods (name, is_default, sort_order, color) VALUES ('Cash',  1, 0, '#27AE60')`).run();
+    db.prepare(`INSERT OR IGNORE INTO payment_methods (name, is_default, sort_order, color) VALUES ('GCash', 0, 1, '#2980B9')`).run();
+  }
+}
+
+// Migration: add color column to payment_methods if missing
+function migratePaymentMethodsColor(): void {
+  const cols = db.prepare("PRAGMA table_info(payment_methods)").all() as { name: string }[];
+  if (!cols.some(c => c.name === 'color')) {
+    console.log('[DB] Adding color column to payment_methods...');
+    db.prepare('ALTER TABLE payment_methods ADD COLUMN color TEXT DEFAULT NULL').run();
+    // Set default colors for existing Cash/GCash rows
+    db.prepare("UPDATE payment_methods SET color = '#27AE60' WHERE LOWER(name) = 'cash' AND color IS NULL").run();
+    db.prepare("UPDATE payment_methods SET color = '#2980B9' WHERE LOWER(name) = 'gcash' AND color IS NULL").run();
+    console.log('[DB] Migration complete.');
   }
 }
 function migrateMenuItemsTable(): void {
@@ -123,6 +136,7 @@ migrateUsersTable();
 migrateMenuItemsTable();
 migrateDefaultSettings();
 migratePaymentMethods();
+migratePaymentMethodsColor();
 runSeed(db);
 
 export default db;

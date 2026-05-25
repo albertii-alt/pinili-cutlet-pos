@@ -2,12 +2,7 @@ import { useState, useEffect } from 'react';
 import { IconX, IconMoon, IconDownload } from '@tabler/icons-react';
 import { getEndOfDaySummary, type EndOfDaySummary } from '../../api/analytics.api';
 import { formatCurrency } from '../../utils/formatCurrency';
-
-// Stable palette for dynamic payment methods
-const METHOD_COLORS = ['#27AE60', '#3498DB', '#F39C12', '#8E44AD', '#E67E22', '#1ABC9C'];
-function methodColor(index: number): string {
-  return METHOD_COLORS[index % METHOD_COLORS.length];
-}
+import { usePaymentMethods } from '../../hooks/usePaymentMethods';
 
 interface EndOfDayModalProps {
   onClose: () => void;
@@ -73,6 +68,7 @@ export default function EndOfDayModal({ onClose }: EndOfDayModalProps) {
   const [data, setData]       = useState<EndOfDaySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
+  const { getMethodColor } = usePaymentMethods();
 
   useEffect(() => {
     getEndOfDaySummary()
@@ -161,8 +157,8 @@ export default function EndOfDayModal({ onClose }: EndOfDayModalProps) {
               <div className="flex flex-col gap-3 p-4 rounded-lg" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C' }}>
                 <p style={{ fontSize: 11, color: '#606060', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Payment Breakdown</p>
                 <div className="flex flex-col gap-2">
-                  {data.payment_breakdown.map((b, i) => {
-                    const color = methodColor(i);
+                  {data.payment_breakdown.map((b) => {
+                    const color = getMethodColor(b.payment_method);
                     const pct = data.total_revenue > 0 ? (b.revenue / data.total_revenue) * 100 : 0;
                     return (
                       <div key={b.payment_method} className="flex flex-col gap-1">

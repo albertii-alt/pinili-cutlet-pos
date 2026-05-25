@@ -34,7 +34,25 @@ function paymentVariant(method: string): { variant: BadgeProps['variant']; label
   return                        { variant: 'payment', label: method };
 }
 
-export function PaymentBadge({ method }: { method: string }) {
+function getTextColor(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  return brightness > 128 ? '#000000' : '#FFFFFF';
+}
+
+export function PaymentBadge({ method, color }: { method: string; color?: string }) {
+  if (color) {
+    return (
+      <span
+        className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium"
+        style={{ backgroundColor: color, color: getTextColor(color) }}
+      >
+        {method}
+      </span>
+    );
+  }
   const { variant, label } = paymentVariant(method);
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${variantStyles[variant]}`}>

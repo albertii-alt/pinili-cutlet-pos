@@ -65,6 +65,7 @@ export function runSchema(db: Database): void {
       is_active  INTEGER DEFAULT 1,
       is_default INTEGER DEFAULT 0,
       sort_order INTEGER DEFAULT 0,
+      color      TEXT    DEFAULT NULL,
       created_at TEXT    DEFAULT (datetime('now','localtime'))
     );
   `);

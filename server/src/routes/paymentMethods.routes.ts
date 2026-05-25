@@ -5,6 +5,7 @@ import {
   deletePaymentMethod,
   setDefaultPaymentMethod,
   togglePaymentMethod,
+  updatePaymentMethodColor,
 } from '../controllers/paymentMethods.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
@@ -15,5 +16,6 @@ router.post('/',             authenticate, authorize('owner'), addPaymentMethod)
 router.delete('/:id',        authenticate, authorize('owner'), deletePaymentMethod);
 router.patch('/:id/default', authenticate, authorize('owner'), setDefaultPaymentMethod);
 router.patch('/:id/toggle',  authenticate, authorize('owner'), togglePaymentMethod);
+router.patch('/:id/color',   authenticate, authorize('owner'), updatePaymentMethodColor);
 
 export default router;

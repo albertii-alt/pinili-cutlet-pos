@@ -9,6 +9,8 @@ import OrderItem from './OrderItem';
 import EmptyState from '../shared/EmptyState';
 import socket from '../../socket/socket';
 import { useOrderSettings } from '../../hooks/useOrderSettings';
+import { usePaymentMethods } from '../../hooks/usePaymentMethods';
+import { PaymentBadge } from '../shared/Badge';
 
 // ─── Order Confirmation Modal ─────────────────────────────────────────────────
 
@@ -16,6 +18,7 @@ interface OrderConfirmModalProps {
   items: CartItem[];
   totalAmount: number;
   paymentMethod: string;
+  paymentColor: string;
   cashTendered: string;
   orderPrefix: string;
   loading: boolean;
@@ -27,6 +30,7 @@ function OrderConfirmModal({
   items,
   totalAmount,
   paymentMethod,
+  paymentColor,
   cashTendered,
   orderPrefix,
   loading,
@@ -125,18 +129,7 @@ function OrderConfirmModal({
         <div className="flex flex-col gap-2 px-6 py-3">
           <div className="flex items-center justify-between">
             <span style={{ fontSize: 12, color: '#606060' }}>Payment</span>
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: '#ffffff',
-                backgroundColor: '#2C2C2C',
-                borderRadius: 4,
-                padding: '2px 8px',
-              }}
-            >
-              {paymentMethod}
-            </span>
+            <PaymentBadge method={paymentMethod} color={paymentColor} />
           </div>
           {isCash && (
             <div className="flex items-center justify-between">
@@ -224,6 +217,7 @@ export default function OrderPanel() {
   const [confirmOpen, setConfirmOpen]       = useState(false);
 
   const { orderPrefix, showConfirmation } = useOrderSettings();
+  const { getMethodColor } = usePaymentMethods();
 
   useEffect(() => {
     getPaymentMethods().then(methods => {
@@ -424,6 +418,7 @@ export default function OrderPanel() {
           items={cartItems}
           totalAmount={totalAmount}
           paymentMethod={paymentMethod}
+          paymentColor={getMethodColor(paymentMethod)}
           cashTendered={cashTendered}
           orderPrefix={orderPrefix}
           loading={loading}

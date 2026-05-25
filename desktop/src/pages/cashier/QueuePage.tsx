@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { useOrders } from '../../hooks/useOrders';
+import { usePaymentMethods } from '../../hooks/usePaymentMethods';
 import { completeOrder } from '../../api/order.api';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatTime } from '../../utils/formatDate';
@@ -11,6 +12,7 @@ import EmptyState from '../../components/shared/EmptyState';
 export default function QueuePage() {
   const navigate = useNavigate();
   const { orders, loading } = useOrders();
+  const { getMethodColor } = usePaymentMethods();
 
   async function handleComplete(id: number) {
     try { await completeOrder(id); } catch { /* socket will update UI */ }
@@ -50,7 +52,7 @@ export default function QueuePage() {
                 {/* Order header */}
                 <div className="flex items-center justify-between">
                   <span className="text-primary font-bold text-lg">{order.order_number}</span>
-                  <PaymentBadge method={order.payment_method} />
+                  <PaymentBadge method={order.payment_method} color={getMethodColor(order.payment_method)} />
                 </div>
 
                 <p className="text-textMuted text-xs">{formatTime(order.created_at)}</p>

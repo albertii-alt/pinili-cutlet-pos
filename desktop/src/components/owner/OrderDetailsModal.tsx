@@ -5,6 +5,7 @@ import { formatCurrency } from '../../utils/formatCurrency';
 import { formatDateTime } from '../../utils/formatDate';
 import Badge, { PaymentBadge } from '../shared/Badge';
 import { cancelCompletedOrder } from '../../api/order.api';
+import { usePaymentMethods } from '../../hooks/usePaymentMethods';
 
 interface OrderDetailsModalProps {
   order: Order;
@@ -17,6 +18,7 @@ export default function OrderDetailsModal({ order, onClose, onCancelled }: Order
   const [reason, setReason]                 = useState('');
   const [cancelling, setCancelling]         = useState(false);
   const [cancelError, setCancelError]       = useState('');
+  const { getMethodColor } = usePaymentMethods();
 
   const isCompleted = order.status === 'completed';
   const isCancelled = order.status === 'cancelled';
@@ -91,7 +93,7 @@ export default function OrderDetailsModal({ order, onClose, onCancelled }: Order
             </div>
             <div className="flex justify-between items-center">
               <span style={{ fontSize: 12, color: '#606060' }}>Payment</span>
-              <PaymentBadge method={order.payment_method} />
+              <PaymentBadge method={order.payment_method} color={getMethodColor(order.payment_method)} />
             </div>
           </div>
 

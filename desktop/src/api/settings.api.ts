@@ -13,6 +13,7 @@ export interface PaymentMethod {
   is_active: number;
   is_default: number;
   sort_order: number;
+  color: string | null;
   created_at: string;
 }
 
@@ -46,4 +47,8 @@ export async function setDefaultPaymentMethod(id: number): Promise<void> {
 
 export async function togglePaymentMethod(id: number, isActive: boolean): Promise<void> {
   await apiClient.patch(`/api/payment-methods/${id}/toggle`, { isActive });
+}
+
+export async function updatePaymentMethodColor(id: number, color: string): Promise<void> {
+  await apiClient.patch(`/api/payment-methods/${id}/color`, { color });
 }

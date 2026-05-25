@@ -13,6 +13,7 @@ export interface PaymentMethod {
   is_active: number;
   is_default: number;
   sort_order: number;
+  color: string | null;
   created_at: string;
 }
 

@@ -11,7 +11,7 @@ import { applyAccentColor } from '../../utils/applyAccentColor';
 import {
   getSettings, updateSetting,
   getPaymentMethods, addPaymentMethod, deletePaymentMethod,
-  setDefaultPaymentMethod, togglePaymentMethod,
+  setDefaultPaymentMethod, togglePaymentMethod, updatePaymentMethodColor,
   type PaymentMethod,
 } from '../../api/settings.api';
 import { useStaff } from '../../hooks/useStaff';
@@ -248,6 +248,17 @@ export default function SettingsPage() {
       setSettingsToast(msg ?? 'Failed to delete');
       setTimeout(() => setSettingsToast(''), 3000);
       setDeleteMethodTarget(null);
+    }
+  }
+
+  async function handleColorChange(id: number, color: string) {
+    try {
+      await updatePaymentMethodColor(id, color);
+      setSettingsToast('Color updated');
+      setTimeout(() => setSettingsToast(''), 3000);
+    } catch {
+      setSettingsToast('Failed to update color');
+      setTimeout(() => setSettingsToast(''), 3000);
     }
   }
 
@@ -673,6 +684,19 @@ export default function SettingsPage() {
                 >
                   {m.is_default ? <IconStarFilled size={15} /> : <IconStar size={15} />}
                 </button>
+
+                {/* Color swatch */}
+                <input
+                  type="color"
+                  title="Change color"
+                  value={m.color ?? '#606060'}
+                  onChange={e => handleColorChange(m.id, e.target.value)}
+                  style={{
+                    width: 24, height: 24, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
+                    border: '2px solid rgba(255,255,255,0.15)',
+                    padding: 0,
+                  }}
+                />
 
                 {/* Name */}
                 <span style={{ flex: 1, fontSize: 13, color: m.is_active ? '#ffffff' : '#606060', fontWeight: m.is_default ? 600 : 400 }}>
