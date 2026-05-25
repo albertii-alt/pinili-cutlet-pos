@@ -86,6 +86,8 @@ function migrateDefaultSettings(): void {
   db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('show_item_description', 'false')`).run();
   db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('order_prefix',    'PC')`).run();
   db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('order_confirmation', 'false')`).run();
+  db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('notification_enabled', 'true')`).run();
+  db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('notification_sound',   '')`).run();
 }
 
 // Migration: seed default payment methods if table is empty

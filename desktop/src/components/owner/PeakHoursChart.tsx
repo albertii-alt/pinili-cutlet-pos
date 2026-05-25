@@ -63,7 +63,7 @@ export default function PeakHoursChart({ data }: PeakHoursChartProps) {
                 {chartData.map((entry, i) => (
                   <Cell
                     key={i}
-                    fill={entry.order_count === 0 ? '#2C2C2C' : entry.order_count === max ? '#C0392B' : '#96281B'}
+                    fill={entry.order_count === 0 ? '#2C2C2C' : entry.order_count === max ? 'var(--accent-color, #C0392B)' : 'var(--accent-color-dark, #96281B)'}
                   />
                 ))}
               </Bar>

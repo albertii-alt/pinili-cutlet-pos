@@ -1,16 +1,18 @@
 import { useNavigate } from 'react-router-dom';
-import { IconShoppingBag, IconLogout } from '@tabler/icons-react';
+import { IconShoppingBag, IconLogout, IconVolume, IconVolumeOff } from '@tabler/icons-react';
 import { useOrders } from '../../hooks/useOrders';
 import { useAuthStore } from '../../store/useAuthStore';
 import { completeOrder } from '../../api/order.api';
 import { logout } from '../../api/auth.api';
-import { disconnectSocket } from '../../socket/socket';
+import { disconnectSocket, onOrderCreated } from '../../socket/socket';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatTime } from '../../utils/formatDate';
 import { PaymentBadge } from '../../components/shared/Badge';
 import EmptyState from '../../components/shared/EmptyState';
 import { useBrandName } from '../../hooks/useBrandName';
 import { usePaymentMethods } from '../../hooks/usePaymentMethods';
+import { useNotificationSound } from '../../hooks/useNotificationSound';
+import { useEffect } from 'react';
 
 export default function QueuePage() {
   const navigate = useNavigate();
@@ -18,6 +20,11 @@ export default function QueuePage() {
   const { user, logout: clearAuth } = useAuthStore();
   const stallName = useBrandName();
   const { getMethodColor } = usePaymentMethods();
+  const { playSound, isMuted, toggleMute } = useNotificationSound();
+
+  useEffect(() => {
+    onOrderCreated(() => playSound(user?.role));
+  }, [user?.role]);
   const brandParts = stallName.trim().split(/\s+/);
   const brandFirst = brandParts[0] ?? stallName;
   const brandRest  = brandParts.slice(1).join(' ');
@@ -53,6 +60,11 @@ export default function QueuePage() {
             <span className="text-xs text-textGray capitalize bg-cardLight border border-border px-2 py-1 rounded-md">
               {user.role}
             </span>
+          )}
+          {user?.role === 'kitchen' && (
+            <button onClick={toggleMute} className="text-textGray p-1 min-h-[44px] min-w-[44px] flex items-center justify-center">
+              {isMuted ? <IconVolumeOff size={18} /> : <IconVolume size={18} />}
+            </button>
           )}
           <button onClick={handleLogout} className="text-textGray p-1 min-h-[44px] min-w-[44px] flex items-center justify-center">
             <IconLogout size={18} />

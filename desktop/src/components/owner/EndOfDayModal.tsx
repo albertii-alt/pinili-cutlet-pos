@@ -127,7 +127,7 @@ export default function EndOfDayModal({ onClose }: EndOfDayModalProps) {
               >
                 <SummaryCard label="Total Orders" value={String(data.total_orders)} />
                 <SummaryCard label="Revenue"      value={formatCurrency(data.total_revenue)} accent />
-                {data.payment_breakdown.map((b, i) => (
+                {data.payment_breakdown.map((b) => (
                   <SummaryCard
                     key={b.payment_method}
                     label={b.payment_method.charAt(0).toUpperCase() + b.payment_method.slice(1)}

@@ -1,5 +1,9 @@
 import { Request, Response } from 'express';
+import path from 'path';
+import fs from 'fs';
 import db from '../database/db';
+
+const SOUNDS_DIR = path.resolve(process.cwd(), '../server/public/sounds');
 
 export function getSettings(req: Request, res: Response): void {
   const rows = db.prepare('SELECT key, value FROM settings').all() as { key: string; value: string }[];
@@ -30,4 +34,41 @@ export function updateSetting(req: Request, res: Response): void {
   getIO().emit('settings:updated', { key, value: String(value) });
 
   res.json({ key, value: String(value) });
+}
+
+export function uploadNotificationSound(req: Request, res: Response): void {
+  if (!req.file) {
+    res.status(400).json({ error: 'No file uploaded' });
+    return;
+  }
+
+  // Delete old sound file if one exists
+  const existing = (db.prepare("SELECT value FROM settings WHERE key = 'notification_sound'").get() as { value: string } | undefined)?.value;
+  if (existing) {
+    const oldPath = path.join(SOUNDS_DIR, existing);
+    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+  }
+
+  const filename = req.file.filename;
+  db.prepare(`UPDATE settings SET value = ?, updated_at = datetime('now','localtime') WHERE key = 'notification_sound'`).run(filename);
+
+  const { getIO } = require('../socket/events');
+  getIO().emit('settings:updated', { key: 'notification_sound', value: filename });
+
+  res.json({ filename });
+}
+
+export function deleteNotificationSound(req: Request, res: Response): void {
+  const existing = (db.prepare("SELECT value FROM settings WHERE key = 'notification_sound'").get() as { value: string } | undefined)?.value;
+  if (existing) {
+    const oldPath = path.join(SOUNDS_DIR, existing);
+    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+  }
+
+  db.prepare(`UPDATE settings SET value = '', updated_at = datetime('now','localtime') WHERE key = 'notification_sound'`).run();
+
+  const { getIO } = require('../socket/events');
+  getIO().emit('settings:updated', { key: 'notification_sound', value: '' });
+
+  res.json({ ok: true });
 }

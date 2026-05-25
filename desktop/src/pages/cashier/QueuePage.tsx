@@ -6,7 +6,7 @@ import { completeOrder } from '../../api/order.api';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatTime } from '../../utils/formatDate';
 import Topbar from '../../components/shared/Topbar';
-import Badge, { PaymentBadge } from '../../components/shared/Badge';
+import { PaymentBadge } from '../../components/shared/Badge';
 import EmptyState from '../../components/shared/EmptyState';
 
 export default function QueuePage() {

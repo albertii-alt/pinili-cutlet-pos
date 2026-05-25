@@ -12,7 +12,7 @@ interface DailySalesTargetProps {
 function getBarColor(pct: number): string {
   if (pct >= 100) return '#C0392B'; // red — at or over target
   if (pct >= 80)  return '#F39C12'; // amber — close
-  return '#27AE60';                  // green — on track
+  return getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#27AE60';
 }
 
 export default function DailySalesTarget({ totalSales, dailyTarget, onTargetUpdated }: DailySalesTargetProps) {

@@ -81,7 +81,7 @@ export default function SalesChart({ data }: SalesChartProps) {
                 {chartData.map((entry, i) => (
                   <Cell
                     key={i}
-                    fill={entry.total === 0 ? '#2C2C2C' : entry.total === max ? '#C0392B' : '#96281B'}
+                    fill={entry.total === 0 ? '#2C2C2C' : entry.total === max ? 'var(--accent-color, #C0392B)' : 'var(--accent-color-dark, #96281B)'}
                   />
                 ))}
               </Bar>

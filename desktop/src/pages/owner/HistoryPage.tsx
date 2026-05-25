@@ -5,7 +5,7 @@ import { Order } from '../../types';
 import type { OrderFilter } from '../../types';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatDateTime, toDateParam } from '../../utils/formatDate';
-import Badge, { PaymentBadge } from '../../components/shared/Badge';
+import { PaymentBadge } from '../../components/shared/Badge';
 import EmptyState from '../../components/shared/EmptyState';
 import SalesCard from '../../components/owner/SalesCard';
 import OrderDetailsModal from '../../components/owner/OrderDetailsModal';

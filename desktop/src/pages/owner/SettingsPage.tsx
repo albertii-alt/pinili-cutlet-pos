@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import {
   IconEye, IconEyeOff, IconShieldLock, IconCheck,
   IconUsers, IconUserPlus, IconEdit, IconTrash, IconLock, IconLockOpen,
-  IconSettings2, IconPencil, IconPlus, IconStar, IconStarFilled, IconUser,
-  IconPalette, IconReceipt,
+  IconPencil, IconPlus, IconStar, IconStarFilled, IconUser,
+  IconPalette, IconReceipt, IconBuildingStore, IconCreditCard, IconBell, IconUpload, IconPlayerPlay,
 } from '@tabler/icons-react';
 import { changePassword, changeUsername } from '../../api/auth.api';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -103,7 +103,20 @@ function RoleAvatar({ username, role }: { username: string; role: string }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+type Section = 'account' | 'staff' | 'system' | 'appearance' | 'orders' | 'payment' | 'notifications';
+
+const NAV_ITEMS: { id: Section; label: string; icon: React.ReactNode }[] = [
+  { id: 'account',       label: 'Account Security',    icon: <IconShieldLock size={15} /> },
+  { id: 'staff',         label: 'Staff Management',    icon: <IconUsers size={15} /> },
+  { id: 'system',        label: 'System Settings',     icon: <IconBuildingStore size={15} /> },
+  { id: 'appearance',    label: 'Display & Appearance', icon: <IconPalette size={15} /> },
+  { id: 'orders',        label: 'Order Settings',      icon: <IconReceipt size={15} /> },
+  { id: 'payment',       label: 'Payment Methods',     icon: <IconCreditCard size={15} /> },
+  { id: 'notifications', label: 'Notifications',       icon: <IconBell size={15} /> },
+];
+
 export default function SettingsPage() {
+  const [activeSection, setActiveSection] = useState<Section>('account');
   // Change password state
   const [current, setCurrent]   = useState('');
   const [newPass, setNewPass]   = useState('');
@@ -167,6 +180,13 @@ export default function SettingsPage() {
   const [prefixError, setPrefixError]           = useState('');
   const [orderConfirm, setOrderConfirm]         = useState(false);
 
+  // Notifications state
+  const [notifEnabled, setNotifEnabled]       = useState(true);
+  const [notifSound, setNotifSound]           = useState('');
+  const [notifUploading, setNotifUploading]   = useState(false);
+  const [notifUploadErr, setNotifUploadErr]   = useState('');
+  const [notifUploadPct, setNotifUploadPct]   = useState(0);
+
   useEffect(() => {
     getSettings().then(s => {
       if (s.stall_name) setStallName(s.stall_name);
@@ -174,6 +194,8 @@ export default function SettingsPage() {
       setShowItemDesc(s.show_item_description === 'true');
       if (s.order_prefix) setOrderPrefix(s.order_prefix.trim().toUpperCase());
       setOrderConfirm(s.order_confirmation === 'true');
+      setNotifEnabled(s.notification_enabled !== 'false');
+      if (s.notification_sound) setNotifSound(s.notification_sound);
     }).catch(() => {});
 
     getPaymentMethods().then(setPaymentMethods).catch(() => {});
@@ -369,12 +391,138 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleToggleNotifEnabled(value: boolean) {
+    setNotifEnabled(value);
+    try {
+      await updateSetting('notification_enabled', value ? 'true' : 'false');
+      socket.emit('settings:updated');
+    } catch {
+      setNotifEnabled(!value);
+    }
+  }
+
+  async function handleSoundUpload(file: File) {
+    if (file.size > 2 * 1024 * 1024) {
+      setNotifUploadErr('File must be under 2MB');
+      return;
+    }
+    setNotifUploading(true);
+    setNotifUploadErr('');
+    setNotifUploadPct(0);
+    try {
+      const formData = new FormData();
+      formData.append('sound', file);
+      const token = localStorage.getItem('token');
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'http://localhost:3000/api/settings/notification-sound');
+        if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.upload.onprogress = e => { if (e.lengthComputable) setNotifUploadPct(Math.round((e.loaded / e.total) * 100)); };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            const { filename } = JSON.parse(xhr.responseText);
+            setNotifSound(filename);
+            setSettingsToast('Sound uploaded');
+            setTimeout(() => setSettingsToast(''), 3000);
+            resolve();
+          } else {
+            reject(new Error(JSON.parse(xhr.responseText)?.error ?? 'Upload failed'));
+          }
+        };
+        xhr.onerror = () => reject(new Error('Upload failed'));
+        xhr.send(formData);
+      });
+    } catch (err: unknown) {
+      setNotifUploadErr((err as Error).message ?? 'Upload failed');
+    } finally {
+      setNotifUploading(false);
+      setNotifUploadPct(0);
+    }
+  }
+
+  async function handleDeleteSound() {
+    try {
+      const token = localStorage.getItem('token');
+      await fetch('http://localhost:3000/api/settings/notification-sound', {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      setNotifSound('');
+      setSettingsToast('Reset to default beep');
+      setTimeout(() => setSettingsToast(''), 3000);
+    } catch {
+      setSettingsToast('Failed to reset sound');
+      setTimeout(() => setSettingsToast(''), 3000);
+    }
+  }
+
+  function handlePreviewSound() {
+    if (notifSound) {
+      const audio = new Audio(`http://localhost:3000/sounds/${notifSound}`);
+      audio.play().catch(() => {});
+    } else {
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 800;
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.5);
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-6 w-full max-w-[640px]">
-      <h1 className="text-white font-semibold text-lg">Settings</h1>
+    <div className="flex flex-col" style={{ height: '100%', minHeight: 0 }}>
+      {/* Page title */}
+      <div className="px-6 py-4" style={{ borderBottom: '1px solid #2C2C2C' }}>
+        <h1 className="text-white font-semibold text-lg">Settings</h1>
+      </div>
+
+      {/* Two-column layout */}
+      <div className="flex flex-1 min-h-0" style={{ overflow: 'hidden' }}>
+
+        {/* ── Sidebar ── */}
+        <nav
+          className="flex flex-col py-2"
+          style={{ width: 220, flexShrink: 0, backgroundColor: '#111111', borderRight: '1px solid #2C2C2C', overflowY: 'auto' }}
+        >
+          {NAV_ITEMS.map(item => {
+            const active = activeSection === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id)}
+                className="flex items-center gap-2.5 text-left w-full transition-colors"
+                style={{
+                  padding: '10px 16px',
+                  fontSize: 13,
+                  backgroundColor: active ? 'rgba(192,57,43,0.08)' : 'transparent',
+                  color: active ? '#ffffff' : '#606060',
+                  borderLeft: active ? '3px solid #C0392B' : '3px solid transparent',
+                  border: 'none',
+
+                  cursor: 'pointer',
+                  outline: 'none',
+                }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.backgroundColor = '#1A1A1A'; }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.backgroundColor = 'transparent'; }}
+              >
+                {item.icon}
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* ── Content area ── */}
+        <div className="flex-1 p-6" style={{ overflowY: 'auto' }}>
 
       {/* ── Account Security ── */}
-      <div className="flex flex-col gap-5 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C' }}>
+      {activeSection === 'account' && (
+      <div className="flex flex-col gap-5 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', maxWidth: 600 }}>
         <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
           <IconShieldLock size={16} color="#C0392B" />
           <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 600 }}>Account Security</span>
@@ -484,8 +632,12 @@ export default function SettingsPage() {
         </div>
       </div>
 
+
+      )}
+
       {/* ── Staff Management ── */}
-      <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C' }}>
+      {activeSection === 'staff' && (
+      <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', maxWidth: 600 }}>
         <div className="flex items-center justify-between pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
           <div className="flex items-center gap-2">
             <IconUsers size={16} color="#C0392B" />
@@ -592,10 +744,13 @@ export default function SettingsPage() {
         )}
       </div>
 
+      )}
+
       {/* ── System Settings ── */}
-      <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C' }}>
+      {activeSection === 'system' && (
+      <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', maxWidth: 600 }}>
         <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
-          <IconSettings2 size={16} color="#C0392B" />
+          <IconBuildingStore size={16} color="#C0392B" />
           <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 600 }}>System Settings</span>
         </div>
 
@@ -656,12 +811,18 @@ export default function SettingsPage() {
           <p style={{ fontSize: 11, color: '#606060' }}>Displayed in the sidebar and cashier topbar.</p>
         </div>
 
-        {/* Default Payment Method */}
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <label style={{ fontSize: 12, color: '#606060', letterSpacing: '0.04em' }}>Payment Methods</label>
-          </div>
+      </div>
+      )}
 
+      {/* ── Payment Methods ── */}
+      {activeSection === 'payment' && (
+      <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', maxWidth: 600 }}>
+        <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
+          <IconCreditCard size={16} color="#C0392B" />
+          <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 600 }}>Payment Methods</span>
+        </div>
+
+        <div className="flex flex-col gap-3">
           {/* Method list */}
           <div className="flex flex-col gap-2">
             {paymentMethods.map(m => (
@@ -674,7 +835,6 @@ export default function SettingsPage() {
                   opacity: m.is_active ? 1 : 0.5,
                 }}
               >
-                {/* Default star */}
                 <button
                   onClick={() => handleSetDefault(m.id)}
                   title={m.is_default ? 'Default method' : 'Set as default'}
@@ -684,55 +844,31 @@ export default function SettingsPage() {
                 >
                   {m.is_default ? <IconStarFilled size={15} /> : <IconStar size={15} />}
                 </button>
-
-                {/* Color swatch */}
                 <input
                   type="color"
                   title="Change color"
                   value={m.color ?? '#606060'}
                   onChange={e => handleColorChange(m.id, e.target.value)}
-                  style={{
-                    width: 24, height: 24, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
-                    border: '2px solid rgba(255,255,255,0.15)',
-                    padding: 0,
-                  }}
+                  style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, cursor: 'pointer', border: '2px solid rgba(255,255,255,0.15)', padding: 0 }}
                 />
-
-                {/* Name */}
                 <span style={{ flex: 1, fontSize: 13, color: m.is_active ? '#ffffff' : '#606060', fontWeight: m.is_default ? 600 : 400 }}>
                   {m.name}
                 </span>
-
-                {/* Default badge */}
                 {m.is_default && (
                   <span style={{ fontSize: 10, color: '#C0392B', backgroundColor: 'rgba(192,57,43,0.1)', border: '1px solid rgba(192,57,43,0.3)', borderRadius: 4, padding: '1px 6px', fontWeight: 600 }}>
                     Default
                   </span>
                 )}
-
-                {/* Toggle active */}
                 <button
                   onClick={() => handleToggleMethod(m.id, !m.is_active)}
-                  style={{
-                    width: 28, height: 28, borderRadius: 6, cursor: 'pointer', lineHeight: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: m.is_active ? 'rgba(243,156,18,0.1)' : 'rgba(39,174,96,0.1)',
-                    border: `1px solid ${m.is_active ? 'rgba(243,156,18,0.3)' : 'rgba(39,174,96,0.3)'}`,
-                    color: m.is_active ? '#F39C12' : '#27AE60',
-                  }}
+                  style={{ width: 28, height: 28, borderRadius: 6, cursor: 'pointer', lineHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: m.is_active ? 'rgba(243,156,18,0.1)' : 'rgba(39,174,96,0.1)', border: `1px solid ${m.is_active ? 'rgba(243,156,18,0.3)' : 'rgba(39,174,96,0.3)'}`, color: m.is_active ? '#F39C12' : '#27AE60' }}
                   title={m.is_active ? 'Disable' : 'Enable'}
                 >
                   {m.is_active ? <IconLock size={12} /> : <IconLockOpen size={12} />}
                 </button>
-
-                {/* Delete */}
                 <button
                   onClick={() => setDeleteMethodTarget(m)}
-                  style={{
-                    width: 28, height: 28, borderRadius: 6, cursor: 'pointer', lineHeight: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.3)', color: '#C0392B',
-                  }}
+                  style={{ width: 28, height: 28, borderRadius: 6, cursor: 'pointer', lineHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.3)', color: '#C0392B' }}
                   onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.15)')}
                   onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.08)')}
                 >
@@ -750,26 +886,15 @@ export default function SettingsPage() {
                 onChange={e => { setNewMethodName(e.target.value); setAddMethodError(''); }}
                 onKeyDown={e => e.key === 'Enter' && handleAddPaymentMethod()}
                 placeholder="New payment method name"
-                style={{
-                  flex: 1, backgroundColor: '#1A1A1A',
-                  border: `1px solid ${addMethodError ? '#C0392B' : '#2C2C2C'}`,
-                  borderRadius: 8, padding: '7px 12px',
-                  color: '#ffffff', fontSize: 13, outline: 'none',
-                }}
-                onFocus={e => (e.currentTarget.style.borderColor = addMethodError ? '#C0392B' : '#C0392B')}
+                style={{ flex: 1, backgroundColor: '#1A1A1A', border: `1px solid ${addMethodError ? '#C0392B' : '#2C2C2C'}`, borderRadius: 8, padding: '7px 12px', color: '#ffffff', fontSize: 13, outline: 'none' }}
+                onFocus={e => (e.currentTarget.style.borderColor = '#C0392B')}
                 onBlur={e => (e.currentTarget.style.borderColor = addMethodError ? '#C0392B' : '#2C2C2C')}
               />
               <button
                 onClick={handleAddPaymentMethod}
                 disabled={addingMethod || !newMethodName.trim()}
                 className="flex items-center gap-1"
-                style={{
-                  backgroundColor: addingMethod || !newMethodName.trim() ? '#2C2C2C' : '#C0392B',
-                  border: 'none', borderRadius: 8, padding: '7px 14px',
-                  color: addingMethod || !newMethodName.trim() ? '#606060' : '#ffffff',
-                  fontSize: 13, fontWeight: 600, cursor: addingMethod || !newMethodName.trim() ? 'not-allowed' : 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
+                style={{ backgroundColor: addingMethod || !newMethodName.trim() ? '#2C2C2C' : '#C0392B', border: 'none', borderRadius: 8, padding: '7px 14px', color: addingMethod || !newMethodName.trim() ? '#606060' : '#ffffff', fontSize: 13, fontWeight: 600, cursor: addingMethod || !newMethodName.trim() ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
                 onMouseEnter={e => { if (!addingMethod && newMethodName.trim()) e.currentTarget.style.backgroundColor = '#96281B'; }}
                 onMouseLeave={e => { if (!addingMethod && newMethodName.trim()) e.currentTarget.style.backgroundColor = '#C0392B'; }}
               >
@@ -779,14 +904,16 @@ export default function SettingsPage() {
             </div>
             {addMethodError && <p style={{ fontSize: 12, color: '#C0392B' }}>{addMethodError}</p>}
           </div>
-          <p style={{ fontSize: 11, color: '#606060' }}>
-            Click the ★ star to set the default. Default method is pre-selected in the cashier panel.
-          </p>
+          <p style={{ fontSize: 11, color: '#606060' }}>Click the ★ star to set the default. Default method is pre-selected in the cashier panel.</p>
         </div>
       </div>
+      )}
+
+
 
       {/* ── Display & Appearance ── */}
-      <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C' }}>
+      {activeSection === 'appearance' && (
+      <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', maxWidth: 600 }}>
         <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
           <IconPalette size={16} color="#C0392B" />
           <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 600 }}>Display &amp; Appearance</span>
@@ -861,8 +988,11 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      )}
+
       {/* ── Order Settings ── */}
-      <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C' }}>
+      {activeSection === 'orders' && (
+      <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', maxWidth: 600 }}>
         <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
           <IconReceipt size={16} color="#C0392B" />
           <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 600 }}>Order Settings</span>
@@ -975,6 +1105,101 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
+
+      )}
+
+
+
+      {/* ── Notifications ── */}
+      {activeSection === 'notifications' && (
+      <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', maxWidth: 600 }}>
+        <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
+          <IconBell size={16} color="#C0392B" />
+          <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 600 }}>Notifications</span>
+        </div>
+
+        {/* Enable toggle */}
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-0.5">
+            <span style={{ fontSize: 13, color: '#ffffff' }}>Play sound when new order arrives</span>
+            <span style={{ fontSize: 11, color: '#606060' }}>Plays on the kitchen display when a new order is received.</span>
+          </div>
+          <button
+            role="switch"
+            aria-checked={notifEnabled}
+            onClick={() => handleToggleNotifEnabled(!notifEnabled)}
+            style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: notifEnabled ? '#C0392B' : '#2C2C2C', border: 'none', cursor: 'pointer', position: 'relative', flexShrink: 0, transition: 'background-color 0.2s' }}
+          >
+            <span style={{ position: 'absolute', top: 3, left: notifEnabled ? 23 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#ffffff', transition: 'left 0.2s' }} />
+          </button>
+        </div>
+
+        {/* Sound file */}
+        <div className="flex flex-col gap-3 pt-3" style={{ borderTop: '1px solid #2C2C2C' }}>
+          <label style={{ fontSize: 12, color: '#606060', letterSpacing: '0.04em' }}>Notification Sound</label>
+
+          {/* Current sound */}
+          <div className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C' }}>
+            <div style={{ flex: 1 }}>
+              <span style={{ fontSize: 13, color: '#ffffff' }}>{notifSound || 'Default beep'}</span>
+              {notifSound && <p style={{ fontSize: 11, color: '#606060', marginTop: 2 }}>Custom sound file</p>}
+            </div>
+            <button
+              onClick={handlePreviewSound}
+              className="flex items-center gap-1"
+              style={{ backgroundColor: '#242424', border: '1px solid #2C2C2C', borderRadius: 6, padding: '5px 10px', color: '#A0A0A0', fontSize: 12, cursor: 'pointer' }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#ffffff'; e.currentTarget.style.backgroundColor = '#2C2C2C'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#A0A0A0'; e.currentTarget.style.backgroundColor = '#242424'; }}
+            >
+              <IconPlayerPlay size={12} />
+              Preview
+            </button>
+            {notifSound && (
+              <button
+                onClick={handleDeleteSound}
+                className="flex items-center gap-1"
+                style={{ backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.3)', borderRadius: 6, padding: '5px 10px', color: '#C0392B', fontSize: 12, cursor: 'pointer' }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.15)')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.08)')}
+              >
+                Reset to Default
+              </button>
+            )}
+          </div>
+
+          {/* Upload button */}
+          <div className="flex flex-col gap-1.5">
+            <label
+              className="flex items-center gap-2 self-start"
+              style={{
+                backgroundColor: notifUploading ? '#2C2C2C' : '#C0392B',
+                border: 'none', borderRadius: 8, padding: '8px 14px',
+                color: notifUploading ? '#606060' : '#ffffff',
+                fontSize: 13, fontWeight: 600,
+                cursor: notifUploading ? 'not-allowed' : 'pointer',
+              }}
+              onMouseEnter={e => { if (!notifUploading) (e.currentTarget as HTMLElement).style.backgroundColor = '#96281B'; }}
+              onMouseLeave={e => { if (!notifUploading) (e.currentTarget as HTMLElement).style.backgroundColor = '#C0392B'; }}
+            >
+              <IconUpload size={13} />
+              {notifUploading ? `Uploading… ${notifUploadPct}%` : 'Upload Sound'}
+              <input
+                type="file"
+                accept=".mp3,.wav,.ogg"
+                className="hidden"
+                disabled={notifUploading}
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleSoundUpload(f); e.target.value = ''; }}
+              />
+            </label>
+            {notifUploadErr && <p style={{ fontSize: 12, color: '#C0392B' }}>{notifUploadErr}</p>}
+            <p style={{ fontSize: 11, color: '#606060' }}>MP3, WAV, or OGG — max 2MB</p>
+          </div>
+        </div>
+      </div>
+      )}
+
+        </div>{/* end content area */}
+      </div>{/* end two-column */}
 
       {/* Staff modal */}
       {staffModal !== undefined && (
