@@ -14,11 +14,18 @@ function formatFullDate(dateStr: string): string {
   });
 }
 
-function SummaryCard({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function SummaryCard({ label, value, accent, accentColor }: { label: string; value: string; accent?: boolean; accentColor?: string }) {
+  const color = accentColor ?? 'var(--accent-color, #C0392B)';
   return (
-    <div className="flex flex-col gap-1 p-3 rounded-lg" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C' }}>
+    <div
+      className="flex flex-col gap-1 p-3 rounded-lg"
+      style={{
+        backgroundColor: accent ? `${accentColor ?? '#C0392B'}12` : '#1A1A1A',
+        border: `1px solid ${accent ? (accentColor ?? 'var(--accent-color, #C0392B)') : '#2C2C2C'}`,
+      }}
+    >
       <span style={{ fontSize: 11, color: '#606060', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</span>
-      <span style={{ fontSize: 18, fontWeight: 700, color: accent ? 'var(--accent-color, #C0392B)' : '#ffffff' }}>{value}</span>
+      <span style={{ fontSize: 18, fontWeight: 700, color: accent ? color : '#ffffff' }}>{value}</span>
     </div>
   );
 }
@@ -121,10 +128,7 @@ export default function EndOfDayModal({ onClose }: EndOfDayModalProps) {
           ) : data ? (
             <>
               {/* Summary cards — total + one per payment method */}
-              <div
-                className="grid gap-3"
-                style={{ gridTemplateColumns: `repeat(${2 + data.payment_breakdown.length}, minmax(0, 1fr))` }}
-              >
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '10px', width: '100%' }}>
                 <SummaryCard label="Total Orders" value={String(data.total_orders)} />
                 <SummaryCard label="Revenue"      value={formatCurrency(data.total_revenue)} accent />
                 {data.payment_breakdown.map((b) => (
@@ -132,6 +136,8 @@ export default function EndOfDayModal({ onClose }: EndOfDayModalProps) {
                     key={b.payment_method}
                     label={b.payment_method.charAt(0).toUpperCase() + b.payment_method.slice(1)}
                     value={formatCurrency(b.revenue)}
+                    accent
+                    accentColor={getMethodColor(b.payment_method)}
                   />
                 ))}
               </div>

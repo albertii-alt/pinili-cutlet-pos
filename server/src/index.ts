@@ -59,16 +59,25 @@ app.get('/api/network/ip', (req, res) => {
   const interfaces = os.networkInterfaces();
   let lanIP = '127.0.0.1';
 
+  // Collect all non-loopback IPv4 addresses
+  const candidates: string[] = [];
   for (const iface of Object.values(interfaces)) {
     if (!iface) continue;
     for (const config of iface) {
       if (config.family === 'IPv4' && !config.internal) {
-        lanIP = config.address;
-        break;
+        candidates.push(config.address);
       }
     }
-    if (lanIP !== '127.0.0.1') break;
   }
+
+  // Prefer private LAN ranges in order: 192.168.x.x → 10.x.x.x → 172.16-31.x.x
+  const preferred =
+    candidates.find(ip => ip.startsWith('192.168.')) ??
+    candidates.find(ip => ip.startsWith('10.'))      ??
+    candidates.find(ip => /^172\.(1[6-9]|2\d|3[01])\./.test(ip)) ??
+    candidates[0];
+
+  if (preferred) lanIP = preferred;
 
   res.json({ ip: lanIP, serverPort: PORT, clientUrl: `http://${lanIP}:${PORT}/app` });
 });
@@ -91,6 +100,6 @@ initSocket(server);
 // Initialize database
 console.log(`[DB] Database initialized at: ${db.name}`);
 
-server.listen(PORT, () => {
-  console.log(`[Server] Pinili Cutlet server running on http://localhost:${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`[Server] Pinili Cutlet server running on http://0.0.0.0:${PORT}`);
 });

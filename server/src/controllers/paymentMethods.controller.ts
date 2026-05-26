@@ -36,7 +36,7 @@ export function addPaymentMethod(req: Request, res: Response): void {
   try {
     const result = db.prepare(
       'INSERT INTO payment_methods (name, sort_order) VALUES (?, ?)'
-    ).run(name.trim(), count);
+    ).run(name.trim().toLowerCase(), count);
 
     const method = db.prepare('SELECT * FROM payment_methods WHERE id = ?').get(result.lastInsertRowid) as PaymentMethod;
     const all    = db.prepare('SELECT * FROM payment_methods ORDER BY sort_order ASC, id ASC').all();

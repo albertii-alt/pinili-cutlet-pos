@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { type Icon } from '@tabler/icons-react';
 
 interface SalesCardProps {
@@ -7,14 +8,38 @@ interface SalesCardProps {
   accentColor?: string;
   icon?: Icon;
   isZero?: boolean;
+  clickable?: boolean;
+  active?: boolean;
+  onClick?: () => void;
 }
 
-export default function SalesCard({ label, value, accent = false, accentColor, icon: Icon, isZero = false }: SalesCardProps) {
+export default function SalesCard({ label, value, accent = false, accentColor, icon: Icon, isZero = false, clickable = false, active = false, onClick }: SalesCardProps) {
+  const [hovered, setHovered] = useState(false);
   const color = accentColor ?? '#C0392B';
   const valueColor = isZero ? '#606060' : accent ? color : '#ffffff';
 
+  const borderColor = active
+    ? (accent ? color : '#ffffff')
+    : (clickable && hovered ? 'rgba(255,255,255,0.2)' : 'var(--color-border, #2C2C2C)');
+
+  const bgColor = active
+    ? (accent ? `${color}12` : 'rgba(255,255,255,0.06)')
+    : (clickable && hovered ? '#1E1E1E' : 'var(--color-card, #161616)');
+
   return (
-    <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
+    <div
+      className="rounded-xl p-4 flex flex-col gap-3"
+      style={{
+        backgroundColor: bgColor,
+        border: `1px solid ${borderColor}`,
+        cursor: clickable ? 'pointer' : 'default',
+        transition: 'background-color 0.15s ease, border-color 0.15s ease',
+        userSelect: 'none',
+      }}
+      onClick={clickable ? onClick : undefined}
+      onMouseEnter={() => clickable && setHovered(true)}
+      onMouseLeave={() => clickable && setHovered(false)}
+    >
       <div className="flex items-center justify-between">
         <span className="text-textGray text-xs uppercase tracking-wider">{label}</span>
         {Icon && (

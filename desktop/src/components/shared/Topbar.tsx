@@ -13,6 +13,10 @@ interface TopbarButtonProps {
   danger?: boolean;
 }
 
+interface TopbarProps {
+  left?: React.ReactNode;
+}
+
 function TopbarButton({ onClick, tooltip, children, danger = false }: TopbarButtonProps) {
   const [hovered, setHovered] = useState(false);
 
@@ -43,7 +47,7 @@ function TopbarButton({ onClick, tooltip, children, danger = false }: TopbarButt
   );
 }
 
-export default function Topbar() {
+export default function Topbar({ left }: TopbarProps) {
   const { user, logout: clearAuth } = useAuthStore();
   const navigate = useNavigate();
   const [showQR, setShowQR] = useState(false);
@@ -63,8 +67,8 @@ export default function Topbar() {
         className="fixed top-0 left-0 right-0 h-[52px] border-b border-border flex items-center justify-between px-4 z-50"
         style={{ backgroundColor: '#111111' }}
       >
-        {/* Left — empty, brand is in sidebar */}
-        <div />
+        {/* Left */}
+        <div>{left}</div>
 
         {/* Right — user info + action buttons */}
         <div className="flex items-center gap-3">

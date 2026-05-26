@@ -72,11 +72,25 @@ export default function MenuItemCard({ item, onAdd, showDescription = false }: M
         <button
           onClick={() => !unavailable && onAdd(item)}
           disabled={unavailable}
-          className={`mt-auto flex items-center justify-center gap-1 w-full py-1.5 rounded-lg text-sm transition-colors ${
-            unavailable
-              ? 'bg-cardLight text-textMuted cursor-not-allowed'
-              : 'bg-primary hover:bg-primaryDark text-white'
-          }`}
+          style={{
+            marginTop: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 4,
+            width: '100%',
+            height: 44,
+            borderRadius: 8,
+            border: 'none',
+            backgroundColor: unavailable ? '#1A1A1A' : 'var(--accent-color, #C0392B)',
+            color: unavailable ? '#606060' : '#ffffff',
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: unavailable ? 'not-allowed' : 'pointer',
+            transition: 'opacity 0.15s',
+          }}
+          onMouseEnter={e => { if (!unavailable) e.currentTarget.style.opacity = '0.85'; }}
+          onMouseLeave={e => { if (!unavailable) e.currentTarget.style.opacity = '1'; }}
         >
           <IconPlus size={14} />
           Add

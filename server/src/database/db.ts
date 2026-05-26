@@ -130,6 +130,12 @@ function migrateMenuItemsTable(): void {
   }
 }
 
+// Migration: normalize payment_method casing in orders and payment_methods tables
+function migrateNormalizePaymentCasing(): void {
+  db.prepare('UPDATE orders SET payment_method = LOWER(payment_method) WHERE payment_method != LOWER(payment_method)').run();
+  db.prepare('UPDATE payment_methods SET name = LOWER(name) WHERE name != LOWER(name)').run();
+}
+
 // Initialize schema and seed data
 runSchema(db);
 migrateOrdersTable();
@@ -139,6 +145,7 @@ migrateMenuItemsTable();
 migrateDefaultSettings();
 migratePaymentMethods();
 migratePaymentMethodsColor();
+migrateNormalizePaymentCasing();
 runSeed(db);
 
 export default db;

@@ -77,7 +77,7 @@ export default function AnalyticsPage() {
       ) : (
         <>
           {/* Stat cards */}
-          <div className="grid grid-cols-4 gap-3">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '12px', width: '100%' }}>
             <SalesCard label="Total Revenue"    value={formatCurrency(summary?.total_sales ?? 0)}  accent isZero={!summary?.total_sales}                icon={IconReportMoney} />
             <SalesCard label="Avg Order Value"  value={formatCurrency(avgOrderValue)}              isZero={!avgOrderValue}                             icon={IconTrendingUp} />
             <SalesCard label="Top Category"     value={topCategory}                                isZero={categorySales.length === 0}                 icon={IconTag} />

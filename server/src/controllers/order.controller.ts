@@ -49,34 +49,55 @@ export function getActive(req: Request, res: Response): void {
 }
 
 export function getHistory(req: Request, res: Response): void {
-  const { status, date, payment_method, startDate, endDate } = req.query as {
+  const { status, date, payment_method, startDate, endDate, period, page, limit } = req.query as {
     status?: string;
     date?: string;
     payment_method?: string;
     startDate?: string;
     endDate?: string;
+    period?: string;
+    page?: string;
+    limit?: string;
   };
 
-  let query = 'SELECT * FROM orders WHERE 1=1';
+  const pageNum  = Math.max(1, parseInt(page  ?? '1',  10));
+  const pageSize = Math.min(100, Math.max(1, parseInt(limit ?? '25', 10)));
+  const offset   = (pageNum - 1) * pageSize;
+
+  let where = 'WHERE 1=1';
   const params: (string | number)[] = [];
 
-  if (status)         { query += ' AND status = ?';                                    params.push(status); }
+  if (status) { where += ' AND status = ?'; params.push(status); }
+  else        { where += " AND status != 'pending'"; }
+
   if (startDate && endDate) {
-    query += ' AND DATE(created_at) >= ? AND DATE(created_at) <= ?';
+    where += ' AND DATE(created_at) >= ? AND DATE(created_at) <= ?';
     params.push(startDate, endDate);
-  } else if (date)    { query += ' AND DATE(created_at) = ?';                          params.push(date); }
-  if (payment_method) { query += ' AND payment_method = ?';                            params.push(payment_method); }
+  } else if (period === 'week') {
+    where += " AND DATE(created_at) >= DATE('now', '-6 days', 'localtime')";
+  } else if (period === 'month') {
+    where += " AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now', 'localtime')";
+  } else if (date) {
+    where += ' AND DATE(created_at) = ?';
+    params.push(date);
+  } else {
+    where += " AND DATE(created_at) = DATE('now', 'localtime')";
+  }
 
-  query += ' ORDER BY created_at DESC';
+  if (payment_method) { where += ' AND LOWER(payment_method) = LOWER(?)'; params.push(payment_method); }
 
-  const orders = db.prepare(query).all(...params) as Order[];
+  const total = (db.prepare(`SELECT COUNT(*) as c FROM orders ${where}`).get(...params) as { c: number }).c;
 
-  const result = orders.map(order => ({
+  const orders = db.prepare(
+    `SELECT * FROM orders ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`
+  ).all(...params, pageSize, offset) as Order[];
+
+  const data = orders.map(order => ({
     ...order,
     items: db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(order.id) as OrderItem[],
   }));
 
-  res.json(result);
+  res.json({ data, total, page: pageNum, totalPages: Math.ceil(total / pageSize) });
 }
 
 export function create(req: Request, res: Response): void {
@@ -111,7 +132,7 @@ export function create(req: Request, res: Response): void {
     `).run(
       order_number,
       total_amount,
-      payment_method,
+      payment_method.toLowerCase(),
       isCash ? cash_tendered : null,
       change_amount,
       req.user!.id

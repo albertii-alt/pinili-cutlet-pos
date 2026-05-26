@@ -6,13 +6,25 @@ export async function getActiveOrders(): Promise<Order[]> {
   return data;
 }
 
-export async function getOrderHistory(params?: {
+export interface OrderHistoryParams {
   status?: string;
   date?: string;
   payment_method?: string;
   startDate?: string;
   endDate?: string;
-}): Promise<Order[]> {
+  period?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedOrders {
+  data: Order[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export async function getOrderHistory(params?: OrderHistoryParams): Promise<PaginatedOrders> {
   const { data } = await apiClient.get('/api/orders', { params });
   return data;
 }

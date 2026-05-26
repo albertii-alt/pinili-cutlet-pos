@@ -80,7 +80,7 @@ export default function DashboardPage() {
       ) : (
         <>
           {/* Stat cards */}
-          <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${2 + (summary?.payment_breakdown?.length ?? 0)}, minmax(0, 1fr))` }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '12px', width: '100%' }}>
             <SalesCard label="Total Sales"  value={formatCurrency(summary?.total_sales ?? 0)}  accent icon={IconReportMoney} />
             <SalesCard label="Total Orders" value={String(summary?.total_orders ?? 0)}          icon={IconShoppingCart} />
             {(summary?.payment_breakdown ?? []).map(b => (
