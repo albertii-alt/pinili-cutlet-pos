@@ -7,9 +7,14 @@ interface MenuItemCardProps {
   item: MenuItem;
   onAdd: (item: MenuItem) => void;
   showDescription?: boolean;
+  size?: 'sm' | 'md' | 'lg';
 }
 
-export default function MenuItemCard({ item, onAdd, showDescription = false }: MenuItemCardProps) {
+const imageSizeMap = { sm: 120, md: 150, lg: 180 };
+const btnHeightMap = { sm: 36, md: 40, lg: 44 };
+const fontSizeMap  = { sm: 13, md: 14, lg: 15 };
+
+export default function MenuItemCard({ item, onAdd, showDescription = false, size = 'sm' }: MenuItemCardProps) {
   const unavailable = item.is_available === 0;
   const imageUrl = getImageUrl(item.image_path);
 
@@ -39,7 +44,7 @@ export default function MenuItemCard({ item, onAdd, showDescription = false }: M
           {item.promo_label}
         </div>
       )}
-      <div className="aspect-square bg-cardLight flex items-center justify-center overflow-hidden">
+      <div className="bg-cardLight flex items-center justify-center overflow-hidden" style={{ height: imageSizeMap[size] }}>
         {imageUrl ? (
           <img src={imageUrl} alt={item.name} className="w-full h-full object-cover" />
         ) : (
@@ -47,7 +52,7 @@ export default function MenuItemCard({ item, onAdd, showDescription = false }: M
         )}
       </div>
       <div className="p-3 flex flex-col gap-2 flex-1">
-        <p className="text-white text-sm font-medium leading-tight">{item.name}</p>
+        <p className="text-white font-medium leading-tight" style={{ fontSize: fontSizeMap[size] }}>{item.name}</p>
         {showDescription && item.description && (
           <p style={{ fontSize: 11, color: '#A0A0A0', lineHeight: 1.4 }}>{item.description}</p>
         )}
@@ -66,7 +71,8 @@ export default function MenuItemCard({ item, onAdd, showDescription = false }: M
         <button
           onClick={() => !unavailable && onAdd(item)}
           disabled={unavailable}
-          className={`mt-auto flex items-center justify-center gap-1 w-full py-2 rounded-lg text-sm min-h-[44px] transition-colors ${
+          style={{ minHeight: btnHeightMap[size] }}
+          className={`mt-auto flex items-center justify-center gap-1 w-full py-2 rounded-lg text-sm transition-colors ${
             unavailable
               ? 'bg-cardLight text-textMuted cursor-not-allowed'
               : 'bg-primary hover:bg-primaryDark text-white active:scale-95'

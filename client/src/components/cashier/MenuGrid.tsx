@@ -6,9 +6,11 @@ import { useDisplaySettings } from '../../hooks/useDisplaySettings';
 interface MenuGridProps {
   items: MenuItem[];
   onAdd: (item: MenuItem) => void;
+  columns?: number;
+  cardSize?: 'sm' | 'md' | 'lg';
 }
 
-export default function MenuGrid({ items, onAdd }: MenuGridProps) {
+export default function MenuGrid({ items, onAdd, columns = 2, cardSize = 'sm' }: MenuGridProps) {
   const { showDescription } = useDisplaySettings();
 
   if (items.length === 0) {
@@ -16,9 +18,9 @@ export default function MenuGrid({ items, onAdd }: MenuGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 px-4">
+    <div className="grid gap-3 px-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
       {items.map(item => (
-        <MenuItemCard key={item.id} item={item} onAdd={onAdd} showDescription={showDescription} />
+        <MenuItemCard key={item.id} item={item} onAdd={onAdd} showDescription={showDescription} size={cardSize} />
       ))}
     </div>
   );
