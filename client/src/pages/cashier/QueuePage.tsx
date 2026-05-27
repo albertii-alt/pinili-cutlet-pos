@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IconShoppingBag, IconLogout, IconVolume, IconVolumeOff, IconArrowLeft, IconClock, IconAlertCircle, IconClipboardList, IconQrcode } from '@tabler/icons-react';
+import { IconShoppingBag, IconLogout, IconVolume, IconVolumeOff, IconArrowLeft, IconClock, IconAlertCircle, IconClipboardList, IconQrcode, IconCircleCheck } from '@tabler/icons-react';
 import { useOrders } from '../../hooks/useOrders';
 import { useAuthStore } from '../../store/useAuthStore';
 import { completeOrder } from '../../api/order.api';
@@ -310,7 +310,7 @@ export default function QueuePage() {
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : orders.length === 0 ? (
-          <EmptyState emoji="✅" message="No pending orders" subtitle="New orders will appear here automatically" />
+          <EmptyState icon={<IconCircleCheck size={48} color="#2C2C2C" />} message="No pending orders" subtitle="New orders will appear here automatically" />
         ) : (
           <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
             {orders.map(order => (
@@ -320,7 +320,11 @@ export default function QueuePage() {
                   <PaymentBadge method={order.payment_method} color={getMethodColor(order.payment_method)} />
                 </div>
 
-                <p className="text-textMuted text-xs">{formatTime(order.created_at)}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-textMuted text-xs">{formatTime(order.created_at)}</p>
+                  <span className="text-textMuted text-xs">·</span>
+                  <ElapsedBadge createdAt={order.created_at} />
+                </div>
 
                 <div className="flex flex-col gap-2 border-t border-border pt-3">
                   {order.items.map(item => (

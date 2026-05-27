@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { IconEye, IconShoppingCart, IconReportMoney, IconCreditCard, IconFileExport, IconCheck, IconX, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
+import { IconEye, IconShoppingCart, IconReportMoney, IconCreditCard, IconFileExport, IconCheck, IconX, IconChevronLeft, IconChevronRight, IconCalendar, IconClipboardList, IconSearchOff } from '@tabler/icons-react';
 import { getOrderHistory } from '../../api/order.api';
 import { getSummary } from '../../api/analytics.api';
 import { Order } from '../../types';
@@ -286,11 +286,11 @@ export default function HistoryPage() {
           <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       ) : period === 'custom' && !appliedRange ? (
-        <EmptyState emoji="📅" message="Select a date range" subtitle="Choose a start and end date, then press Apply" />
+        <EmptyState icon={<IconCalendar size={48} color="#2C2C2C" />} message="Select a date range" subtitle="Choose a start and end date, then press Apply" />
       ) : total === 0 ? (
-        <EmptyState emoji="📋" message="No orders found" subtitle="Completed orders will appear here" />
+        <EmptyState icon={<IconClipboardList size={48} color="#2C2C2C" />} message="No orders found" subtitle="Completed orders will appear here" />
       ) : orders.length === 0 ? (
-        <EmptyState emoji="🔍" message="No orders found" subtitle={`No orders paid with ${activeFilter}`} />
+        <EmptyState icon={<IconSearchOff size={48} color="#2C2C2C" />} message="No orders found" subtitle={`No orders paid with ${activeFilter}`} />
       ) : (
         <>
           <div className="border border-border rounded-xl overflow-hidden" style={{ backgroundColor: '#111111' }}>

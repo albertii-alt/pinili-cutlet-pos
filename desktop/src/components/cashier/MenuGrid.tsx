@@ -1,3 +1,4 @@
+import { IconToolsKitchen2 } from '@tabler/icons-react';
 import { MenuItem } from '../../types';
 import MenuItemCard from './MenuItemCard';
 import EmptyState from '../shared/EmptyState';
@@ -12,7 +13,7 @@ export default function MenuGrid({ items, onAdd }: MenuGridProps) {
   const { showDescription } = useDisplaySettings();
 
   if (items.length === 0) {
-    return <EmptyState emoji="🍱" message="No items found" subtitle="Try a different category" />;
+    return <EmptyState icon={<IconToolsKitchen2 size={48} color="#2C2C2C" />} message="No items found" subtitle="Try a different category" />;
   }
 
   return (

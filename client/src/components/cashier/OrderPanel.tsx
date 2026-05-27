@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { IconShoppingCart, IconChevronDown, IconTrash } from '@tabler/icons-react';
+import { IconShoppingCart, IconChevronDown, IconTrash, IconShoppingCartOff } from '@tabler/icons-react';
 import { useOrderStore } from '../../store/useOrderStore';
 import { createOrder, getNextOrderNumber } from '../../api/order.api';
 import { getPaymentMethods, type PaymentMethod } from '../../api/settings.api';
@@ -585,7 +585,7 @@ export default function OrderPanel({ variant = 'phone', width = 320 }: OrderPane
 
             <div className="flex-1 overflow-y-auto px-4">
               {cartItems.length === 0 ? (
-                <EmptyState emoji="🛒" message="No items yet" subtitle="Add items from the menu" />
+                <EmptyState icon={<IconShoppingCartOff size={48} color="#2C2C2C" />} message="No items yet" subtitle="Add items from the menu" />
               ) : (
                 cartItems.map(item => (
                   <OrderItem

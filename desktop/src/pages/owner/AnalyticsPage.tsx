@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { IconReportMoney, IconShoppingCart, IconTag, IconTrendingUp } from '@tabler/icons-react';
+import { IconCalendar, IconReportMoney, IconShoppingCart, IconTag, IconTrendingUp } from '@tabler/icons-react';
 import { useAnalytics, type AnalyticsPeriod, type DateRange } from '../../hooks/useAnalytics';
 import { formatCurrency } from '../../utils/formatCurrency';
 import SalesCard from '../../components/owner/SalesCard';
@@ -69,7 +69,7 @@ export default function AnalyticsPage() {
       )}
 
       {awaitingRange ? (
-        <EmptyState emoji="📅" message="Select a date range" subtitle="Choose a start and end date, then press Apply" />
+        <EmptyState icon={<IconCalendar size={48} color="#2C2C2C" />} message="Select a date range" subtitle="Choose a start and end date, then press Apply" />
       ) : loading ? (
         <div className="flex justify-center py-16">
           <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />

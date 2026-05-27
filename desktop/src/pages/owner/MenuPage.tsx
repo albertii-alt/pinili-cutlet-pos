@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { IconPlus, IconChevronDown, IconCheck } from '@tabler/icons-react';
+import { IconPlus, IconChevronDown, IconCheck, IconToolsKitchen2 } from '@tabler/icons-react';
 import { useMenu } from '../../hooks/useMenu';
 import { useCategories } from '../../hooks/useCategories';
 import { deleteMenuItem, toggleAvailability, bulkToggleAvailability, toggleFeatured as toggleFeaturedApi } from '../../api/menu.api';
@@ -159,7 +159,7 @@ export default function MenuPage() {
 
       {/* Table */}
       {filtered.length === 0 ? (
-        <EmptyState emoji="🍱" message="No items found" subtitle="Try a different search or category" />
+        <EmptyState icon={<IconToolsKitchen2 size={48} color="#2C2C2C" />} message="No items found" subtitle="Try a different search or category" />
       ) : (
         <MenuTable
           items={filtered}

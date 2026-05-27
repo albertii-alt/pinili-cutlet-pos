@@ -904,7 +904,7 @@ export default function SettingsPage() {
             </div>
             {addMethodError && <p style={{ fontSize: 12, color: '#C0392B' }}>{addMethodError}</p>}
           </div>
-          <p style={{ fontSize: 11, color: '#606060' }}>Click the ★ star to set the default. Default method is pre-selected in the cashier panel.</p>
+          <p style={{ fontSize: 11, color: '#606060' }}>Click the <IconStar size={14} style={{ display: 'inline', verticalAlign: 'middle' }} /> star to set the default. Default method is pre-selected in the cashier panel.</p>
         </div>
       </div>
       )}
