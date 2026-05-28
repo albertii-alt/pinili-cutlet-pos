@@ -9,6 +9,7 @@ import MenuPage from '../pages/owner/MenuPage';
 import HistoryPage from '../pages/owner/HistoryPage';
 import AnalyticsPage from '../pages/owner/AnalyticsPage';
 import SettingsPage from '../pages/owner/SettingsPage';
+import AuditLogsPage from '../pages/owner/AuditLogsPage';
 import Topbar from '../components/shared/Topbar';
 import Sidebar from '../components/shared/Sidebar';
 
@@ -57,7 +58,8 @@ export const routes: RouteObject[] = [
       { path: 'menu',      element: <MenuPage /> },
       { path: 'history',   element: <HistoryPage /> },
       { path: 'analytics', element: <AnalyticsPage /> },
-      { path: 'settings',  element: <SettingsPage /> },
+      { path: 'settings',   element: <SettingsPage /> },
+      { path: 'audit-logs', element: <AuditLogsPage /> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },

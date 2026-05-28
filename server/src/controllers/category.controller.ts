@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import db from '../database/db';
 import { Category } from '../types';
+import { logAudit } from '../utils/auditLogger';
 
 export function getAll(req: Request, res: Response): void {
   const categories = db.prepare('SELECT * FROM categories ORDER BY id ASC').all() as Category[];
@@ -22,6 +23,8 @@ export function create(req: Request, res: Response): void {
     // Emit socket event — imported lazily to avoid circular dependency
     const { getIO } = require('../socket/events');
     getIO().emit('category:added', category);
+
+    logAudit({ user_id: req.user!.id, username: req.user!.username, action: 'CATEGORY_CREATED', entity_type: 'category', entity_id: String(category.id), details: `Created category: ${category.name}` });
 
     res.status(201).json(category);
   } catch {
@@ -68,6 +71,8 @@ export function remove(req: Request, res: Response): void {
 
   // Business rule #3: set category_id to NULL on affected menu items (handled by ON DELETE SET NULL FK)
   db.prepare('DELETE FROM categories WHERE id = ?').run(id);
+
+  logAudit({ user_id: req.user!.id, username: req.user!.username, action: 'CATEGORY_DELETED', entity_type: 'category', entity_id: String(id), details: `Deleted category: ${category.name}` });
 
   const { getIO } = require('../socket/events');
   getIO().emit('category:deleted', Number(id));

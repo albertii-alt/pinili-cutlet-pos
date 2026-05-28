@@ -1,0 +1,23 @@
+import apiClient from './client';
+import { AuditLog } from '../types';
+
+export interface AuditLogsParams {
+  start_date?: string;
+  end_date?: string;
+  username?: string;
+  action?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface AuditLogsResponse {
+  data: AuditLog[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export async function getAuditLogs(params: AuditLogsParams = {}): Promise<AuditLogsResponse> {
+  const { data } = await apiClient.get('/api/audit-logs', { params });
+  return data;
+}

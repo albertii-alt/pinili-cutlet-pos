@@ -4,6 +4,7 @@ import { MenuItem } from '../types';
 import path from 'path';
 import fs from 'fs';
 import sharp from 'sharp';
+import { logAudit } from '../utils/auditLogger';
 
 const IMAGES_DIR = path.join(__dirname, '../../public/images');
 
@@ -60,6 +61,8 @@ export async function create(req: Request, res: Response): Promise<void> {
   const { getIO } = require('../socket/events');
   getIO().emit('menu:updated', item);
 
+  logAudit({ user_id: req.user!.id, username: req.user!.username, action: 'MENU_ITEM_CREATED', entity_type: 'menu_item', entity_id: String(item.id), details: `Added menu item: ${item.name} at ₱${item.price}` });
+
   res.status(201).json(item);
 }
 
@@ -102,6 +105,8 @@ export async function update(req: Request, res: Response): Promise<void> {
   const { getIO } = require('../socket/events');
   getIO().emit('menu:updated', updated);
 
+  logAudit({ user_id: req.user!.id, username: req.user!.username, action: 'MENU_ITEM_UPDATED', entity_type: 'menu_item', entity_id: String(updated.id), details: `Updated menu item: ${updated.name}` });
+
   res.json(updated);
 }
 
@@ -119,6 +124,7 @@ export function remove(req: Request, res: Response): void {
   }
 
   db.prepare('DELETE FROM menu_items WHERE id = ?').run(req.params.id);
+  logAudit({ user_id: req.user!.id, username: req.user!.username, action: 'MENU_ITEM_DELETED', entity_type: 'menu_item', entity_id: String(existing.id), details: `Deleted menu item: ${existing.name}` });
   res.json({ message: 'Menu item deleted' });
 }
 
@@ -134,6 +140,8 @@ export function toggleAvailability(req: Request, res: Response): void {
 
   const { getIO } = require('../socket/events');
   getIO().emit('item:availability', { id: existing.id, is_available: newValue });
+
+  logAudit({ user_id: req.user!.id, username: req.user!.username, action: 'MENU_ITEM_AVAILABILITY', entity_type: 'menu_item', entity_id: String(existing.id), details: `${newValue ? 'Marked available' : 'Marked unavailable'}: ${existing.name}` });
 
   res.json({ id: existing.id, is_available: newValue });
 }
@@ -190,6 +198,11 @@ export function setPromoPrice(req: Request, res: Response): void {
 
   const { getIO } = require('../socket/events');
   getIO().emit('menu:updated', updated);
+
+  const promoDetail = promoPrice !== null && promoPrice !== undefined
+    ? `Set promo price on ${existing.name}: ₱${existing.price} → ₱${promoPrice}${promoLabel ? ` (${promoLabel})` : ''}`
+    : `Removed promo price from ${existing.name}`;
+  logAudit({ user_id: req.user!.id, username: req.user!.username, action: 'MENU_ITEM_PROMO', entity_type: 'menu_item', entity_id: String(existing.id), details: promoDetail });
 
   res.json(updated);
 }

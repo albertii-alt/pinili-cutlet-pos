@@ -74,5 +74,20 @@ export function runSchema(db: Database): void {
     CREATE INDEX IF NOT EXISTS idx_orders_status       ON orders(status);
     CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
     CREATE INDEX IF NOT EXISTS idx_menu_items_category  ON menu_items(category_id);
+
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id     INTEGER,
+      username    TEXT    NOT NULL,
+      action      TEXT    NOT NULL,
+      entity_type TEXT,
+      entity_id   TEXT,
+      details     TEXT,
+      created_at  TEXT    DEFAULT (datetime('now','localtime'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_audit_created_at ON audit_logs(created_at);
+    CREATE INDEX IF NOT EXISTS idx_audit_username   ON audit_logs(username);
+    CREATE INDEX IF NOT EXISTS idx_audit_action     ON audit_logs(action);
   `);
 }

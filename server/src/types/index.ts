@@ -106,6 +106,19 @@ export interface CategorySales {
   total_revenue: number;
 }
 
+// Audit log
+
+export interface AuditLog {
+  id: number;
+  user_id?: number | null;
+  username: string;
+  action: string;
+  entity_type?: string | null;
+  entity_id?: string | null;
+  details?: string | null;
+  created_at: string;
+}
+
 // Order creation payload
 
 export interface CreateOrderPayload {

@@ -17,6 +17,7 @@ import analyticsRoutes from './routes/analytics.routes';
 import settingsRoutes      from './routes/settings.routes';
 import paymentMethodRoutes from './routes/paymentMethods.routes';
 import backupRoutes        from './routes/backup.routes';
+import auditRoutes         from './routes/audit.routes';
 import { scheduleAutoBackup } from './controllers/backup.controller';
 
 const app    = express();
@@ -93,6 +94,7 @@ app.use('/api/analytics',  analyticsRoutes);
 app.use('/api/settings',         settingsRoutes);
 app.use('/api/payment-methods',  paymentMethodRoutes);
 app.use('/api/backup',           backupRoutes);
+app.use('/api/audit-logs',       auditRoutes);
 
 // Global error handler
 app.use(errorHandler);

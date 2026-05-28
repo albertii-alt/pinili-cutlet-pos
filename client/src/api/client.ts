@@ -3,7 +3,7 @@ import axios from 'axios';
 const SERVER_PORT = 3000;
 const baseURL = `http://${window.location.hostname}:${SERVER_PORT}`;
 
-const apiClient = axios.create({ baseURL });
+const apiClient = axios.create({ baseURL, headers: { 'X-Client-Type': 'web' } });
 
 // Attach JWT token to every request
 apiClient.interceptors.request.use((config) => {

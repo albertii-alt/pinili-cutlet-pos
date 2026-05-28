@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import db from '../database/db';
 import { Order, OrderItem, CreateOrderPayload } from '../types';
+import { logAudit } from '../utils/auditLogger';
 
 function getNextOrderNumber(): string {
   const prefixRow = db.prepare(`SELECT value FROM settings WHERE key = 'order_prefix'`).get() as { value: string } | undefined;
@@ -159,6 +160,8 @@ export function create(req: Request, res: Response): void {
   const { getIO } = require('../socket/events');
   getIO().emit('order:created', fullOrder);
 
+  logAudit({ user_id: req.user!.id, username: req.user!.username, action: 'ORDER_CREATED', entity_type: 'order', entity_id: String(order.id), details: `Created order ${order.order_number} — ${items.length} item(s), ${payment_method}, total ₱${total_amount.toFixed(2)}` });
+
   res.status(201).json(fullOrder);
 }
 
@@ -175,6 +178,8 @@ export function complete(req: Request, res: Response): void {
   }
 
   db.prepare("UPDATE orders SET status = 'completed' WHERE id = ?").run(req.params.id);
+
+  logAudit({ user_id: req.user!.id, username: req.user!.username, action: 'ORDER_COMPLETED', entity_type: 'order', entity_id: String(order.id), details: `Completed order ${order.order_number}` });
 
   const { getIO } = require('../socket/events');
   getIO().emit('order:completed', Number(req.params.id));
@@ -222,6 +227,8 @@ export function cancelCompleted(req: Request, res: Response): void {
 
   db.prepare("UPDATE orders SET status = 'cancelled', cancel_reason = ? WHERE id = ?")
     .run(reason.trim(), req.params.id);
+
+  logAudit({ user_id: req.user!.id, username: req.user!.username, action: 'ORDER_CANCELLED', entity_type: 'order', entity_id: String(order.id), details: `Cancelled completed order ${order.order_number}. Reason: ${reason.trim()}` });
 
   const { getIO } = require('../socket/events');
   getIO().emit('order:cancelled', Number(req.params.id));

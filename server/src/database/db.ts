@@ -159,6 +159,25 @@ function migrateOrderItemsNotes(): void {
   }
 }
 
+// Migration: create audit_logs table if missing (safe — schema handles IF NOT EXISTS)
+function migrateAuditLogs(): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id     INTEGER,
+      username    TEXT    NOT NULL,
+      action      TEXT    NOT NULL,
+      entity_type TEXT,
+      entity_id   TEXT,
+      details     TEXT,
+      created_at  TEXT    DEFAULT (datetime('now','localtime'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_audit_created_at ON audit_logs(created_at);
+    CREATE INDEX IF NOT EXISTS idx_audit_username   ON audit_logs(username);
+    CREATE INDEX IF NOT EXISTS idx_audit_action     ON audit_logs(action);
+  `);
+}
+
 // Initialize schema and seed data
 runSchema(db);
 migrateOrdersTable();
@@ -171,6 +190,7 @@ migratePaymentMethodsColor();
 migrateNormalizePaymentCasing();
 migrateIndexes();
 migrateOrderItemsNotes();
+migrateAuditLogs();
 runSeed(db);
 
 export default db;

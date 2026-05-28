@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import db from '../database/db';
 import { User, AuthPayload } from '../types';
+import { logAudit } from '../utils/auditLogger';
 
 export function login(req: Request, res: Response): void {
   const { username, password } = req.body as { username: string; password: string };
@@ -14,7 +15,11 @@ export function login(req: Request, res: Response): void {
 
   const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username) as User | undefined;
 
+  const ip     = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip ?? 'unknown';
+  const device = (req.headers['x-client-type'] as string) ?? 'unknown';
+
   if (!user || !bcrypt.compareSync(password, user.password)) {
+    logAudit({ username: username || 'unknown', action: 'LOGIN_FAILED', details: `Failed login attempt | role: unknown | ip: ${ip} | device: ${device}` });
     res.status(401).json({ error: 'Invalid username or password' });
     return;
   }
@@ -27,10 +32,15 @@ export function login(req: Request, res: Response): void {
   const payload: AuthPayload = { id: user.id, username: user.username, role: user.role };
   const token = jwt.sign(payload, process.env.JWT_SECRET as string, { expiresIn: '24h' });
 
+  logAudit({ user_id: user.id, username: user.username, action: 'LOGIN', details: `Logged in | role: ${user.role} | ip: ${ip} | device: ${device}` });
+
   res.json({ token, user: payload });
 }
 
 export function logout(req: Request, res: Response): void {
+  if (req.user) {
+    logAudit({ user_id: req.user.id, username: req.user.username, action: 'LOGOUT' });
+  }
   res.json({ message: 'Logged out successfully' });
 }
 
@@ -55,6 +65,8 @@ export function changePassword(req: Request, res: Response): void {
 
   const hashed = bcrypt.hashSync(newPassword, 10);
   db.prepare('UPDATE users SET password = ? WHERE id = ?').run(hashed, req.user!.id);
+
+  logAudit({ user_id: req.user!.id, username: req.user!.username, action: 'PASSWORD_CHANGED', details: 'Owner changed their password' });
 
   res.json({ message: 'Password updated successfully' });
 }
@@ -94,6 +106,8 @@ export function changeUsername(req: Request, res: Response): void {
   const payload: AuthPayload = { id: user.id, username: trimmed, role: user.role };
   const token = jwt.sign(payload, process.env.JWT_SECRET as string, { expiresIn: '24h' });
 
+  logAudit({ user_id: user.id, username: trimmed, action: 'USERNAME_CHANGED', details: `Username changed from "${user.username}" to "${trimmed}"` });
+
   res.json({ token, user: payload });
 }
 
@@ -126,6 +140,7 @@ export function createStaff(req: Request, res: Response): void {
       'INSERT INTO users (username, password, role) VALUES (?, ?, ?)'
     ).run(username.trim(), hashed, role);
     const created = db.prepare('SELECT id, username, role, is_active, created_at FROM users WHERE id = ?').get(result.lastInsertRowid);
+    logAudit({ user_id: req.user!.id, username: req.user!.username, action: 'STAFF_CREATED', entity_type: 'user', entity_id: String(result.lastInsertRowid), details: `Created ${role} account: ${username.trim()}` });
     res.status(201).json(created);
   } catch {
     res.status(409).json({ error: 'Username already exists' });
@@ -156,6 +171,7 @@ export function updateStaff(req: Request, res: Response): void {
   }
 
   const updated = db.prepare('SELECT id, username, role, is_active, created_at FROM users WHERE id = ?').get(id);
+  logAudit({ user_id: req.user!.id, username: req.user!.username, action: 'STAFF_UPDATED', entity_type: 'user', entity_id: String(id), details: `Updated staff account: ${existing.username}` });
   res.json(updated);
 }
 
@@ -165,6 +181,7 @@ export function deleteStaff(req: Request, res: Response): void {
   if (!user) { res.status(404).json({ error: 'Staff not found' }); return; }
   if (user.role === 'owner') { res.status(403).json({ error: 'Cannot delete owner account' }); return; }
   db.prepare('DELETE FROM users WHERE id = ?').run(id);
+  logAudit({ user_id: req.user!.id, username: req.user!.username, action: 'STAFF_DELETED', entity_type: 'user', entity_id: String(id), details: `Deleted ${user.role} account: ${user.username}` });
   res.json({ message: 'Staff deleted' });
 }
 
@@ -175,5 +192,6 @@ export function toggleStaffStatus(req: Request, res: Response): void {
   if (!user) { res.status(404).json({ error: 'Staff not found' }); return; }
   if (user.role === 'owner') { res.status(403).json({ error: 'Cannot disable owner account' }); return; }
   db.prepare('UPDATE users SET is_active = ? WHERE id = ?').run(is_active, id);
+  logAudit({ user_id: req.user!.id, username: req.user!.username, action: is_active ? 'STAFF_ENABLED' : 'STAFF_DISABLED', entity_type: 'user', entity_id: String(id), details: `${is_active ? 'Enabled' : 'Disabled'} ${user.role} account: ${user.username}` });
   res.json({ id: Number(id), is_active });
 }

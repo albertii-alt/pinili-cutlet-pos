@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { IconShoppingCart, IconChevronDown, IconTrash, IconShoppingCartOff } from '@tabler/icons-react';
+import { IconShoppingCart, IconChevronDown, IconTrash, IconShoppingCartOff, IconPlayerPause } from '@tabler/icons-react';
 import { useOrderStore } from '../../store/useOrderStore';
 import { createOrder, getNextOrderNumber } from '../../api/order.api';
 import { getPaymentMethods, type PaymentMethod } from '../../api/settings.api';
@@ -7,6 +7,9 @@ import { formatCurrency } from '../../utils/formatCurrency';
 import type { CartItem } from '../../types';
 import OrderItem from './OrderItem';
 import EmptyState from '../shared/EmptyState';
+import HoldOrderModal from './HoldOrderModal';
+import HeldOrdersPanel from './HeldOrdersPanel';
+import ConfirmDialog from '../shared/ConfirmDialog';
 import socket from '../../socket/socket';
 import { useOrderSettings } from '../../hooks/useOrderSettings';
 import { usePaymentMethods } from '../../hooks/usePaymentMethods';
@@ -203,7 +206,10 @@ interface OrderPanelProps {
 }
 
 export default function OrderPanel({ variant = 'phone', width = 320 }: OrderPanelProps) {
-  const { cartItems, totalAmount, incrementItem, decrementItem, removeItem, clearCart } = useOrderStore();
+  const {
+    cartItems, totalAmount, incrementItem, decrementItem, removeItem, clearCart,
+    heldOrders, holdCurrentOrder, resumeHeldOrder, deleteHeldOrder,
+  } = useOrderStore();
   const [open, setOpen]                     = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [paymentMethod, setPaymentMethod]   = useState('');
@@ -211,6 +217,9 @@ export default function OrderPanel({ variant = 'phone', width = 320 }: OrderPane
   const [loading, setLoading]               = useState(false);
   const [error, setError]                   = useState('');
   const [confirmOpen, setConfirmOpen]       = useState(false);
+  const [holdOpen, setHoldOpen]             = useState(false);
+  const [heldPanelOpen, setHeldPanelOpen]   = useState(false);
+  const [resumeId, setResumeId]             = useState<string | null>(null);
 
   const { orderPrefix, showConfirmation } = useOrderSettings();
   const { getMethodColor } = usePaymentMethods();
@@ -284,6 +293,28 @@ export default function OrderPanel({ variant = 'phone', width = 320 }: OrderPane
     if (showConfirmation) { setConfirmOpen(true); } else { submitOrder(); }
   }
 
+  function handleHoldConfirm(label: string) {
+    holdCurrentOrder(label, paymentMethod);
+    setHoldOpen(false);
+  }
+
+  function handleResumeRequest(id: string) {
+    if (cartItems.length > 0) {
+      setHeldPanelOpen(false);
+      setResumeId(id);
+    } else {
+      resumeHeldOrder(id);
+      setHeldPanelOpen(false);
+    }
+  }
+
+  function handleResumeConfirm() {
+    if (!resumeId) return;
+    resumeHeldOrder(resumeId);
+    setResumeId(null);
+    setHeldPanelOpen(false);
+  }
+
   // ── Desktop: matches desktop app OrderPanel exactly ──────────────────────────
   if (variant === 'desktop') {
     return (
@@ -323,26 +354,41 @@ export default function OrderPanel({ variant = 'phone', width = 320 }: OrderPane
                 </span>
               )}
             </div>
-            {cartItems.length > 0 && (
+            <div className="flex items-center gap-1.5">
               <button
-                onClick={clearCart}
+                onClick={() => setHeldPanelOpen(true)}
                 className="flex items-center gap-1"
-                style={{
-                  backgroundColor: 'rgba(192,57,43,0.08)',
-                  border: '1px solid rgba(192,57,43,0.3)',
-                  borderRadius: 6,
-                  padding: '4px 8px',
-                  color: '#C0392B',
-                  fontSize: 11,
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.15)')}
-                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.08)')}
+                style={{ backgroundColor: heldOrders.length > 0 ? 'rgba(243,156,18,0.1)' : 'transparent', border: `1px solid ${heldOrders.length > 0 ? 'rgba(243,156,18,0.4)' : '#2C2C2C'}`, borderRadius: 6, padding: '4px 8px', color: heldOrders.length > 0 ? '#F39C12' : '#606060', fontSize: 11, cursor: 'pointer' }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(243,156,18,0.15)')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = heldOrders.length > 0 ? 'rgba(243,156,18,0.1)' : 'transparent')}
               >
-                <IconTrash size={11} />
-                Discard
+                <IconPlayerPause size={11} />
+                {heldOrders.length > 0 ? `Held (${heldOrders.length})` : 'Held'}
               </button>
-            )}
+              {cartItems.length > 0 && (
+                <button
+                  onClick={() => setHoldOpen(true)}
+                  className="flex items-center gap-1"
+                  style={{ backgroundColor: 'rgba(243,156,18,0.08)', border: '1px solid rgba(243,156,18,0.3)', borderRadius: 6, padding: '4px 8px', color: '#F39C12', fontSize: 11, cursor: 'pointer' }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(243,156,18,0.15)')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(243,156,18,0.08)')}
+                >
+                  Hold
+                </button>
+              )}
+              {cartItems.length > 0 && (
+                <button
+                  onClick={clearCart}
+                  className="flex items-center gap-1"
+                  style={{ backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.3)', borderRadius: 6, padding: '4px 8px', color: '#C0392B', fontSize: 11, cursor: 'pointer' }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.15)')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.08)')}
+                >
+                  <IconTrash size={11} />
+                  Discard
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Item list */}
@@ -467,6 +513,20 @@ export default function OrderPanel({ variant = 'phone', width = 320 }: OrderPane
             orderPrefix={orderPrefix} loading={loading} onConfirm={submitOrder} onCancel={() => setConfirmOpen(false)}
           />
         )}
+        {holdOpen && <HoldOrderModal onConfirm={handleHoldConfirm} onCancel={() => setHoldOpen(false)} />}
+        {heldPanelOpen && (
+          <HeldOrdersPanel heldOrders={heldOrders} onResume={handleResumeRequest} onDelete={deleteHeldOrder} onClose={() => setHeldPanelOpen(false)} />
+        )}
+        {resumeId && (
+          <ConfirmDialog
+            title="Replace Current Cart?"
+            message="Resuming this held order will replace your current cart. The current cart will be lost."
+            confirmLabel="Resume Held Order"
+            destructive
+            onConfirm={handleResumeConfirm}
+            onCancel={() => { setResumeId(null); setHeldPanelOpen(true); }}
+          />
+        )}
       </>
     );
   }
@@ -480,10 +540,23 @@ export default function OrderPanel({ variant = 'phone', width = 320 }: OrderPane
           style={{ height: 320 }}
         >
           <div className="flex items-center justify-between px-4 py-2 border-b border-border shrink-0">
-            <span className="text-white font-semibold text-sm">Current Order</span>
-            {cartItems.length > 0 && (
-              <button onClick={clearCart} className="text-xs text-textMuted">Discard</button>
-            )}
+            <div className="flex items-center gap-2">
+              <span className="text-white font-semibold text-sm">Current Order</span>
+              {heldOrders.length > 0 && (
+                <button onClick={() => setHeldPanelOpen(true)} className="flex items-center gap-1 text-xs px-2 py-1 rounded-md" style={{ backgroundColor: 'rgba(243,156,18,0.1)', color: '#F39C12', border: '1px solid rgba(243,156,18,0.3)' }}>
+                  <IconPlayerPause size={10} />
+                  {heldOrders.length}
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {cartItems.length > 0 && (
+                <button onClick={() => setHoldOpen(true)} className="text-xs px-2 py-1 rounded-md" style={{ backgroundColor: 'rgba(243,156,18,0.08)', color: '#F39C12', border: '1px solid rgba(243,156,18,0.3)' }}>Hold</button>
+              )}
+              {cartItems.length > 0 && (
+                <button onClick={clearCart} className="text-xs text-textMuted">Discard</button>
+              )}
+            </div>
           </div>
 
           <div className="flex gap-3 overflow-x-auto px-4 py-2 shrink-0 scrollbar-none" style={{ minHeight: 110 }}>
@@ -549,6 +622,20 @@ export default function OrderPanel({ variant = 'phone', width = 320 }: OrderPane
             orderPrefix={orderPrefix} loading={loading} onConfirm={submitOrder} onCancel={() => setConfirmOpen(false)}
           />
         )}
+        {holdOpen && <HoldOrderModal onConfirm={handleHoldConfirm} onCancel={() => setHoldOpen(false)} />}
+        {heldPanelOpen && (
+          <HeldOrdersPanel heldOrders={heldOrders} onResume={handleResumeRequest} onDelete={deleteHeldOrder} onClose={() => setHeldPanelOpen(false)} />
+        )}
+        {resumeId && (
+          <ConfirmDialog
+            title="Replace Current Cart?"
+            message="Resuming this held order will replace your current cart. The current cart will be lost."
+            confirmLabel="Resume Held Order"
+            destructive
+            onConfirm={handleResumeConfirm}
+            onCancel={() => { setResumeId(null); setHeldPanelOpen(true); }}
+          />
+        )}
       </>
     );
   }
@@ -556,14 +643,34 @@ export default function OrderPanel({ variant = 'phone', width = 320 }: OrderPane
   // ── Phone: original bottom sheet ─────────────────────────────────────────────
   return (
     <>
-      {!open && itemCount > 0 && (
+      {/* Always-visible FAB — shows cart items or held count */}
+      {!open && (itemCount > 0 || heldOrders.length > 0) && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-20 right-4 bg-primary text-white rounded-full px-5 py-3 flex items-center gap-2 shadow-lg z-40 active:scale-95 transition-transform"
+          className="fixed bottom-20 right-4 rounded-full px-5 py-3 flex items-center gap-2 shadow-lg z-40 active:scale-95 transition-transform"
+          style={{
+            backgroundColor: itemCount > 0 ? 'var(--accent-color, #C0392B)' : '#F39C12',
+            color: itemCount > 0 ? '#ffffff' : '#000000',
+          }}
         >
-          <IconShoppingCart size={18} />
-          <span className="font-semibold text-sm">{itemCount} item{itemCount > 1 ? 's' : ''}</span>
-          <span className="text-sm">{formatCurrency(totalAmount)}</span>
+          {itemCount > 0 ? (
+            <>
+              <IconShoppingCart size={18} />
+              <span className="font-semibold text-sm">{itemCount} item{itemCount > 1 ? 's' : ''}</span>
+              <span className="text-sm">{formatCurrency(totalAmount)}</span>
+              {heldOrders.length > 0 && (
+                <span className="flex items-center gap-0.5 text-xs font-bold" style={{ backgroundColor: 'rgba(0,0,0,0.25)', borderRadius: 99, padding: '1px 6px' }}>
+                  <IconPlayerPause size={10} />
+                  {heldOrders.length}
+                </span>
+              )}
+            </>
+          ) : (
+            <>
+              <IconPlayerPause size={18} />
+              <span className="font-semibold text-sm">{heldOrders.length} held</span>
+            </>
+          )}
         </button>
       )}
 
@@ -572,8 +679,19 @@ export default function OrderPanel({ variant = 'phone', width = 320 }: OrderPane
           <div className="bg-black/75 absolute inset-0" onClick={() => setOpen(false)} />
           <div className="relative bg-card border-t border-border rounded-t-2xl max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <span className="text-white font-semibold">Current Order</span>
+              <div className="flex items-center gap-2">
+                <span className="text-white font-semibold">Current Order</span>
+                {heldOrders.length > 0 && (
+                  <button onClick={() => setHeldPanelOpen(true)} className="flex items-center gap-1 text-xs px-2 py-1 rounded-md" style={{ backgroundColor: 'rgba(243,156,18,0.1)', color: '#F39C12', border: '1px solid rgba(243,156,18,0.3)' }}>
+                    <IconPlayerPause size={10} />
+                    {heldOrders.length}
+                  </button>
+                )}
+              </div>
               <div className="flex items-center gap-3">
+                {cartItems.length > 0 && (
+                  <button onClick={() => setHoldOpen(true)} className="text-xs px-2 py-1 rounded-md" style={{ backgroundColor: 'rgba(243,156,18,0.08)', color: '#F39C12', border: '1px solid rgba(243,156,18,0.3)' }}>Hold</button>
+                )}
                 {cartItems.length > 0 && (
                   <button onClick={clearCart} className="text-xs text-textMuted">Discard</button>
                 )}
@@ -666,6 +784,20 @@ export default function OrderPanel({ variant = 'phone', width = 320 }: OrderPane
           loading={loading}
           onConfirm={submitOrder}
           onCancel={() => setConfirmOpen(false)}
+        />
+      )}
+      {holdOpen && <HoldOrderModal onConfirm={handleHoldConfirm} onCancel={() => setHoldOpen(false)} />}
+      {heldPanelOpen && (
+        <HeldOrdersPanel heldOrders={heldOrders} onResume={handleResumeRequest} onDelete={deleteHeldOrder} onClose={() => setHeldPanelOpen(false)} />
+      )}
+      {resumeId && (
+        <ConfirmDialog
+          title="Replace Current Cart?"
+          message="Resuming this held order will replace your current cart. The current cart will be lost."
+          confirmLabel="Resume Held Order"
+          destructive
+          onConfirm={handleResumeConfirm}
+          onCancel={() => { setResumeId(null); setHeldPanelOpen(true); }}
         />
       )}
     </>

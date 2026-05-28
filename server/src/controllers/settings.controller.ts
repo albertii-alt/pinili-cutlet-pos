@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
 import db from '../database/db';
+import { logAudit } from '../utils/auditLogger';
 
 const SOUNDS_DIR = path.resolve(process.cwd(), '../server/public/sounds');
 
@@ -33,6 +34,8 @@ export function updateSetting(req: Request, res: Response): void {
   const { getIO } = require('../socket/events');
   getIO().emit('settings:updated', { key, value: String(value) });
 
+  logAudit({ user_id: req.user?.id, username: req.user?.username ?? 'owner', action: 'SETTING_CHANGED', entity_type: 'setting', entity_id: String(key), details: `Changed "${String(key)}" to "${String(value)}"` });
+
   res.json({ key, value: String(value) });
 }
 
@@ -54,6 +57,8 @@ export function uploadNotificationSound(req: Request, res: Response): void {
 
   const { getIO } = require('../socket/events');
   getIO().emit('settings:updated', { key: 'notification_sound', value: filename });
+
+  logAudit({ user_id: req.user?.id, username: req.user?.username ?? 'owner', action: 'SOUND_UPLOADED', details: `Uploaded notification sound: ${filename}` });
 
   res.json({ filename });
 }

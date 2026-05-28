@@ -85,6 +85,14 @@ export interface CartItem {
   notes?: string | null;
 }
 
+export interface HeldOrder {
+  id: string;
+  label: string;
+  items: CartItem[];
+  payment_method?: string;
+  created_at: string;
+}
+
 export interface AuthState {
   token: string | null;
   user: User | null;

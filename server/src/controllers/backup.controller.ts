@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import cron from 'node-cron';
 import db from '../database/db';
+import { logAudit } from '../utils/auditLogger';
 
 const DATA_DIR    = path.join(__dirname, '../../data');
 const DB_PATH     = path.join(DATA_DIR, 'pinili_cutlet.db');
@@ -43,6 +44,7 @@ export function createBackup(req: Request, res: Response): void {
     const filename = `pinili-cutlet-backup-${formatDate(new Date())}.db`;
     (db as any).backup(path.join(BACKUPS_DIR, filename));
     // Serve as file download
+    logAudit({ user_id: req.user?.id, username: req.user?.username ?? 'owner', action: 'BACKUP_CREATED', details: `Manual backup created: ${filename}` });
     res.download(DB_PATH, filename, err => {
       if (err && !res.headersSent) res.status(500).json({ error: 'Download failed' });
     });
@@ -62,7 +64,8 @@ export function restoreBackup(req: Request, res: Response): void {
     // Close WAL checkpoint before replacing
     db.pragma('wal_checkpoint(TRUNCATE)');
     fs.copyFileSync(req.file.path, DB_PATH);
-    fs.unlinkSync(req.file.path); // remove temp upload
+    fs.unlinkSync(req.file.path);
+    logAudit({ user_id: req.user?.id, username: req.user?.username ?? 'owner', action: 'BACKUP_RESTORED', details: `Database restored from uploaded file` });
     res.json({ ok: true, message: 'Database restored. Please restart the server.' });
   } catch {
     res.status(500).json({ error: 'Restore failed' });

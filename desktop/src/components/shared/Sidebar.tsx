@@ -6,6 +6,7 @@ import {
   IconHistory,
   IconChartBar,
   IconSettings,
+  IconShieldCheck,
 } from '@tabler/icons-react';
 import { getSettings } from '../../api/settings.api';
 import socket from '../../socket/socket';
@@ -16,6 +17,7 @@ const navItems = [
   { to: '/owner/history',    label: 'History',     icon: IconHistory         },
   { to: '/owner/analytics',  label: 'Analytics',   icon: IconChartBar        },
   { to: '/owner/settings',   label: 'Settings',    icon: IconSettings        },
+  { to: '/owner/audit-logs', label: 'Audit Logs',  icon: IconShieldCheck     },
 ];
 
 export default function Sidebar() {
