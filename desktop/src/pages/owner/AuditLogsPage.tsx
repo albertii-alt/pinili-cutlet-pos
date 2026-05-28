@@ -205,17 +205,36 @@ export default function AuditLogsPage() {
                     <td className="px-4 py-2.5" style={{ fontSize: 12, color: '#A0A0A0', maxWidth: 360 }}>
                       {(() => {
                         const d = log.details ?? '';
-                        const ipMatch     = d.match(/ip:\s*([^|]+)/);
-                        const deviceMatch = d.match(/device:\s*(\S+)/);
-                        const ip     = ipMatch?.[1]?.trim();
-                        const device = deviceMatch?.[1]?.trim();
-                        const plain  = d.replace(/\|?\s*ip:[^|]+/g, '').replace(/\|?\s*device:\S+/g, '').trim().replace(/\|\s*$/, '').trim();
+                        const ipMatch         = d.match(/ip:\s*([^|]+)/);
+                        const deviceMatch     = d.match(/device:\s*(\S+)/);
+                        const osMatch         = d.match(/os:\s*([^|]+)/);
+                        const browserMatch    = d.match(/browser:\s*([^|]+)/);
+                        const deviceTypeMatch = d.match(/device_type:\s*([^|]+)/);
+                        const ip         = ipMatch?.[1]?.trim();
+                        const device     = deviceMatch?.[1]?.trim();
+                        const os         = osMatch?.[1]?.trim();
+                        const browser    = browserMatch?.[1]?.trim();
+                        const deviceType = deviceTypeMatch?.[1]?.trim();
+                        const plain = d
+                          .replace(/\|?\s*ip:[^|]+/g, '')
+                          .replace(/\|?\s*device:\S+/g, '')
+                          .replace(/\|?\s*os:[^|]+/g, '')
+                          .replace(/\|?\s*browser:[^|]+/g, '')
+                          .replace(/\|?\s*device_type:[^|]+/g, '')
+                          .trim().replace(/\|\s*$/, '').trim();
                         return (
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {plain && <span className="truncate">{plain}</span>}
-                            {device === 'desktop' && <IconDeviceDesktop size={13} color="#3498DB" title="Desktop" />}
-                            {device === 'web'     && <IconDeviceMobile  size={13} color="#27AE60" title="Web/Phone" />}
-                            {ip && <span style={{ color: '#606060', fontSize: 11, whiteSpace: 'nowrap' }}>{ip}</span>}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {device === 'desktop' && <IconDeviceDesktop size={13} color="#3498DB" />}
+                            {device === 'web'     && <IconDeviceMobile  size={13} color="#27AE60" />}
+                            {deviceType && <span style={{ color: '#A0A0A0' }}>{deviceType}</span>}
+                            {(os || browser) && <span style={{ color: '#606060' }}>·</span>}
+                            {os      && <span style={{ color: '#606060' }}>{os}</span>}
+                            {browser && <span style={{ color: '#606060' }}>{browser}</span>}
+                            {ip && <>
+                              <span style={{ color: '#606060' }}>·</span>
+                              <span style={{ color: '#606060', fontSize: 11 }}>{ip}</span>
+                            </>}
+                            {plain && <span className="truncate" style={{ color: '#A0A0A0' }}>{plain}</span>}
                             {!plain && !device && !ip && '—'}
                           </div>
                         );

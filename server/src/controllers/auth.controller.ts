@@ -5,6 +5,22 @@ import db from '../database/db';
 import { User, AuthPayload } from '../types';
 import { logAudit } from '../utils/auditLogger';
 
+function parseUserAgent(ua: string = '') {
+  const isMobile  = /mobile/i.test(ua);
+  const isTablet  = /tablet|ipad/i.test(ua);
+  const os        = /android/i.test(ua)        ? 'Android'
+    : /ipad|iphone|ios/i.test(ua) ? 'iOS'
+    : /windows/i.test(ua)         ? 'Windows'
+    : /mac/i.test(ua)             ? 'macOS'
+    : /linux/i.test(ua)           ? 'Linux' : 'Unknown';
+  const browser   = /chrome/i.test(ua) && !/edg/i.test(ua) ? 'Chrome'
+    : /safari/i.test(ua) && !/chrome/i.test(ua) ? 'Safari'
+    : /firefox/i.test(ua) ? 'Firefox'
+    : /edg/i.test(ua)     ? 'Edge' : 'Unknown';
+  const deviceType = isTablet ? 'Tablet' : isMobile ? 'Mobile' : 'Desktop';
+  return { os, browser, deviceType };
+}
+
 export function login(req: Request, res: Response): void {
   const { username, password } = req.body as { username: string; password: string };
 
@@ -16,10 +32,12 @@ export function login(req: Request, res: Response): void {
   const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username) as User | undefined;
 
   const ip     = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip ?? 'unknown';
-  const device = (req.headers['x-client-type'] as string) ?? 'unknown';
+  const device  = (req.headers['x-client-type'] as string) ?? 'unknown';
+  const ua      = req.headers['user-agent'] as string ?? '';
+  const { os, browser, deviceType } = parseUserAgent(ua);
 
   if (!user || !bcrypt.compareSync(password, user.password)) {
-    logAudit({ username: username || 'unknown', action: 'LOGIN_FAILED', details: `Failed login attempt | role: unknown | ip: ${ip} | device: ${device}` });
+    logAudit({ username: username || 'unknown', action: 'LOGIN_FAILED', details: `Failed login attempt | role: unknown | os: ${os} | browser: ${browser} | device_type: ${deviceType} | ip: ${ip} | device: ${device}` });
     res.status(401).json({ error: 'Invalid username or password' });
     return;
   }
@@ -32,7 +50,7 @@ export function login(req: Request, res: Response): void {
   const payload: AuthPayload = { id: user.id, username: user.username, role: user.role };
   const token = jwt.sign(payload, process.env.JWT_SECRET as string, { expiresIn: '24h' });
 
-  logAudit({ user_id: user.id, username: user.username, action: 'LOGIN', details: `Logged in | role: ${user.role} | ip: ${ip} | device: ${device}` });
+  logAudit({ user_id: user.id, username: user.username, action: 'LOGIN', details: `Logged in | role: ${user.role} | os: ${os} | browser: ${browser} | device_type: ${deviceType} | ip: ${ip} | device: ${device}` });
 
   res.json({ token, user: payload });
 }
