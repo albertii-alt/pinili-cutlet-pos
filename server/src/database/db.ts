@@ -149,6 +149,16 @@ function migrateIndexes(): void {
   `);
 }
 
+// Migration: add notes column to order_items if missing
+function migrateOrderItemsNotes(): void {
+  const cols = db.prepare('PRAGMA table_info(order_items)').all() as { name: string }[];
+  if (!cols.some(c => c.name === 'notes')) {
+    console.log('[DB] Adding notes column to order_items...');
+    db.prepare('ALTER TABLE order_items ADD COLUMN notes TEXT DEFAULT NULL').run();
+    console.log('[DB] Migration complete.');
+  }
+}
+
 // Initialize schema and seed data
 runSchema(db);
 migrateOrdersTable();
@@ -160,6 +170,7 @@ migratePaymentMethods();
 migratePaymentMethodsColor();
 migrateNormalizePaymentCasing();
 migrateIndexes();
+migrateOrderItemsNotes();
 runSeed(db);
 
 export default db;

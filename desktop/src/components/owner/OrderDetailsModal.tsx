@@ -138,17 +138,24 @@ export default function OrderDetailsModal({ order, onClose, onCancelled }: Order
               {order.items.map((item, i) => (
                 <div
                   key={item.id}
-                  className="flex items-center gap-3 px-3 py-2.5"
+                  className="flex flex-col px-3 py-2.5"
                   style={{
                     borderBottom: i < order.items.length - 1 ? '1px solid #2C2C2C' : 'none',
                     backgroundColor: '#1A1A1A',
                   }}
                 >
-                  <span style={{ flex: 1, fontSize: 13, color: '#ffffff' }}>{item.item_name}</span>
-                  <span style={{ fontSize: 13, color: '#C0392B', fontWeight: 600 }}>×{item.quantity}</span>
-                  <span style={{ fontSize: 13, color: '#A0A0A0', minWidth: 60, textAlign: 'right' }}>
-                    {formatCurrency(item.item_price * item.quantity)}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span style={{ flex: 1, fontSize: 13, color: '#ffffff' }}>{item.item_name}</span>
+                    <span style={{ fontSize: 13, color: '#C0392B', fontWeight: 600 }}>×{item.quantity}</span>
+                    <span style={{ fontSize: 13, color: '#A0A0A0', minWidth: 60, textAlign: 'right' }}>
+                      {formatCurrency(item.item_price * item.quantity)}
+                    </span>
+                  </div>
+                  {item.notes && (
+                    <span style={{ fontSize: 11, color: '#606060', fontStyle: 'italic', marginTop: 2 }}>
+                      {item.notes}
+                    </span>
+                  )}
                 </div>
               ))}
             </div>

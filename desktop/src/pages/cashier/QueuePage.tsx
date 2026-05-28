@@ -164,11 +164,18 @@ export default function QueuePage() {
                 {/* Fix 3 — items: ×N on left in accent, name on right */}
                 <div className="flex flex-col gap-1" style={{ borderTop: '1px solid #2C2C2C', paddingTop: 8 }}>
                   {order.items.map(item => (
-                    <div key={item.id} className="flex items-center gap-2">
-                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-color, #C0392B)', flexShrink: 0 }}>
-                        ×{item.quantity}
-                      </span>
-                      <span style={{ fontSize: 13, color: '#ffffff' }}>{item.item_name}</span>
+                    <div key={item.id} className="flex flex-col gap-0.5">
+                      <div className="flex items-center gap-2">
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-color, #C0392B)', flexShrink: 0 }}>
+                          ×{item.quantity}
+                        </span>
+                        <span style={{ fontSize: 13, color: '#ffffff' }}>{item.item_name}</span>
+                      </div>
+                      {item.notes && (
+                        <span style={{ fontSize: 11, color: '#606060', fontStyle: 'italic', paddingLeft: 20 }}>
+                          {item.notes}
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>

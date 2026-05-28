@@ -46,6 +46,7 @@ export interface OrderItem {
   item_name: string;
   item_price: number;
   quantity: number;
+  notes?: string | null;
 }
 
 export interface AnalyticsSummary {
@@ -81,6 +82,7 @@ export interface CartItem {
   item_price: number;
   quantity: number;
   image_path: string | null;
+  notes?: string | null;
 }
 
 export interface AuthState {
@@ -97,5 +99,6 @@ export interface CreateOrderPayload {
     item_name: string;
     item_price: number;
     quantity: number;
+    notes?: string | null;
   }[];
 }

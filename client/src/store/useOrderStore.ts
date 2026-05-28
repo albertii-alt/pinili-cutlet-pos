@@ -8,6 +8,7 @@ interface OrderStore {
   incrementItem: (menu_item_id: number) => void;
   decrementItem: (menu_item_id: number) => void;
   removeItem: (menu_item_id: number) => void;
+  updateItemNotes: (menu_item_id: number, notes: string) => void;
   clearCart: () => void;
 }
 
@@ -45,6 +46,12 @@ export const useOrderStore = create<OrderStore>((set) => ({
     const updated = state.cartItems.filter(i => i.menu_item_id !== menu_item_id);
     return { cartItems: updated, totalAmount: calcTotal(updated) };
   }),
+
+  updateItemNotes: (menu_item_id, notes) => set((state) => ({
+    cartItems: state.cartItems.map(i =>
+      i.menu_item_id === menu_item_id ? { ...i, notes: notes || null } : i
+    ),
+  })),
 
   clearCart: () => set({ cartItems: [], totalAmount: 0 }),
 }));

@@ -141,12 +141,12 @@ export function create(req: Request, res: Response): void {
     const orderId = result.lastInsertRowid;
 
     const insertItem = db.prepare(`
-      INSERT INTO order_items (order_id, menu_item_id, item_name, item_price, quantity)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO order_items (order_id, menu_item_id, item_name, item_price, quantity, notes)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
 
     items.forEach(item => {
-      insertItem.run(orderId, item.menu_item_id, item.item_name, item.item_price, item.quantity);
+      insertItem.run(orderId, item.menu_item_id, item.item_name, item.item_price, item.quantity, item.notes ?? null);
     });
 
     return db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId) as Order;

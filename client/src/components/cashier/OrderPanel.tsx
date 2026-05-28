@@ -254,8 +254,8 @@ export default function OrderPanel({ variant = 'phone', width = 320 }: OrderPane
       await createOrder({
         payment_method: paymentMethod,
         cash_tendered: isCash ? parseFloat(cashTendered) : undefined,
-        items: cartItems.map(({ menu_item_id, item_name, item_price, quantity }) => ({
-          menu_item_id, item_name, item_price, quantity,
+        items: cartItems.map(({ menu_item_id, item_name, item_price, quantity, notes }) => ({
+          menu_item_id, item_name, item_price, quantity, notes: notes ?? null,
         })),
       });
       clearCart();

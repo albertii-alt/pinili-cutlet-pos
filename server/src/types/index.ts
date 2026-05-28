@@ -48,6 +48,7 @@ export interface OrderItem {
   item_name: string;
   item_price: number;
   quantity: number;
+  notes?: string | null;
 }
 
 // Auth types
@@ -115,5 +116,6 @@ export interface CreateOrderPayload {
     item_name: string;
     item_price: number;
     quantity: number;
+    notes?: string | null;
   }[];
 }

@@ -50,7 +50,8 @@ export function runSchema(db: Database): void {
       menu_item_id INTEGER NOT NULL REFERENCES menu_items(id),
       item_name    TEXT    NOT NULL,
       item_price   REAL    NOT NULL,
-      quantity     INTEGER NOT NULL
+      quantity     INTEGER NOT NULL,
+      notes        TEXT    DEFAULT NULL
     );
 
     CREATE TABLE IF NOT EXISTS settings (
