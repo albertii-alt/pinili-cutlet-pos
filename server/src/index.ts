@@ -16,6 +16,8 @@ import orderRoutes     from './routes/order.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import settingsRoutes      from './routes/settings.routes';
 import paymentMethodRoutes from './routes/paymentMethods.routes';
+import backupRoutes        from './routes/backup.routes';
+import { scheduleAutoBackup } from './controllers/backup.controller';
 
 const app    = express();
 const server = http.createServer(app);
@@ -90,6 +92,7 @@ app.use('/api/orders',     orderRoutes);
 app.use('/api/analytics',  analyticsRoutes);
 app.use('/api/settings',         settingsRoutes);
 app.use('/api/payment-methods',  paymentMethodRoutes);
+app.use('/api/backup',           backupRoutes);
 
 // Global error handler
 app.use(errorHandler);
@@ -99,6 +102,9 @@ initSocket(server);
 
 // Initialize database
 console.log(`[DB] Database initialized at: ${db.name}`);
+
+// Start auto backup cron
+scheduleAutoBackup();
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`[Server] Pinili Cutlet server running on http://0.0.0.0:${PORT}`);

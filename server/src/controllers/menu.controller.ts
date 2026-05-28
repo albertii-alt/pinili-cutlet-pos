@@ -3,6 +3,19 @@ import db from '../database/db';
 import { MenuItem } from '../types';
 import path from 'path';
 import fs from 'fs';
+import sharp from 'sharp';
+
+const IMAGES_DIR = path.join(__dirname, '../../public/images');
+
+async function saveCompressedImage(buffer: Buffer): Promise<string> {
+  const filename = `${Date.now()}-${Math.round(Math.random() * 1e6)}.jpg`;
+  const outputPath = path.join(IMAGES_DIR, filename);
+  await sharp(buffer)
+    .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 80 })
+    .toFile(outputPath);
+  return filename;
+}
 
 export function getAll(req: Request, res: Response): void {
   const items = db.prepare('SELECT * FROM menu_items ORDER BY category_id ASC, id ASC').all() as MenuItem[];
@@ -18,7 +31,7 @@ export function getById(req: Request, res: Response): void {
   res.json(item);
 }
 
-export function create(req: Request, res: Response): void {
+export async function create(req: Request, res: Response): Promise<void> {
   const { name, description, price, category_id } = req.body as {
     name: string;
     description?: string;
@@ -31,7 +44,11 @@ export function create(req: Request, res: Response): void {
     return;
   }
 
-  const image_path = req.file ? `/images/${req.file.filename}` : null;
+  let image_path: string | null = null;
+  if (req.file) {
+    const filename = await saveCompressedImage(req.file.buffer);
+    image_path = `/images/${filename}`;
+  }
 
   const result = db.prepare(`
     INSERT INTO menu_items (name, description, price, category_id, image_path)
@@ -46,7 +63,7 @@ export function create(req: Request, res: Response): void {
   res.status(201).json(item);
 }
 
-export function update(req: Request, res: Response): void {
+export async function update(req: Request, res: Response): Promise<void> {
   const existing = db.prepare('SELECT * FROM menu_items WHERE id = ?').get(req.params.id) as MenuItem | undefined;
   if (!existing) {
     res.status(404).json({ error: 'Menu item not found' });
@@ -55,13 +72,16 @@ export function update(req: Request, res: Response): void {
 
   const { name, description, price, category_id, is_available } = req.body as Partial<MenuItem>;
 
-  // If a new image was uploaded, delete the old one
-  if (req.file && existing.image_path) {
-    const oldPath = path.join(__dirname, '../../public', existing.image_path);
-    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+  let image_path = existing.image_path;
+  if (req.file) {
+    // Delete old image file
+    if (existing.image_path) {
+      const oldPath = path.join(__dirname, '../../public', existing.image_path);
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+    const filename = await saveCompressedImage(req.file.buffer);
+    image_path = `/images/${filename}`;
   }
-
-  const image_path = req.file ? `/images/${req.file.filename}` : existing.image_path;
 
   db.prepare(`
     UPDATE menu_items
@@ -191,10 +211,11 @@ export function bulkToggleAvailability(req: Request, res: Response): void {
   res.json({ message: 'Bulk availability updated', categoryId, is_available: isAvailable ? 1 : 0 });
 }
 
-export function uploadImage(req: Request, res: Response): void {
+export async function uploadImage(req: Request, res: Response): Promise<void> {
   if (!req.file) {
     res.status(400).json({ error: 'No image file provided' });
     return;
   }
-  res.json({ image_path: `/images/${req.file.filename}` });
+  const filename = await saveCompressedImage(req.file.buffer);
+  res.json({ image_path: `/images/${filename}` });
 }

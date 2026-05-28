@@ -88,6 +88,9 @@ function migrateDefaultSettings(): void {
   db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('order_confirmation', 'false')`).run();
   db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('notification_enabled', 'true')`).run();
   db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('notification_sound',   '')`).run();
+  db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('auto_backup_enabled',  'false')`).run();
+  db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('auto_backup_time',     '23:00')`).run();
+  db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('last_backup_at',       '')`).run();
 }
 
 // Migration: seed default payment methods if table is empty
@@ -136,6 +139,16 @@ function migrateNormalizePaymentCasing(): void {
   db.prepare('UPDATE payment_methods SET name = LOWER(name) WHERE name != LOWER(name)').run();
 }
 
+// Migration: create performance indexes if missing
+function migrateIndexes(): void {
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_orders_created_at    ON orders(created_at);
+    CREATE INDEX IF NOT EXISTS idx_orders_status        ON orders(status);
+    CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+    CREATE INDEX IF NOT EXISTS idx_menu_items_category  ON menu_items(category_id);
+  `);
+}
+
 // Initialize schema and seed data
 runSchema(db);
 migrateOrdersTable();
@@ -146,6 +159,7 @@ migrateDefaultSettings();
 migratePaymentMethods();
 migratePaymentMethodsColor();
 migrateNormalizePaymentCasing();
+migrateIndexes();
 runSeed(db);
 
 export default db;
