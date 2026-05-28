@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import {
-  IconEye, IconEyeOff, IconShieldLock, IconCheck,
+  IconEye, IconEyeOff, IconShieldLock, IconCheck, IconX,
   IconUsers, IconUserPlus, IconEdit, IconTrash, IconLock, IconLockOpen,
   IconPencil, IconPlus, IconStar, IconStarFilled, IconUser,
   IconPalette, IconReceipt, IconBuildingStore, IconCreditCard, IconBell, IconUpload, IconPlayerPlay,
+  IconDatabaseExport, IconDatabaseImport, IconRotateClockwise, IconHistory, IconAlertTriangle,
 } from '@tabler/icons-react';
 import { changePassword, changeUsername } from '../../api/auth.api';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -19,6 +20,11 @@ import { StaffUser } from '../../types';
 import StaffModal from '../../components/owner/StaffModal';
 import ConfirmDialog from '../../components/shared/ConfirmDialog';
 import socket from '../../socket/socket';
+import {
+  listBackups, deleteBackup, configAutoBackup,
+  getManualBackupUrl, getBackupDownloadUrl, restoreBackup,
+  type BackupFile,
+} from '../../api/backup.api';
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 
@@ -103,7 +109,7 @@ function RoleAvatar({ username, role }: { username: string; role: string }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-type Section = 'account' | 'staff' | 'system' | 'appearance' | 'orders' | 'payment' | 'notifications';
+type Section = 'account' | 'staff' | 'system' | 'appearance' | 'orders' | 'payment' | 'notifications' | 'data';
 
 const NAV_ITEMS: { id: Section; label: string; icon: React.ReactNode }[] = [
   { id: 'account',       label: 'Account Security',    icon: <IconShieldLock size={15} /> },
@@ -113,6 +119,7 @@ const NAV_ITEMS: { id: Section; label: string; icon: React.ReactNode }[] = [
   { id: 'orders',        label: 'Order Settings',      icon: <IconReceipt size={15} /> },
   { id: 'payment',       label: 'Payment Methods',     icon: <IconCreditCard size={15} /> },
   { id: 'notifications', label: 'Notifications',       icon: <IconBell size={15} /> },
+  { id: 'data',          label: 'Data Management',      icon: <IconDatabaseExport size={15} /> },
 ];
 
 export default function SettingsPage() {
@@ -196,6 +203,9 @@ export default function SettingsPage() {
       setOrderConfirm(s.order_confirmation === 'true');
       setNotifEnabled(s.notification_enabled !== 'false');
       if (s.notification_sound) setNotifSound(s.notification_sound);
+      setAutoBackupEnabled(s.auto_backup_enabled === 'true');
+      if (s.auto_backup_time) setAutoBackupTime(s.auto_backup_time);
+      if (s.last_backup_at)   setLastBackupAt(s.last_backup_at);
     }).catch(() => {});
 
     getPaymentMethods().then(setPaymentMethods).catch(() => {});
@@ -206,6 +216,10 @@ export default function SettingsPage() {
     socket.on('payment_methods:updated', handlePaymentMethodsUpdated);
     return () => { socket.off('payment_methods:updated', handlePaymentMethodsUpdated); };
   }, []);
+
+  useEffect(() => {
+    if (activeSection === 'data') loadBackups();
+  }, [activeSection]);
 
   async function handleSaveStallName() {
     const trimmed = stallNameInput.trim();
@@ -471,6 +485,128 @@ export default function SettingsPage() {
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.5);
+    }
+  }
+
+  // ─── Data Management state + handlers ────────────────────────────────────────
+
+  const [backups, setBackups]                     = useState<BackupFile[]>([]);
+  const [backupsLoading, setBackupsLoading]       = useState(false);
+  const [autoBackupEnabled, setAutoBackupEnabled] = useState(false);
+  const [autoBackupTime, setAutoBackupTime]       = useState('23:00');
+  const [lastBackupAt, setLastBackupAt]           = useState('');
+  const [backupToDelete, setBackupToDelete]       = useState<BackupFile | null>(null);
+  const [restoreTarget, setRestoreTarget]         = useState<File | null>(null);
+  const [restoring, setRestoring]                 = useState(false);
+  const [restoreError, setRestoreError]           = useState('');
+  const [manualBacking, setManualBacking]         = useState(false);
+  const [autoConfigSaving, setAutoConfigSaving]   = useState(false);
+
+  function loadBackups() {
+    setBackupsLoading(true);
+    listBackups()
+      .then(setBackups)
+      .catch(() => {})
+      .finally(() => setBackupsLoading(false));
+  }
+
+  async function handleManualBackup() {
+    setManualBacking(true);
+    try {
+      const token = localStorage.getItem('token');
+      const url   = getManualBackupUrl();
+      const today = new Date();
+      const name  = `pinili-cutlet-backup-${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}.db`;
+      const { save }      = await import('@tauri-apps/plugin-dialog');
+      const { writeFile } = await import('@tauri-apps/plugin-fs');
+      const filePath = await save({
+        defaultPath: name,
+        filters: [{ name: 'SQLite Database', extensions: ['db'] }],
+      });
+      if (!filePath) return;
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!resp.ok) throw new Error('Backup request failed');
+      const buffer = await resp.arrayBuffer();
+      await writeFile(filePath, new Uint8Array(buffer));
+      setSettingsToast('Backup saved successfully');
+      setTimeout(() => setSettingsToast(''), 3000);
+      loadBackups();
+    } catch {
+      setSettingsToast('Backup failed');
+      setTimeout(() => setSettingsToast(''), 3000);
+    } finally {
+      setManualBacking(false);
+    }
+  }
+
+  async function handleDownloadBackup(file: BackupFile) {
+    try {
+      const token = localStorage.getItem('token');
+      const url   = getBackupDownloadUrl(file.filename);
+      const { save }      = await import('@tauri-apps/plugin-dialog');
+      const { writeFile } = await import('@tauri-apps/plugin-fs');
+      const filePath = await save({
+        defaultPath: file.filename,
+        filters: [{ name: 'SQLite Database', extensions: ['db'] }],
+      });
+      if (!filePath) return;
+      const resp = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!resp.ok) throw new Error('Download failed');
+      const buffer = await resp.arrayBuffer();
+      await writeFile(filePath, new Uint8Array(buffer));
+      setSettingsToast('Backup downloaded');
+      setTimeout(() => setSettingsToast(''), 3000);
+    } catch {
+      setSettingsToast('Download failed');
+      setTimeout(() => setSettingsToast(''), 3000);
+    }
+  }
+
+  async function handleDeleteBackup() {
+    if (!backupToDelete) return;
+    try {
+      await deleteBackup(backupToDelete.filename);
+      setBackupToDelete(null);
+      loadBackups();
+    } catch {
+      setSettingsToast('Failed to delete backup');
+      setTimeout(() => setSettingsToast(''), 3000);
+      setBackupToDelete(null);
+    }
+  }
+
+  async function handleRestoreConfirm() {
+    if (!restoreTarget) return;
+    setRestoring(true);
+    setRestoreError('');
+    try {
+      await restoreBackup(restoreTarget);
+      setRestoreTarget(null);
+      setSettingsToast('Database restored — please restart the server');
+      setTimeout(() => setSettingsToast(''), 5000);
+    } catch {
+      setRestoreError('Restore failed. Make sure the file is a valid .db backup.');
+    } finally {
+      setRestoring(false);
+    }
+  }
+
+  async function handleSaveAutoConfig() {
+    setAutoConfigSaving(true);
+    try {
+      await configAutoBackup(autoBackupEnabled, autoBackupTime);
+      setSettingsToast('Auto backup settings saved');
+      setTimeout(() => setSettingsToast(''), 3000);
+    } catch {
+      setSettingsToast('Failed to save auto backup settings');
+      setTimeout(() => setSettingsToast(''), 3000);
+    } finally {
+      setAutoConfigSaving(false);
     }
   }
 
@@ -1198,6 +1334,222 @@ export default function SettingsPage() {
       </div>
       )}
 
+      {/* ── Data Management ── */}
+      {activeSection === 'data' && (
+      <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', maxWidth: 600 }}>
+        <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
+          <IconDatabaseExport size={16} color="#C0392B" />
+          <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 600 }}>Data Management</span>
+        </div>
+
+        {/* ─ Manual Backup ─ */}
+        <div className="flex flex-col gap-2">
+          <span style={{ fontSize: 12, color: '#606060', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Manual Backup</span>
+          <div className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C' }}>
+            <div className="flex flex-col gap-0.5">
+              <span style={{ fontSize: 13, color: '#ffffff' }}>Download a backup of the database</span>
+              <span style={{ fontSize: 11, color: '#606060' }}>Saves a copy of pinili_cutlet.db to your computer.</span>
+            </div>
+            <button
+              onClick={handleManualBackup}
+              disabled={manualBacking}
+              className="flex items-center gap-1.5 shrink-0"
+              style={{
+                backgroundColor: manualBacking ? '#2C2C2C' : '#C0392B',
+                border: 'none', borderRadius: 8, padding: '8px 14px',
+                color: manualBacking ? '#606060' : '#ffffff',
+                fontSize: 13, fontWeight: 600,
+                cursor: manualBacking ? 'not-allowed' : 'pointer',
+              }}
+              onMouseEnter={e => { if (!manualBacking) e.currentTarget.style.backgroundColor = '#96281B'; }}
+              onMouseLeave={e => { if (!manualBacking) e.currentTarget.style.backgroundColor = manualBacking ? '#2C2C2C' : '#C0392B'; }}
+            >
+              {manualBacking
+                ? <div className="w-3.5 h-3.5 border-2 border-textMuted border-t-transparent rounded-full animate-spin" />
+                : <IconDatabaseExport size={14} />}
+              {manualBacking ? 'Saving...' : 'Backup Now'}
+            </button>
+          </div>
+        </div>
+
+        {/* ─ Auto Backup ─ */}
+        <div className="flex flex-col gap-3 pt-3" style={{ borderTop: '1px solid #2C2C2C' }}>
+          <span style={{ fontSize: 12, color: '#606060', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Auto Backup</span>
+
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-0.5">
+              <span style={{ fontSize: 13, color: '#ffffff' }}>Enable automatic daily backup</span>
+              <span style={{ fontSize: 11, color: '#606060' }}>Keeps the last 7 backups in server/data/backups/.</span>
+            </div>
+            <button
+              role="switch"
+              aria-checked={autoBackupEnabled}
+              onClick={() => setAutoBackupEnabled(v => !v)}
+              style={{
+                width: 44, height: 24, borderRadius: 12,
+                backgroundColor: autoBackupEnabled ? '#C0392B' : '#2C2C2C',
+                border: 'none', cursor: 'pointer', position: 'relative', flexShrink: 0,
+                transition: 'background-color 0.2s',
+              }}
+            >
+              <span style={{
+                position: 'absolute', top: 3,
+                left: autoBackupEnabled ? 23 : 3,
+                width: 18, height: 18, borderRadius: '50%',
+                backgroundColor: '#ffffff', transition: 'left 0.2s',
+              }} />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label style={{ fontSize: 12, color: '#606060', whiteSpace: 'nowrap' }}>Backup time</label>
+            <input
+              type="time"
+              value={autoBackupTime}
+              onChange={e => setAutoBackupTime(e.target.value)}
+              style={{
+                backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C',
+                borderRadius: 8, padding: '7px 10px',
+                color: '#ffffff', fontSize: 13, outline: 'none',
+                colorScheme: 'dark',
+              }}
+              onFocus={e => (e.currentTarget.style.borderColor = '#C0392B')}
+              onBlur={e => (e.currentTarget.style.borderColor = '#2C2C2C')}
+            />
+            <button
+              onClick={handleSaveAutoConfig}
+              disabled={autoConfigSaving}
+              style={{
+                backgroundColor: autoConfigSaving ? '#2C2C2C' : '#C0392B',
+                border: 'none', borderRadius: 8, padding: '7px 14px',
+                color: autoConfigSaving ? '#606060' : '#ffffff',
+                fontSize: 13, fontWeight: 600,
+                cursor: autoConfigSaving ? 'not-allowed' : 'pointer',
+              }}
+              onMouseEnter={e => { if (!autoConfigSaving) e.currentTarget.style.backgroundColor = '#96281B'; }}
+              onMouseLeave={e => { if (!autoConfigSaving) e.currentTarget.style.backgroundColor = autoConfigSaving ? '#2C2C2C' : '#C0392B'; }}
+            >
+              {autoConfigSaving ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+
+          {lastBackupAt && (
+            <div className="flex items-center gap-1.5">
+              <IconHistory size={12} color="#606060" />
+              <span style={{ fontSize: 11, color: '#606060' }}>
+                Last auto backup: {new Date(lastBackupAt).toLocaleString('en-PH')}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* ─ Backup History ─ */}
+        <div className="flex flex-col gap-3 pt-3" style={{ borderTop: '1px solid #2C2C2C' }}>
+          <div className="flex items-center justify-between">
+            <span style={{ fontSize: 12, color: '#606060', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Backup History</span>
+            <button
+              onClick={loadBackups}
+              style={{ backgroundColor: 'transparent', border: 'none', color: '#606060', cursor: 'pointer', lineHeight: 0, padding: 4 }}
+              title="Refresh"
+              onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#606060')}
+            >
+              <IconRotateClockwise size={14} />
+            </button>
+          </div>
+
+          {backupsLoading ? (
+            <div className="flex justify-center py-4">
+              <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : backups.length === 0 ? (
+            <p style={{ fontSize: 13, color: '#606060', textAlign: 'center', padding: '8px 0' }}>No auto backups yet</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {backups.map(b => (
+                <div
+                  key={b.filename}
+                  className="flex items-center gap-3 p-3 rounded-lg"
+                  style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C' }}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p style={{ fontSize: 13, color: '#ffffff', fontWeight: 500 }}>{b.filename}</p>
+                    <p style={{ fontSize: 11, color: '#606060', marginTop: 2 }}>
+                      {new Date(b.created_at).toLocaleString('en-PH')} &middot; {(b.size / 1024).toFixed(1)} KB
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDownloadBackup(b)}
+                    className="flex items-center gap-1"
+                    style={{ backgroundColor: '#242424', border: '1px solid #2C2C2C', borderRadius: 6, padding: '5px 10px', color: '#A0A0A0', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#2C2C2C'; e.currentTarget.style.color = '#ffffff'; }}
+                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#242424'; e.currentTarget.style.color = '#A0A0A0'; }}
+                  >
+                    <IconDatabaseExport size={12} />
+                    Download
+                  </button>
+                  <button
+                    onClick={() => setBackupToDelete(b)}
+                    style={{ width: 28, height: 28, borderRadius: 6, cursor: 'pointer', lineHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.3)', color: '#C0392B' }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.15)')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.08)')}
+                  >
+                    <IconTrash size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ─ Restore ─ */}
+        <div className="flex flex-col gap-3 pt-3" style={{ borderTop: '1px solid #2C2C2C' }}>
+          <span style={{ fontSize: 12, color: '#606060', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Restore Database</span>
+          <div className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: 'rgba(192,57,43,0.06)', border: '1px solid rgba(192,57,43,0.25)' }}>
+            <IconAlertTriangle size={16} color="#C0392B" style={{ flexShrink: 0, marginTop: 1 }} />
+            <span style={{ fontSize: 12, color: '#A0A0A0' }}>
+              Restoring will <strong style={{ color: '#ffffff' }}>replace the current database</strong>. All data after the backup date will be lost. The server must be restarted after restore.
+            </span>
+          </div>
+          <label
+            className="flex items-center gap-2 self-start"
+            style={{
+              backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C',
+              borderRadius: 8, padding: '8px 14px',
+              color: '#A0A0A0', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#242424'; (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#1A1A1A'; (e.currentTarget as HTMLElement).style.color = '#A0A0A0'; }}
+          >
+            <IconDatabaseImport size={14} />
+            Select .db file…
+            <input
+              type="file"
+              accept=".db"
+              className="hidden"
+              onChange={e => {
+                const f = e.target.files?.[0];
+                if (f) { setRestoreTarget(f); setRestoreError(''); }
+                e.target.value = '';
+              }}
+            />
+          </label>
+          {restoreTarget && (
+            <div className="flex items-center gap-2">
+              <span style={{ fontSize: 13, color: '#ffffff' }}>{restoreTarget.name}</span>
+              <button
+                onClick={() => { setRestoreTarget(null); setRestoreError(''); }}
+                style={{ color: '#606060', background: 'none', border: 'none', cursor: 'pointer', lineHeight: 0 }}
+              >
+                <IconX size={14} />
+              </button>
+            </div>
+          )}
+          {restoreError && <p style={{ fontSize: 12, color: '#C0392B' }}>{restoreError}</p>}
+        </div>
+      </div>
+      )}
+
         </div>{/* end content area */}
       </div>{/* end two-column */}
 
@@ -1230,6 +1582,28 @@ export default function SettingsPage() {
           destructive
           onConfirm={handleDeleteMethod}
           onCancel={() => setDeleteMethodTarget(null)}
+        />
+      )}
+
+      {backupToDelete && (
+        <ConfirmDialog
+          title="Delete Backup"
+          message={`Delete "${backupToDelete.filename}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          destructive
+          onConfirm={handleDeleteBackup}
+          onCancel={() => setBackupToDelete(null)}
+        />
+      )}
+
+      {restoreTarget && (
+        <ConfirmDialog
+          title="Restore Database"
+          message={`Replace the current database with "${restoreTarget.name}"? All data after the backup date will be permanently lost. The server must be restarted after restore.`}
+          confirmLabel={restoring ? 'Restoring...' : 'Yes, Restore'}
+          destructive
+          onConfirm={handleRestoreConfirm}
+          onCancel={() => { setRestoreTarget(null); setRestoreError(''); }}
         />
       )}
 
