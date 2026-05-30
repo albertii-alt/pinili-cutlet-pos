@@ -11,6 +11,7 @@ import { formatTime } from '../../utils/formatDate';
 import { PaymentBadge } from '../../components/shared/Badge';
 import EmptyState from '../../components/shared/EmptyState';
 import QRCodeModal from '../../components/shared/QRCodeModal';
+import LogoutModal from '../../components/shared/LogoutModal';
 import { useBrandName } from '../../hooks/useBrandName';
 import { usePaymentMethods } from '../../hooks/usePaymentMethods';
 import { useNotificationSound } from '../../hooks/useNotificationSound';
@@ -64,6 +65,7 @@ export default function QueuePage() {
   const { playSound, isMuted, toggleMute } = useNotificationSound();
   const { width } = useWindowSize();
   const [showQR, setShowQR] = useState(false);
+  const [showLogout, setShowLogout] = useState(false);
 
   const isDesktop = width >= 1024;
   const gridCols  = isDesktop ? 3 : width >= 600 ? 2 : 1;
@@ -142,7 +144,7 @@ export default function QueuePage() {
             )}
 
             <button
-              onClick={handleLogout}
+              onClick={() => setShowLogout(true)}
               className="w-8 h-8 flex items-center justify-center rounded-lg border border-border"
               style={{ backgroundColor: '#1A1A1A', color: '#A0A0A0', cursor: 'pointer' }}
               onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.1)'; e.currentTarget.style.color = '#C0392B'; }}
@@ -154,6 +156,7 @@ export default function QueuePage() {
         </header>
 
         {showQR && <QRCodeModal onClose={() => setShowQR(false)} />}
+        {showLogout && <LogoutModal onConfirm={handleLogout} onCancel={() => setShowLogout(false)} />}
 
         <div style={{ padding: '68px 16px 16px', display: 'flex', flexDirection: 'column', flex: 1, gap: 16 }}>
           {/* Header row */}
@@ -308,7 +311,7 @@ export default function QueuePage() {
               {isMuted ? <IconVolumeOff size={18} /> : <IconVolume size={18} />}
             </button>
           )}
-          <button onClick={handleLogout} className="text-textGray p-1 min-h-[44px] min-w-[44px] flex items-center justify-center">
+          <button onClick={() => setShowLogout(true)} className="text-textGray p-1 min-h-[44px] min-w-[44px] flex items-center justify-center">
             <IconLogout size={18} />
           </button>
         </div>
@@ -386,6 +389,7 @@ export default function QueuePage() {
           </button>
         </nav>
       )}
+      {showLogout && <LogoutModal onConfirm={handleLogout} onCancel={() => setShowLogout(false)} />}
     </div>
   );
 }
