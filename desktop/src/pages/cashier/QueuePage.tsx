@@ -54,7 +54,7 @@ function ElapsedBadge({ createdAt }: { createdAt: string }) {
 export default function QueuePage() {
   const navigate = useNavigate();
   const { orders, loading } = useOrders();
-  const { getMethodColor } = usePaymentMethods();
+  const { getMethodColor, getMethodLogoUrl } = usePaymentMethods();
   const stallName = useBrandName();
   const { user } = useAuthStore();
 
@@ -151,7 +151,7 @@ export default function QueuePage() {
                   <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--accent-color, #C0392B)' }}>
                     {order.order_number}
                   </span>
-                  <PaymentBadge method={order.payment_method} color={getMethodColor(order.payment_method)} />
+                  <PaymentBadge method={order.payment_method} color={getMethodColor(order.payment_method)} logoUrl={getMethodLogoUrl(order.payment_method)} />
                 </div>
 
                 {/* Fix 4 — timestamp + elapsed */}

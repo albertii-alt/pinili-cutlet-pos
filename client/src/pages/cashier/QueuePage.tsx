@@ -60,7 +60,7 @@ export default function QueuePage() {
   const { orders, loading } = useOrders();
   const { user, logout: clearAuth } = useAuthStore();
   const stallName = useBrandName();
-  const { getMethodColor } = usePaymentMethods();
+  const { getMethodColor, getMethodLogoUrl } = usePaymentMethods();
   const { playSound, isMuted, toggleMute } = useNotificationSound();
   const { width } = useWindowSize();
   const [showQR, setShowQR] = useState(false);
@@ -219,7 +219,7 @@ export default function QueuePage() {
                     <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--accent-color, #C0392B)' }}>
                       {order.order_number}
                     </span>
-                    <PaymentBadge method={order.payment_method} color={getMethodColor(order.payment_method)} />
+                    <PaymentBadge method={order.payment_method} color={getMethodColor(order.payment_method)} logoUrl={getMethodLogoUrl(order.payment_method)} />
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
@@ -327,7 +327,7 @@ export default function QueuePage() {
               <div key={order.id} className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <span className="text-primary font-bold text-xl">{order.order_number}</span>
-                  <PaymentBadge method={order.payment_method} color={getMethodColor(order.payment_method)} />
+                  <PaymentBadge method={order.payment_method} color={getMethodColor(order.payment_method)} logoUrl={getMethodLogoUrl(order.payment_method)} />
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">

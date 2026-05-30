@@ -118,6 +118,11 @@ function migratePaymentMethodsColor(): void {
     db.prepare("UPDATE payment_methods SET color = '#2980B9' WHERE LOWER(name) = 'gcash' AND color IS NULL").run();
     console.log('[DB] Migration complete.');
   }
+  if (!cols.some(c => c.name === 'logo_path')) {
+    console.log('[DB] Adding logo_path column to payment_methods...');
+    db.prepare('ALTER TABLE payment_methods ADD COLUMN logo_path TEXT DEFAULT NULL').run();
+    console.log('[DB] Migration complete.');
+  }
 }
 function migrateMenuItemsTable(): void {
   const cols = db.prepare("PRAGMA table_info(menu_items)").all() as { name: string }[];

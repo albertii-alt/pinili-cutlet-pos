@@ -7,13 +7,14 @@ interface SalesCardProps {
   accent?: boolean;
   accentColor?: string;
   icon?: Icon;
+  logoUrl?: string;
   isZero?: boolean;
   clickable?: boolean;
   active?: boolean;
   onClick?: () => void;
 }
 
-export default function SalesCard({ label, value, accent = false, accentColor, icon: Icon, isZero = false, clickable = false, active = false, onClick }: SalesCardProps) {
+export default function SalesCard({ label, value, accent = false, accentColor, icon: Icon, logoUrl, isZero = false, clickable = false, active = false, onClick }: SalesCardProps) {
   const [hovered, setHovered] = useState(false);
   const color = accentColor ?? '#C0392B';
   const valueColor = isZero ? '#606060' : accent ? color : '#ffffff';
@@ -42,14 +43,26 @@ export default function SalesCard({ label, value, accent = false, accentColor, i
     >
       <div className="flex items-center justify-between">
         <span className="text-textGray text-xs uppercase tracking-wider">{label}</span>
-        {Icon && (
+        {logoUrl ? (
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden"
+            style={{ backgroundColor: accent && !isZero ? `${color}1A` : 'rgba(255,255,255,0.05)' }}
+          >
+            <img
+              src={logoUrl}
+              alt={label}
+              style={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 6 }}
+              onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+            />
+          </div>
+        ) : Icon ? (
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center"
             style={{ backgroundColor: accent && !isZero ? `${color}1A` : 'rgba(255,255,255,0.05)' }}
           >
             <Icon size={20} color={accent && !isZero ? color : '#606060'} />
           </div>
-        )}
+        ) : null}
       </div>
       <span className="font-bold text-2xl" style={{ color: valueColor }}>
         {value}

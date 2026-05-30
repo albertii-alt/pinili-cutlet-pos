@@ -24,7 +24,7 @@ export default function DashboardPage() {
   const [dailyTarget, setDailyTarget] = useState<number>(0);
   const [todayExpenses, setTodayExpenses] = useState<number>(0);
   const { summary, dailySales, bestSellers, loading } = useAnalytics(period);
-  const { getMethodColor } = usePaymentMethods();
+  const { getMethodColor, getMethodLogoUrl } = usePaymentMethods();
 
   // Fetch daily target once on mount
   useEffect(() => {
@@ -99,6 +99,7 @@ export default function DashboardPage() {
                 label={`${b.payment_method.charAt(0).toUpperCase() + b.payment_method.slice(1)} Sales`}
                 value={formatCurrency(b.revenue)}
                 icon={IconCreditCard}
+                logoUrl={getMethodLogoUrl(b.payment_method)}
                 accent
                 accentColor={getMethodColor(b.payment_method)}
               />

@@ -18,7 +18,7 @@ export default function OrderDetailsModal({ order, onClose, onCancelled }: Order
   const [reason, setReason]                 = useState('');
   const [cancelling, setCancelling]         = useState(false);
   const [cancelError, setCancelError]       = useState('');
-  const { getMethodColor } = usePaymentMethods();
+  const { getMethodColor, getMethodLogoUrl } = usePaymentMethods();
 
   const isCompleted = order.status === 'completed';
   const isCancelled = order.status === 'cancelled';
@@ -93,7 +93,7 @@ export default function OrderDetailsModal({ order, onClose, onCancelled }: Order
             </div>
             <div className="flex justify-between items-center">
               <span style={{ fontSize: 12, color: '#606060' }}>Payment</span>
-              <PaymentBadge method={order.payment_method} color={getMethodColor(order.payment_method)} />
+              <PaymentBadge method={order.payment_method} color={getMethodColor(order.payment_method)} logoUrl={getMethodLogoUrl(order.payment_method)} />
             </div>
           </div>
 

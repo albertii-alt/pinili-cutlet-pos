@@ -22,6 +22,7 @@ interface OrderConfirmModalProps {
   totalAmount: number;
   paymentMethod: string;
   paymentColor: string;
+  paymentLogoUrl?: string;
   cashTendered: string;
   orderPrefix: string;
   loading: boolean;
@@ -34,6 +35,7 @@ function OrderConfirmModal({
   totalAmount,
   paymentMethod,
   paymentColor,
+  paymentLogoUrl,
   cashTendered,
   orderPrefix,
   loading,
@@ -127,7 +129,7 @@ function OrderConfirmModal({
         <div className="flex flex-col gap-2 px-6 py-3">
           <div className="flex items-center justify-between">
             <span style={{ fontSize: 12, color: '#606060' }}>Payment</span>
-            <PaymentBadge method={paymentMethod} color={paymentColor} />
+            <PaymentBadge method={paymentMethod} color={paymentColor} logoUrl={paymentLogoUrl} />
           </div>
           {isCash && (
             <div className="flex items-center justify-between">
@@ -222,7 +224,7 @@ export default function OrderPanel({ variant = 'phone', width = 320 }: OrderPane
   const [resumeId, setResumeId]             = useState<string | null>(null);
 
   const { orderPrefix, showConfirmation } = useOrderSettings();
-  const { getMethodColor } = usePaymentMethods();
+  const { getMethodColor, getMethodLogoUrl } = usePaymentMethods();
 
   useEffect(() => {
     getPaymentMethods().then(methods => {
@@ -509,7 +511,8 @@ export default function OrderPanel({ variant = 'phone', width = 320 }: OrderPane
         {confirmOpen && (
           <OrderConfirmModal
             items={cartItems} totalAmount={totalAmount} paymentMethod={paymentMethod}
-            paymentColor={getMethodColor(paymentMethod)} cashTendered={cashTendered}
+            paymentColor={getMethodColor(paymentMethod)} paymentLogoUrl={getMethodLogoUrl(paymentMethod)}
+            cashTendered={cashTendered}
             orderPrefix={orderPrefix} loading={loading} onConfirm={submitOrder} onCancel={() => setConfirmOpen(false)}
           />
         )}
@@ -618,7 +621,8 @@ export default function OrderPanel({ variant = 'phone', width = 320 }: OrderPane
         {confirmOpen && (
           <OrderConfirmModal
             items={cartItems} totalAmount={totalAmount} paymentMethod={paymentMethod}
-            paymentColor={getMethodColor(paymentMethod)} cashTendered={cashTendered}
+            paymentColor={getMethodColor(paymentMethod)} paymentLogoUrl={getMethodLogoUrl(paymentMethod)}
+            cashTendered={cashTendered}
             orderPrefix={orderPrefix} loading={loading} onConfirm={submitOrder} onCancel={() => setConfirmOpen(false)}
           />
         )}
@@ -779,6 +783,7 @@ export default function OrderPanel({ variant = 'phone', width = 320 }: OrderPane
           totalAmount={totalAmount}
           paymentMethod={paymentMethod}
           paymentColor={getMethodColor(paymentMethod)}
+          paymentLogoUrl={getMethodLogoUrl(paymentMethod)}
           cashTendered={cashTendered}
           orderPrefix={orderPrefix}
           loading={loading}

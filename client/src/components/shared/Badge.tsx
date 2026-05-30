@@ -42,7 +42,27 @@ function getTextColor(hex: string): string {
   return brightness > 128 ? '#000000' : '#FFFFFF';
 }
 
-export function PaymentBadge({ method, color }: { method: string; color?: string }) {
+export function PaymentBadge({ method, color, logoUrl }: { method: string; color?: string; logoUrl?: string }) {
+  if (logoUrl) {
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium"
+        style={{
+          backgroundColor: color ? `${color}22` : 'rgba(160,160,160,0.1)',
+          border: `1px solid ${color ? `${color}44` : 'rgba(160,160,160,0.2)'}`,
+          color: color ?? '#A0A0A0',
+        }}
+      >
+        <img
+          src={logoUrl}
+          alt={method}
+          style={{ width: 16, height: 16, objectFit: 'contain', borderRadius: 2, flexShrink: 0 }}
+          onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+        />
+        {method}
+      </span>
+    );
+  }
   if (color) {
     return (
       <span

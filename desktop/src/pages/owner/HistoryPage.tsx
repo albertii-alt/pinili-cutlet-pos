@@ -84,7 +84,7 @@ export default function HistoryPage() {
   const [exporting, setExporting]       = useState(false);
   const [toast, setToast]               = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
-  const { getMethodColor } = usePaymentMethods();
+  const { getMethodColor, getMethodLogoUrl } = usePaymentMethods();
 
   function handleOrderCancelled(id: number) {
     setOrders(prev => prev.map(o =>
@@ -272,6 +272,7 @@ export default function HistoryPage() {
             label={b.payment_method.charAt(0).toUpperCase() + b.payment_method.slice(1)}
             value={formatCurrency(b.revenue)}
             icon={IconCreditCard}
+            logoUrl={getMethodLogoUrl(b.payment_method)}
             accent
             accentColor={getMethodColor(b.payment_method)}
             clickable
@@ -319,7 +320,7 @@ export default function HistoryPage() {
                   >
                     <td className="px-4 py-3" style={{ color: '#C0392B', fontWeight: 600, fontSize: 13 }}>{order.order_number}</td>
                     <td className="px-4 py-3" style={{ color: '#A0A0A0', fontSize: 13 }}>{formatDateTime(order.created_at)}</td>
-                    <td className="px-4 py-3"><PaymentBadge method={order.payment_method} color={getMethodColor(order.payment_method)} /></td>
+                    <td className="px-4 py-3"><PaymentBadge method={order.payment_method} color={getMethodColor(order.payment_method)} logoUrl={getMethodLogoUrl(order.payment_method)} /></td>
                     <td className="px-4 py-3">
                       {order.status === 'cancelled'
                         ? <span style={{ fontSize: 11, fontWeight: 600, color: '#C0392B', backgroundColor: 'rgba(192,57,43,0.1)', border: '1px solid rgba(192,57,43,0.3)', borderRadius: 4, padding: '2px 7px' }}>Cancelled</span>

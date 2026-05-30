@@ -14,6 +14,7 @@ export interface PaymentMethod {
   is_default: number;
   sort_order: number;
   color: string | null;
+  logo_path: string | null;
   created_at: string;
 }
 

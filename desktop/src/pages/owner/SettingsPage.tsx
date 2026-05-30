@@ -13,6 +13,7 @@ import {
   getSettings, updateSetting,
   getPaymentMethods, addPaymentMethod, deletePaymentMethod,
   setDefaultPaymentMethod, togglePaymentMethod, updatePaymentMethodColor,
+  uploadPaymentLogo, deletePaymentLogo,
   type PaymentMethod,
 } from '../../api/settings.api';
 import { useStaff } from '../../hooks/useStaff';
@@ -166,6 +167,10 @@ export default function SettingsPage() {
   const [addingMethod, setAddingMethod]       = useState(false);
   const [addMethodError, setAddMethodError]   = useState('');
   const [deleteMethodTarget, setDeleteMethodTarget] = useState<PaymentMethod | null>(null);
+  const [logoUploading, setLogoUploading]     = useState<number | null>(null); // method id being uploaded
+  const [logoError, setLogoError]             = useState<Record<number, string>>({});
+
+  const SERVER_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
   // Display & Appearance state
   const ACCENT_PRESETS = [
@@ -294,6 +299,35 @@ export default function SettingsPage() {
       setTimeout(() => setSettingsToast(''), 3000);
     } catch {
       setSettingsToast('Failed to update color');
+      setTimeout(() => setSettingsToast(''), 3000);
+    }
+  }
+
+  async function handleLogoUpload(id: number, file: File) {
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoError(prev => ({ ...prev, [id]: 'File must be under 2MB' }));
+      return;
+    }
+    setLogoUploading(id);
+    setLogoError(prev => ({ ...prev, [id]: '' }));
+    try {
+      await uploadPaymentLogo(id, file);
+      setSettingsToast('Logo uploaded');
+      setTimeout(() => setSettingsToast(''), 3000);
+    } catch {
+      setLogoError(prev => ({ ...prev, [id]: 'Upload failed. Try again.' }));
+    } finally {
+      setLogoUploading(null);
+    }
+  }
+
+  async function handleLogoDelete(id: number) {
+    try {
+      await deletePaymentLogo(id);
+      setSettingsToast('Logo removed');
+      setTimeout(() => setSettingsToast(''), 3000);
+    } catch {
+      setSettingsToast('Failed to remove logo');
       setTimeout(() => setSettingsToast(''), 3000);
     }
   }
@@ -964,52 +998,123 @@ export default function SettingsPage() {
             {paymentMethods.map(m => (
               <div
                 key={m.id}
-                className="flex items-center gap-3 p-3 rounded-lg"
+                className="flex flex-col gap-2 p-3 rounded-lg"
                 style={{
                   backgroundColor: '#1A1A1A',
                   border: `1px solid ${m.is_default ? 'rgba(192,57,43,0.4)' : '#2C2C2C'}`,
                   opacity: m.is_active ? 1 : 0.5,
                 }}
               >
-                <button
-                  onClick={() => handleSetDefault(m.id)}
-                  title={m.is_default ? 'Default method' : 'Set as default'}
-                  style={{ lineHeight: 0, color: m.is_default ? '#F4C430' : '#606060', cursor: m.is_default ? 'default' : 'pointer' }}
-                  onMouseEnter={e => { if (!m.is_default) e.currentTarget.style.color = '#F4C430'; }}
-                  onMouseLeave={e => { if (!m.is_default) e.currentTarget.style.color = '#606060'; }}
-                >
-                  {m.is_default ? <IconStarFilled size={15} /> : <IconStar size={15} />}
-                </button>
-                <input
-                  type="color"
-                  title="Change color"
-                  value={m.color ?? '#606060'}
-                  onChange={e => handleColorChange(m.id, e.target.value)}
-                  style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, cursor: 'pointer', border: '2px solid rgba(255,255,255,0.15)', padding: 0 }}
-                />
-                <span style={{ flex: 1, fontSize: 13, color: m.is_active ? '#ffffff' : '#606060', fontWeight: m.is_default ? 600 : 400 }}>
-                  {m.name}
-                </span>
-                {m.is_default && (
-                  <span style={{ fontSize: 10, color: '#C0392B', backgroundColor: 'rgba(192,57,43,0.1)', border: '1px solid rgba(192,57,43,0.3)', borderRadius: 4, padding: '1px 6px', fontWeight: 600 }}>
-                    Default
+                {/* Main row */}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleSetDefault(m.id)}
+                    title={m.is_default ? 'Default method' : 'Set as default'}
+                    style={{ lineHeight: 0, color: m.is_default ? '#F4C430' : '#606060', cursor: m.is_default ? 'default' : 'pointer' }}
+                    onMouseEnter={e => { if (!m.is_default) e.currentTarget.style.color = '#F4C430'; }}
+                    onMouseLeave={e => { if (!m.is_default) e.currentTarget.style.color = '#606060'; }}
+                  >
+                    {m.is_default ? <IconStarFilled size={15} /> : <IconStar size={15} />}
+                  </button>
+
+                  {/* Logo thumbnail or color swatch */}
+                  {m.logo_path ? (
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 overflow-hidden"
+                      style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C' }}
+                    >
+                      <img
+                        src={`${SERVER_BASE}/payment-logos/${m.logo_path}`}
+                        alt={m.name}
+                        style={{ width: 28, height: 28, objectFit: 'contain' }}
+                      />
+                    </div>
+                  ) : (
+                    <input
+                      type="color"
+                      title="Change color"
+                      value={m.color ?? '#606060'}
+                      onChange={e => handleColorChange(m.id, e.target.value)}
+                      style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, cursor: 'pointer', border: '2px solid rgba(255,255,255,0.15)', padding: 0 }}
+                    />
+                  )}
+
+                  <span style={{ flex: 1, fontSize: 13, color: m.is_active ? '#ffffff' : '#606060', fontWeight: m.is_default ? 600 : 400 }}>
+                    {m.name}
                   </span>
-                )}
-                <button
-                  onClick={() => handleToggleMethod(m.id, !m.is_active)}
-                  style={{ width: 28, height: 28, borderRadius: 6, cursor: 'pointer', lineHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: m.is_active ? 'rgba(243,156,18,0.1)' : 'rgba(39,174,96,0.1)', border: `1px solid ${m.is_active ? 'rgba(243,156,18,0.3)' : 'rgba(39,174,96,0.3)'}`, color: m.is_active ? '#F39C12' : '#27AE60' }}
-                  title={m.is_active ? 'Disable' : 'Enable'}
-                >
-                  {m.is_active ? <IconLock size={12} /> : <IconLockOpen size={12} />}
-                </button>
-                <button
-                  onClick={() => setDeleteMethodTarget(m)}
-                  style={{ width: 28, height: 28, borderRadius: 6, cursor: 'pointer', lineHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.3)', color: '#C0392B' }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.15)')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.08)')}
-                >
-                  <IconTrash size={12} />
-                </button>
+                  {m.is_default && (
+                    <span style={{ fontSize: 10, color: '#C0392B', backgroundColor: 'rgba(192,57,43,0.1)', border: '1px solid rgba(192,57,43,0.3)', borderRadius: 4, padding: '1px 6px', fontWeight: 600 }}>
+                      Default
+                    </span>
+                  )}
+                  <button
+                    onClick={() => handleToggleMethod(m.id, !m.is_active)}
+                    style={{ width: 28, height: 28, borderRadius: 6, cursor: 'pointer', lineHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: m.is_active ? 'rgba(243,156,18,0.1)' : 'rgba(39,174,96,0.1)', border: `1px solid ${m.is_active ? 'rgba(243,156,18,0.3)' : 'rgba(39,174,96,0.3)'}`, color: m.is_active ? '#F39C12' : '#27AE60' }}
+                    title={m.is_active ? 'Disable' : 'Enable'}
+                  >
+                    {m.is_active ? <IconLock size={12} /> : <IconLockOpen size={12} />}
+                  </button>
+                  <button
+                    onClick={() => setDeleteMethodTarget(m)}
+                    style={{ width: 28, height: 28, borderRadius: 6, cursor: 'pointer', lineHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.3)', color: '#C0392B' }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.15)')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.08)')}
+                  >
+                    <IconTrash size={12} />
+                  </button>
+                </div>
+
+                {/* Logo upload row */}
+                <div className="flex items-center gap-2 pl-1">
+                  <label
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 5,
+                      backgroundColor: logoUploading === m.id ? '#2C2C2C' : 'transparent',
+                      border: '1px solid #2C2C2C',
+                      borderRadius: 6, padding: '3px 10px',
+                      color: logoUploading === m.id ? '#606060' : '#A0A0A0',
+                      fontSize: 11, cursor: logoUploading === m.id ? 'not-allowed' : 'pointer',
+                    }}
+                    onMouseEnter={e => { if (logoUploading !== m.id) { (e.currentTarget as HTMLElement).style.backgroundColor = '#242424'; (e.currentTarget as HTMLElement).style.color = '#ffffff'; } }}
+                    onMouseLeave={e => { if (logoUploading !== m.id) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#A0A0A0'; } }}
+                  >
+                    <IconUpload size={11} />
+                    {logoUploading === m.id ? 'Uploading…' : m.logo_path ? 'Replace Logo' : 'Upload Logo'}
+                    <input
+                      type="file"
+                      accept=".png,.jpg,.jpeg,.webp"
+                      className="hidden"
+                      disabled={logoUploading === m.id}
+                      onChange={e => { const f = e.target.files?.[0]; if (f) handleLogoUpload(m.id, f); e.target.value = ''; }}
+                    />
+                  </label>
+
+                  {m.logo_path && (
+                    <button
+                      onClick={() => handleLogoDelete(m.id)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, backgroundColor: 'transparent', border: '1px solid rgba(192,57,43,0.3)', borderRadius: 6, padding: '3px 10px', color: '#C0392B', fontSize: 11, cursor: 'pointer' }}
+                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.08)')}
+                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    >
+                      <IconX size={11} />
+                      Remove
+                    </button>
+                  )}
+
+                  {!m.logo_path && (
+                    <input
+                      type="color"
+                      title="Change color"
+                      value={m.color ?? '#606060'}
+                      onChange={e => handleColorChange(m.id, e.target.value)}
+                      style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, cursor: 'pointer', border: '2px solid rgba(255,255,255,0.15)', padding: 0 }}
+                    />
+                  )}
+
+                  {logoError[m.id] && (
+                    <span style={{ fontSize: 11, color: '#C0392B' }}>{logoError[m.id]}</span>
+                  )}
+                </div>
               </div>
             ))}
           </div>

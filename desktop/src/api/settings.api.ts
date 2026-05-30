@@ -14,6 +14,7 @@ export interface PaymentMethod {
   is_default: number;
   sort_order: number;
   color: string | null;
+  logo_path: string | null;
   created_at: string;
 }
 
@@ -51,4 +52,17 @@ export async function togglePaymentMethod(id: number, isActive: boolean): Promis
 
 export async function updatePaymentMethodColor(id: number, color: string): Promise<void> {
   await apiClient.patch(`/api/payment-methods/${id}/color`, { color });
+}
+
+export async function uploadPaymentLogo(id: number, file: File): Promise<{ logo_path: string }> {
+  const formData = new FormData();
+  formData.append('logo', file);
+  const { data } = await apiClient.post(`/api/payment-methods/${id}/logo`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+
+export async function deletePaymentLogo(id: number): Promise<void> {
+  await apiClient.delete(`/api/payment-methods/${id}/logo`);
 }

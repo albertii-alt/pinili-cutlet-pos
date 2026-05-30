@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import db from '../database/db';
+import fs from 'fs';
+import path from 'path';
+import sharp from 'sharp';
 
 interface PaymentMethod {
   id: number;
@@ -8,6 +11,7 @@ interface PaymentMethod {
   is_default: number;
   sort_order: number;
   color: string | null;
+  logo_path: string | null;
   created_at: string;
 }
 
@@ -159,4 +163,66 @@ export function togglePaymentMethod(req: Request, res: Response): void {
   const all = db.prepare('SELECT * FROM payment_methods ORDER BY sort_order ASC, id ASC').all();
   emit('payment_methods:updated', all);
   res.json({ message: 'Payment method updated' });
+}
+
+const LOGO_DIR = path.resolve(process.cwd(), '../server/public/payment-logos');
+
+function ensureLogoDir(): void {
+  if (!fs.existsSync(LOGO_DIR)) fs.mkdirSync(LOGO_DIR, { recursive: true });
+}
+
+export async function uploadPaymentLogo(req: Request, res: Response): Promise<void> {
+  const { id } = req.params;
+
+  const method = db.prepare('SELECT * FROM payment_methods WHERE id = ?').get(id) as PaymentMethod | undefined;
+  if (!method) { res.status(404).json({ error: 'Payment method not found' }); return; }
+
+  if (!req.file) { res.status(400).json({ error: 'No file uploaded' }); return; }
+
+  ensureLogoDir();
+
+  // Delete old logo if exists
+  if (method.logo_path) {
+    const oldFile = path.join(LOGO_DIR, method.logo_path);
+    if (fs.existsSync(oldFile)) fs.unlinkSync(oldFile);
+  }
+
+  const filename = `payment-${id}-${Date.now()}.png`;
+  const dest     = path.join(LOGO_DIR, filename);
+
+  try {
+    await sharp(req.file.buffer)
+      .resize(120, 120, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .png({ quality: 90 })
+      .toFile(dest);
+  } catch {
+    res.status(500).json({ error: 'Failed to process image' });
+    return;
+  }
+
+  db.prepare('UPDATE payment_methods SET logo_path = ? WHERE id = ?').run(filename, id);
+
+  const all = db.prepare('SELECT * FROM payment_methods ORDER BY sort_order ASC, id ASC').all();
+  emit('payment_methods:updated', all);
+
+  res.json({ logo_path: filename });
+}
+
+export function deletePaymentLogo(req: Request, res: Response): void {
+  const { id } = req.params;
+
+  const method = db.prepare('SELECT * FROM payment_methods WHERE id = ?').get(id) as PaymentMethod | undefined;
+  if (!method) { res.status(404).json({ error: 'Payment method not found' }); return; }
+
+  if (method.logo_path) {
+    const file = path.join(LOGO_DIR, method.logo_path);
+    if (fs.existsSync(file)) fs.unlinkSync(file);
+  }
+
+  db.prepare('UPDATE payment_methods SET logo_path = NULL WHERE id = ?').run(id);
+
+  const all = db.prepare('SELECT * FROM payment_methods ORDER BY sort_order ASC, id ASC').all();
+  emit('payment_methods:updated', all);
+
+  res.json({ ok: true });
 }

@@ -22,6 +22,7 @@ interface OrderConfirmModalProps {
   totalAmount: number;
   paymentMethod: string;
   paymentColor: string;
+  paymentLogoUrl?: string;
   cashTendered: string;
   orderPrefix: string;
   loading: boolean;
@@ -30,7 +31,7 @@ interface OrderConfirmModalProps {
 }
 
 function OrderConfirmModal({
-  items, totalAmount, paymentMethod, paymentColor,
+  items, totalAmount, paymentMethod, paymentColor, paymentLogoUrl,
   cashTendered, orderPrefix, loading, onConfirm, onCancel,
 }: OrderConfirmModalProps) {
   const isCash = paymentMethod.toLowerCase() === 'cash';
@@ -87,7 +88,7 @@ function OrderConfirmModal({
         <div className="flex flex-col gap-2 px-6 py-3">
           <div className="flex items-center justify-between">
             <span style={{ fontSize: 12, color: '#606060' }}>Payment</span>
-            <PaymentBadge method={paymentMethod} color={paymentColor} />
+            <PaymentBadge method={paymentMethod} color={paymentColor} logoUrl={paymentLogoUrl} />
           </div>
           {isCash && (
             <>
@@ -143,7 +144,7 @@ export default function OrderPanel({ width }: { width: number }) {
   const [resumeId, setResumeId]             = useState<string | null>(null);
 
   const { orderPrefix, showConfirmation } = useOrderSettings();
-  const { getMethodColor } = usePaymentMethods();
+  const { getMethodColor, getMethodLogoUrl } = usePaymentMethods();
 
   useEffect(() => {
     getPaymentMethods().then(methods => {
@@ -368,7 +369,8 @@ export default function OrderPanel({ width }: { width: number }) {
       {confirmOpen && (
         <OrderConfirmModal
           items={cartItems} totalAmount={totalAmount} paymentMethod={paymentMethod}
-          paymentColor={getMethodColor(paymentMethod)} cashTendered={cashTendered}
+          paymentColor={getMethodColor(paymentMethod)} paymentLogoUrl={getMethodLogoUrl(paymentMethod)}
+          cashTendered={cashTendered}
           orderPrefix={orderPrefix} loading={loading} onConfirm={submitOrder} onCancel={() => setConfirmOpen(false)}
         />
       )}
