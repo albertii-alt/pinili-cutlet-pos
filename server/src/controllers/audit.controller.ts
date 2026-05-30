@@ -28,3 +28,16 @@ export function getAuditLogs(req: Request, res: Response): void {
 
   res.json({ data: logs, total, limit: pageSize, offset: skip });
 }
+
+export function deleteAuditLog(req: Request, res: Response): void {
+  const { id } = req.params;
+  const existing = db.prepare('SELECT id FROM audit_logs WHERE id = ?').get(id);
+  if (!existing) { res.status(404).json({ error: 'Log not found' }); return; }
+  db.prepare('DELETE FROM audit_logs WHERE id = ?').run(id);
+  res.json({ ok: true });
+}
+
+export function deleteAllAuditLogs(req: Request, res: Response): void {
+  db.prepare('DELETE FROM audit_logs').run();
+  res.json({ ok: true });
+}

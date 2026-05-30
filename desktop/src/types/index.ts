@@ -134,6 +134,20 @@ export interface AuditLog {
   created_at: string;
 }
 
+export interface CashDrawer {
+  id: number;
+  date: string;
+  opening_amount: number;
+  expected_amount: number;
+  actual_amount: number | null;
+  discrepancy: number | null;
+  notes: string | null;
+  closed_at: string | null;
+  created_at: string;
+  /** Computed by server — today's cash sales only */
+  cash_sales?: number;
+}
+
 export interface AuthState {
   token: string | null;
   user: User | null;

@@ -7,6 +7,7 @@ import SalesChart from '../../components/owner/SalesChart';
 import BestSellerList from '../../components/owner/BestSellerList';
 import EndOfDayModal from '../../components/owner/EndOfDayModal';
 import DailySalesTarget from '../../components/owner/DailySalesTarget';
+import CashDrawerCard from '../../components/owner/CashDrawerCard';
 import { getDailyTarget } from '../../api/analytics.api';
 import { usePaymentMethods } from '../../hooks/usePaymentMethods';
 
@@ -102,6 +103,11 @@ export default function DashboardPage() {
               dailyTarget={dailyTarget}
               onTargetUpdated={setDailyTarget}
             />
+          )}
+
+          {/* Cash drawer management — only shown on Today period */}
+          {period === 'today' && (
+            <CashDrawerCard />
           )}
 
           {/* Chart + best sellers */}

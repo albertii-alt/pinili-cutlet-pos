@@ -21,3 +21,11 @@ export async function getAuditLogs(params: AuditLogsParams = {}): Promise<AuditL
   const { data } = await apiClient.get('/api/audit-logs', { params });
   return data;
 }
+
+export async function deleteAuditLog(id: number): Promise<void> {
+  await apiClient.delete(`/api/audit-logs/${id}`);
+}
+
+export async function deleteAllAuditLogs(): Promise<void> {
+  await apiClient.delete('/api/audit-logs/all');
+}

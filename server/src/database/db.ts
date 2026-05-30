@@ -178,6 +178,24 @@ function migrateAuditLogs(): void {
   `);
 }
 
+// Migration: create cash_drawer table if missing
+function migrateCashDrawer(): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS cash_drawer (
+      id               INTEGER PRIMARY KEY AUTOINCREMENT,
+      date             TEXT    NOT NULL UNIQUE,
+      opening_amount   REAL    DEFAULT 0,
+      expected_amount  REAL    DEFAULT 0,
+      actual_amount    REAL    DEFAULT NULL,
+      discrepancy      REAL    DEFAULT NULL,
+      notes            TEXT    DEFAULT NULL,
+      closed_at        TEXT    DEFAULT NULL,
+      created_at       TEXT    DEFAULT (datetime('now','localtime'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_cash_drawer_date ON cash_drawer(date);
+  `);
+}
+
 // Initialize schema and seed data
 runSchema(db);
 migrateOrdersTable();
@@ -191,6 +209,7 @@ migrateNormalizePaymentCasing();
 migrateIndexes();
 migrateOrderItemsNotes();
 migrateAuditLogs();
+migrateCashDrawer();
 runSeed(db);
 
 export default db;

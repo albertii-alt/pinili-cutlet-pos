@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { IconShieldCheck, IconSearch, IconChevronLeft, IconChevronRight, IconRefresh, IconDeviceDesktop, IconDeviceMobile } from '@tabler/icons-react';
-import { getAuditLogs } from '../../api/audit.api';
+import { IconShieldCheck, IconSearch, IconChevronLeft, IconChevronRight, IconRefresh, IconDeviceDesktop, IconDeviceMobile, IconTrash } from '@tabler/icons-react';
+import { getAuditLogs, deleteAuditLog, deleteAllAuditLogs } from '../../api/audit.api';
 import { AuditLog } from '../../types';
 import { formatDateTime } from '../../utils/formatDate';
+import ConfirmDialog from '../../components/shared/ConfirmDialog';
 
 // ─── Action badge ─────────────────────────────────────────────────────────────
 
@@ -48,13 +49,15 @@ const ACTION_OPTIONS = Object.entries(ACTION_COLORS).map(([value, { label }]) =>
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 50;
 
 export default function AuditLogsPage() {
   const [logs, setLogs]           = useState<AuditLog[]>([]);
   const [total, setTotal]         = useState(0);
   const [page, setPage]           = useState(1);
   const [loading, setLoading]     = useState(true);
+  const [deleteId, setDeleteId]   = useState<number | null>(null);
+  const [confirmAll, setConfirmAll] = useState(false);
 
   // Filters
   const [search, setSearch]       = useState('');
@@ -93,6 +96,20 @@ export default function AuditLogsPage() {
     setApplied({ search: '', action: '', startDate: '', endDate: '' });
   }
 
+  async function handleDeleteOne() {
+    if (!deleteId) return;
+    await deleteAuditLog(deleteId);
+    setDeleteId(null);
+    fetchLogs(page, applied);
+  }
+
+  async function handleDeleteAll() {
+    await deleteAllAuditLogs();
+    setConfirmAll(false);
+    setPage(1);
+    fetchLogs(1, applied);
+  }
+
   return (
     <div className="flex flex-col gap-4 w-full">
       {/* Header */}
@@ -101,15 +118,28 @@ export default function AuditLogsPage() {
           <IconShieldCheck size={18} color="#C0392B" />
           <h1 className="text-white font-semibold text-lg">Audit Logs</h1>
         </div>
-        <button
-          onClick={() => fetchLogs(page, applied)}
-          style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: 8, padding: '6px 12px', color: '#A0A0A0', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
-          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#242424'; e.currentTarget.style.color = '#ffffff'; }}
-          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#1A1A1A'; e.currentTarget.style.color = '#A0A0A0'; }}
-        >
-          <IconRefresh size={14} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => fetchLogs(page, applied)}
+            style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: 8, padding: '6px 12px', color: '#A0A0A0', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#242424'; e.currentTarget.style.color = '#ffffff'; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#1A1A1A'; e.currentTarget.style.color = '#A0A0A0'; }}
+          >
+            <IconRefresh size={14} />
+            Refresh
+          </button>
+          {total > 0 && (
+            <button
+              onClick={() => setConfirmAll(true)}
+              style={{ backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.3)', borderRadius: 8, padding: '6px 12px', color: '#C0392B', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.15)')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.08)')}
+            >
+              <IconTrash size={14} />
+              Delete All
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
@@ -170,8 +200,8 @@ export default function AuditLogsPage() {
           <table className="w-full">
             <thead>
               <tr style={{ backgroundColor: '#1A1A1A', borderBottom: '1px solid #2C2C2C' }}>
-                {['Timestamp', 'User', 'Action', 'Details'].map(h => (
-                  <th key={h} className="text-left px-4 py-3" style={{ fontSize: 11, color: '#606060', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500 }}>
+                {['Timestamp', 'User', 'Action', 'Details', ''].map((h, i) => (
+                  <th key={i} className="text-left px-4 py-3" style={{ fontSize: 11, color: '#606060', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500, width: h === '' ? 40 : undefined }}>
                     {h}
                   </th>
                 ))}
@@ -180,7 +210,7 @@ export default function AuditLogsPage() {
             <tbody>
               {logs.length === 0 ? (
                 <tr>
-                  <td colSpan={4} style={{ textAlign: 'center', padding: '32px', color: '#606060', fontSize: 13 }}>
+                  <td colSpan={5} style={{ textAlign: 'center', padding: '32px', color: '#606060', fontSize: 13 }}>
                     No audit logs found
                   </td>
                 </tr>
@@ -216,12 +246,13 @@ export default function AuditLogsPage() {
                         const browser    = browserMatch?.[1]?.trim();
                         const deviceType = deviceTypeMatch?.[1]?.trim();
                         const plain = d
-                          .replace(/\|?\s*ip:[^|]+/g, '')
-                          .replace(/\|?\s*device:\S+/g, '')
-                          .replace(/\|?\s*os:[^|]+/g, '')
-                          .replace(/\|?\s*browser:[^|]+/g, '')
-                          .replace(/\|?\s*device_type:[^|]+/g, '')
-                          .trim().replace(/\|\s*$/, '').trim();
+                          .replace(/\|?\s*device_type:[^|]+/gi, '')
+                          .replace(/\|?\s*device:[^|]+/gi, '')
+                          .replace(/\|?\s*os:[^|]+/gi, '')
+                          .replace(/\|?\s*browser:[^|]+/gi, '')
+                          .replace(/\|?\s*ip:[^|]+/gi, '')
+                          .replace(/^[\s|]+|[\s|]+$/g, '')
+                          .trim();
                         return (
                           <div className="flex items-center gap-1.5 flex-wrap">
                             {device === 'desktop' && <IconDeviceDesktop size={13} color="#3498DB" />}
@@ -239,6 +270,17 @@ export default function AuditLogsPage() {
                           </div>
                         );
                       })()}
+                    </td>
+                    <td className="px-4 py-2.5" style={{ width: 40 }}>
+                      <button
+                        onClick={() => setDeleteId(log.id)}
+                        title="Delete log"
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, backgroundColor: 'transparent', border: '1px solid transparent', color: '#404040', cursor: 'pointer', transition: 'all 0.15s' }}
+                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.1)'; e.currentTarget.style.borderColor = 'rgba(192,57,43,0.3)'; e.currentTarget.style.color = '#C0392B'; }}
+                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.color = '#404040'; }}
+                      >
+                        <IconTrash size={13} />
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -278,6 +320,30 @@ export default function AuditLogsPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Confirm: delete single log */}
+      {deleteId !== null && (
+        <ConfirmDialog
+          title="Delete Log Entry"
+          message="Are you sure you want to delete this log entry? This action cannot be undone."
+          confirmLabel="Delete"
+          destructive
+          onConfirm={handleDeleteOne}
+          onCancel={() => setDeleteId(null)}
+        />
+      )}
+
+      {/* Confirm: delete all logs */}
+      {confirmAll && (
+        <ConfirmDialog
+          title="Delete All Logs"
+          message="Are you sure you want to delete all audit logs? This will permanently remove every entry and cannot be undone."
+          confirmLabel="Delete All"
+          destructive
+          onConfirm={handleDeleteAll}
+          onCancel={() => setConfirmAll(false)}
+        />
       )}
     </div>
   );

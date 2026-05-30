@@ -57,7 +57,11 @@ export function login(req: Request, res: Response): void {
 
 export function logout(req: Request, res: Response): void {
   if (req.user) {
-    logAudit({ user_id: req.user.id, username: req.user.username, action: 'LOGOUT' });
+    const ip     = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip ?? 'unknown';
+    const device = (req.headers['x-client-type'] as string) ?? 'unknown';
+    const ua     = req.headers['user-agent'] as string ?? '';
+    const { os, browser, deviceType } = parseUserAgent(ua);
+    logAudit({ user_id: req.user.id, username: req.user.username, action: 'LOGOUT', details: `Logged out | role: ${req.user.role} | os: ${os} | browser: ${browser} | device_type: ${deviceType} | ip: ${ip} | device: ${device}` });
   }
   res.json({ message: 'Logged out successfully' });
 }
