@@ -181,6 +181,29 @@ export interface ExpenseSummary {
   breakdown: ExpenseCategoryBreakdown[];
 }
 
+export interface ShiftReportEntry {
+  created_by: number | null;
+  username: string | null;
+  role: string | null;
+  total_orders: number;
+  cancelled_orders: number;
+  total_sales: number;
+  avg_order_value: number | null;
+  first_order_at: string | null;
+  last_order_at: string | null;
+}
+
+export interface ShiftReportSummary {
+  total_orders: number;
+  total_sales: number;
+}
+
+export interface ShiftReportResponse {
+  data: ShiftReportEntry[];
+  summary: ShiftReportSummary;
+  period: { start_date: string; end_date: string };
+}
+
 export interface AuthState {
   token: string | null;
   user: User | null;

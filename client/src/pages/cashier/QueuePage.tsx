@@ -235,7 +235,10 @@ export default function QueuePage() {
                           <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-color, #C0392B)', flexShrink: 0 }}>
                             ×{item.quantity}
                           </span>
-                          <span style={{ fontSize: 13, color: '#ffffff' }}>{item.item_name}</span>
+                          <span style={{ fontSize: 13, color: '#ffffff', flex: 1 }}>{item.item_name}</span>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: '#A0A0A0', flexShrink: 0 }}>
+                            {formatCurrency(item.item_price * item.quantity)}
+                          </span>
                         </div>
                         {item.notes && (
                           <span style={{ fontSize: 11, color: '#606060', fontStyle: 'italic', paddingLeft: 20 }}>
@@ -336,9 +339,12 @@ export default function QueuePage() {
                 <div className="flex flex-col gap-2 border-t border-border pt-3">
                   {order.items.map(item => (
                     <div key={item.id} className="flex flex-col gap-0.5">
-                      <div className="flex justify-between items-center">
-                        <span className="text-white text-sm">{item.item_name}</span>
-                        <span className="text-textGray text-sm font-medium">×{item.quantity}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-primary text-xs font-bold shrink-0">×{item.quantity}</span>
+                        <span className="text-white text-sm flex-1">{item.item_name}</span>
+                        <span className="text-textGray text-xs font-semibold shrink-0">
+                          {formatCurrency(item.item_price * item.quantity)}
+                        </span>
                       </div>
                       {item.notes && (
                         <span className="text-xs" style={{ color: '#606060', fontStyle: 'italic' }}>

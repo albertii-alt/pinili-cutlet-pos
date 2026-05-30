@@ -8,18 +8,20 @@ import {
   IconSettings,
   IconShieldCheck,
   IconReceipt2,
+  IconUsers,
 } from '@tabler/icons-react';
 import { getSettings } from '../../api/settings.api';
 import socket from '../../socket/socket';
 
 const navItems = [
-  { to: '/owner/dashboard',  label: 'Dashboard',  icon: IconLayoutDashboard },
-  { to: '/owner/menu',       label: 'Menu',        icon: IconToolsKitchen2   },
-  { to: '/owner/history',    label: 'History',     icon: IconHistory         },
-  { to: '/owner/analytics',  label: 'Analytics',   icon: IconChartBar        },
-  { to: '/owner/expenses',   label: 'Expenses',    icon: IconReceipt2        },
-  { to: '/owner/settings',   label: 'Settings',    icon: IconSettings        },
-  { to: '/owner/audit-logs', label: 'Audit Logs',  icon: IconShieldCheck     },
+  { to: '/owner/dashboard',      label: 'Dashboard',     icon: IconLayoutDashboard },
+  { to: '/owner/menu',           label: 'Menu',           icon: IconToolsKitchen2   },
+  { to: '/owner/history',        label: 'History',        icon: IconHistory         },
+  { to: '/owner/analytics',      label: 'Analytics',      icon: IconChartBar        },
+  { to: '/owner/expenses',       label: 'Expenses',       icon: IconReceipt2        },
+  { to: '/owner/shift-reports',  label: 'Shift Reports',  icon: IconUsers           },
+  { to: '/owner/settings',       label: 'Settings',       icon: IconSettings        },
+  { to: '/owner/audit-logs',     label: 'Audit Logs',     icon: IconShieldCheck     },
 ];
 
 export default function Sidebar() {

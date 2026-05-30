@@ -75,6 +75,11 @@ function migrateOrdersColumns(): void {
     db.prepare('ALTER TABLE orders ADD COLUMN cancel_reason TEXT DEFAULT NULL').run();
     console.log('[DB] Migration complete.');
   }
+  if (!cols.some(c => c.name === 'created_by')) {
+    console.log('[DB] Adding created_by column to orders...');
+    db.prepare('ALTER TABLE orders ADD COLUMN created_by INTEGER DEFAULT NULL').run();
+    console.log('[DB] Migration complete.');
+  }
 }
 
 // Migration: ensure default settings rows exist (INSERT OR IGNORE — safe to run always)

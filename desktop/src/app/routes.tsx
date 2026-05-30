@@ -11,6 +11,7 @@ import AnalyticsPage from '../pages/owner/AnalyticsPage';
 import SettingsPage from '../pages/owner/SettingsPage';
 import AuditLogsPage from '../pages/owner/AuditLogsPage';
 import ExpensesPage from '../pages/owner/ExpensesPage';
+import ShiftReportPage from '../pages/owner/ShiftReportPage';
 import Topbar from '../components/shared/Topbar';
 import Sidebar from '../components/shared/Sidebar';
 
@@ -61,7 +62,8 @@ export const routes: RouteObject[] = [
       { path: 'analytics', element: <AnalyticsPage /> },
       { path: 'settings',   element: <SettingsPage /> },
       { path: 'audit-logs', element: <AuditLogsPage /> },
-      { path: 'expenses',   element: <ExpensesPage /> },
+      { path: 'expenses',       element: <ExpensesPage /> },
+      { path: 'shift-reports',  element: <ShiftReportPage /> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },
