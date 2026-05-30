@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { IconReportMoney, IconShoppingCart, IconCreditCard, IconMoon } from '@tabler/icons-react';
+import { IconReportMoney, IconShoppingCart, IconCreditCard, IconMoon, IconTrendingUp, IconTrendingDown } from '@tabler/icons-react';
 import { useAnalytics, type AnalyticsPeriod } from '../../hooks/useAnalytics';
 import { formatCurrency } from '../../utils/formatCurrency';
 import SalesCard from '../../components/owner/SalesCard';
@@ -9,6 +9,7 @@ import EndOfDayModal from '../../components/owner/EndOfDayModal';
 import DailySalesTarget from '../../components/owner/DailySalesTarget';
 import CashDrawerCard from '../../components/owner/CashDrawerCard';
 import { getDailyTarget } from '../../api/analytics.api';
+import { getExpenseSummary } from '../../api/expense.api';
 import { usePaymentMethods } from '../../hooks/usePaymentMethods';
 
 const periods: { label: string; value: AnalyticsPeriod }[] = [
@@ -18,9 +19,10 @@ const periods: { label: string; value: AnalyticsPeriod }[] = [
 ];
 
 export default function DashboardPage() {
-  const [period, setPeriod]         = useState<AnalyticsPeriod>('today');
-  const [showEOD, setShowEOD]       = useState(false);
+  const [period, setPeriod]           = useState<AnalyticsPeriod>('today');
+  const [showEOD, setShowEOD]         = useState(false);
   const [dailyTarget, setDailyTarget] = useState<number>(0);
+  const [todayExpenses, setTodayExpenses] = useState<number>(0);
   const { summary, dailySales, bestSellers, loading } = useAnalytics(period);
   const { getMethodColor } = usePaymentMethods();
 
@@ -28,6 +30,13 @@ export default function DashboardPage() {
   useEffect(() => {
     getDailyTarget().then(setDailyTarget).catch(console.error);
   }, []);
+
+  // Fetch today's expenses whenever period changes (only used for Today card)
+  useEffect(() => {
+    getExpenseSummary({ period: 'today' })
+      .then(s => setTodayExpenses(s.total))
+      .catch(() => setTodayExpenses(0));
+  }, [period]);
 
   return (
     <div className="flex flex-col gap-6 w-full">
@@ -94,6 +103,21 @@ export default function DashboardPage() {
                 accentColor={getMethodColor(b.payment_method)}
               />
             ))}
+            {period === 'today' && (() => {
+              const revenue    = summary?.total_sales ?? 0;
+              const netProfit  = revenue - todayExpenses;
+              const isPositive = netProfit >= 0;
+              return (
+                <SalesCard
+                  label="Est. Net Profit"
+                  value={formatCurrency(netProfit)}
+                  accent
+                  accentColor={isPositive ? '#27AE60' : '#C0392B'}
+                  icon={isPositive ? IconTrendingUp : IconTrendingDown}
+                  isZero={netProfit === 0}
+                />
+              );
+            })()}
           </div>
 
           {/* Daily sales target — only shown on Today period */}

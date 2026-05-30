@@ -148,6 +148,39 @@ export interface CashDrawer {
   cash_sales?: number;
 }
 
+export const EXPENSE_CATEGORIES = [
+  'Ingredients',
+  'Utilities',
+  'Staff Meals',
+  'Packaging',
+  'Transport',
+  'Maintenance',
+  'Other',
+] as const;
+
+export type ExpenseCategory = typeof EXPENSE_CATEGORIES[number];
+
+export interface Expense {
+  id: number;
+  description: string;
+  amount: number;
+  category: ExpenseCategory | string;
+  date: string;
+  created_by: number | null;
+  created_at: string;
+}
+
+export interface ExpenseCategoryBreakdown {
+  category: string;
+  total: number;
+  count: number;
+}
+
+export interface ExpenseSummary {
+  total: number;
+  breakdown: ExpenseCategoryBreakdown[];
+}
+
 export interface AuthState {
   token: string | null;
   user: User | null;

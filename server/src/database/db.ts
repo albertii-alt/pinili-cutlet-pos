@@ -196,6 +196,23 @@ function migrateCashDrawer(): void {
   `);
 }
 
+// Migration: create expenses table if missing
+function migrateExpenses(): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS expenses (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      description TEXT    NOT NULL,
+      amount      REAL    NOT NULL,
+      category    TEXT    DEFAULT 'Other',
+      date        TEXT    DEFAULT (date('now','localtime')),
+      created_by  INTEGER,
+      created_at  TEXT    DEFAULT (datetime('now','localtime'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_expenses_date     ON expenses(date);
+    CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category);
+  `);
+}
+
 // Initialize schema and seed data
 runSchema(db);
 migrateOrdersTable();
@@ -210,6 +227,7 @@ migrateIndexes();
 migrateOrderItemsNotes();
 migrateAuditLogs();
 migrateCashDrawer();
+migrateExpenses();
 runSeed(db);
 
 export default db;
