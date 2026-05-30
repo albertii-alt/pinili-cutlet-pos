@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { IconEye, IconShoppingCart, IconReportMoney, IconCreditCard, IconFileExport, IconCheck, IconX, IconChevronLeft, IconChevronRight, IconCalendar, IconClipboardList, IconSearchOff } from '@tabler/icons-react';
+import { IconEye, IconShoppingCart, IconReportMoney, IconCreditCard, IconFileExport, IconCheck, IconX, IconChevronLeft, IconChevronRight, IconCalendar, IconClipboardList, IconSearchOff, IconHistory } from '@tabler/icons-react';
 import { getOrderHistory } from '../../api/order.api';
 import { getSummary } from '../../api/analytics.api';
 import { Order } from '../../types';
@@ -194,7 +194,10 @@ export default function HistoryPage() {
     <div className="flex flex-col gap-4 w-full">
       {/* Header + filters + export */}
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-white font-semibold text-lg">Order History</h1>
+        <div className="flex items-center gap-2">
+          <IconHistory size={18} color="#C0392B" />
+          <h1 className="text-white font-semibold text-lg">Order History</h1>
+        </div>
         <div className="flex items-center gap-2 flex-wrap">
           {periods.map(p => (
             <button

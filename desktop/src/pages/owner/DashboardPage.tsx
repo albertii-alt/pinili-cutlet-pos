@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { IconReportMoney, IconShoppingCart, IconCreditCard, IconMoon, IconTrendingUp, IconTrendingDown } from '@tabler/icons-react';
+import { IconReportMoney, IconShoppingCart, IconCreditCard, IconMoon, IconTrendingUp, IconTrendingDown, IconLayoutDashboard } from '@tabler/icons-react';
 import { useAnalytics, type AnalyticsPeriod } from '../../hooks/useAnalytics';
 import { formatCurrency } from '../../utils/formatCurrency';
 import SalesCard from '../../components/owner/SalesCard';
@@ -42,7 +42,10 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-6 w-full">
       {/* Header + filters + EOD button */}
       <div className="flex items-center justify-between">
-        <h1 className="text-white font-semibold text-lg">Dashboard</h1>
+        <div className="flex items-center gap-2">
+          <IconLayoutDashboard size={18} color="#C0392B" />
+          <h1 className="text-white font-semibold text-lg">Dashboard</h1>
+        </div>
         <div className="flex items-center gap-2">
           {periods.map(p => (
             <button

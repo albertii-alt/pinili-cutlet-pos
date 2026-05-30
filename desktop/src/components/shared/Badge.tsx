@@ -81,6 +81,20 @@ export function PaymentBadge({ method, color, logoUrl }: { method: string; color
   );
 }
 
+export function CategoryBadge({ label }: { label?: string }) {
+  return (
+    <span
+      className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium"
+      style={{
+        backgroundColor: 'var(--accent-color, #C0392B)',
+        color: '#ffffff',
+      }}
+    >
+      {label ?? 'Category'}
+    </span>
+  );
+}
+
 export default function Badge({ variant, label }: BadgeProps) {
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${variantStyles[variant]}`}>

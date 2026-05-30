@@ -12,6 +12,7 @@ import { disconnectSocket } from '../../socket/socket';
 import { MenuItem } from '../../types';
 import StallName from '../../components/shared/StallName';
 import QRCodeModal from '../../components/shared/QRCodeModal';
+import LogoutModal from '../../components/shared/LogoutModal';
 import CategoryTabs from '../../components/cashier/CategoryTabs';
 import MenuGrid from '../../components/cashier/MenuGrid';
 import OrderPanel from '../../components/cashier/OrderPanel';
@@ -39,6 +40,7 @@ export default function OrderPage() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [panelWidth, setPanelWidth] = useState<number>(getSavedWidth);
   const [showQR, setShowQR] = useState(false);
+  const [showLogout, setShowLogout] = useState(false);
 
   async function handleLogout() {
     try { await logout(); } catch { /* ignore */ }
@@ -173,7 +175,7 @@ export default function OrderPage() {
             )}
 
             <button
-              onClick={handleLogout}
+              onClick={() => setShowLogout(true)}
               className="w-8 h-8 flex items-center justify-center rounded-lg border border-border"
               style={{ backgroundColor: '#1A1A1A', color: '#A0A0A0', cursor: 'pointer' }}
               onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.1)'; e.currentTarget.style.color = '#C0392B'; }}
@@ -185,6 +187,7 @@ export default function OrderPage() {
         </header>
 
         {showQR && <QRCodeModal onClose={() => setShowQR(false)} />}
+        {showLogout && <LogoutModal onConfirm={handleLogout} onCancel={() => setShowLogout(false)} />}
 
         <div className="flex-1 overflow-y-auto pt-[52px] hide-scrollbar">
           <div className="p-4 flex flex-col gap-4">

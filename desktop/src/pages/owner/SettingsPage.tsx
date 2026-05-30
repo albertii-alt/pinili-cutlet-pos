@@ -4,7 +4,7 @@ import {
   IconUsers, IconUserPlus, IconEdit, IconTrash, IconLock, IconLockOpen,
   IconPencil, IconPlus, IconStar, IconStarFilled, IconUser,
   IconPalette, IconReceipt, IconBuildingStore, IconCreditCard, IconBell, IconUpload, IconPlayerPlay,
-  IconDatabaseExport, IconDatabaseImport, IconRotateClockwise, IconHistory, IconAlertTriangle,
+  IconDatabaseExport, IconDatabaseImport, IconRotateClockwise, IconHistory, IconAlertTriangle, IconSettings,
 } from '@tabler/icons-react';
 import { changePassword, changeUsername } from '../../api/auth.api';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -648,7 +648,10 @@ export default function SettingsPage() {
     <div className="flex flex-col" style={{ height: '100%', minHeight: 0 }}>
       {/* Page title */}
       <div className="px-6 py-4" style={{ borderBottom: '1px solid #2C2C2C' }}>
-        <h1 className="text-white font-semibold text-lg">Settings</h1>
+        <div className="flex items-center gap-2">
+          <IconSettings size={18} color="#C0392B" />
+          <h1 className="text-white font-semibold text-lg">Settings</h1>
+        </div>
       </div>
 
       {/* Two-column layout */}

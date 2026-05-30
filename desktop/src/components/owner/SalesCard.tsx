@@ -42,7 +42,7 @@ export default function SalesCard({ label, value, accent = false, accentColor, i
       onMouseLeave={() => clickable && setHovered(false)}
     >
       <div className="flex items-center justify-between">
-        <span className="text-textGray text-xs uppercase tracking-wider">{label}</span>
+        <span style={{ fontSize: 12, color: '#606060', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
         {logoUrl ? (
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden"

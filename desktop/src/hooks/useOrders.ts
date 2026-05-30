@@ -58,7 +58,7 @@ export function useOrderHistory(params: OrderHistoryParams) {
 
     setLoading(true);
     getOrderHistory(params)
-      .then(setOrders)
+      .then(res => setOrders(res.data))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [params.status, params.date, params.payment_method, params.startDate, params.endDate]);

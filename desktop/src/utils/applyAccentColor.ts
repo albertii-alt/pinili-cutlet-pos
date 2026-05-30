@@ -29,4 +29,6 @@ export function applyAccentColor(color: string): void {
   root.style.setProperty('--accent-color', color);
   root.style.setProperty('--accent-color-dark', darken(color));
   root.style.setProperty('--accent-color-light', lighten(color));
+  const rgb = hexToRgb(color);
+  if (rgb) root.style.setProperty('--accent-color-rgb', rgb.join(','));
 }

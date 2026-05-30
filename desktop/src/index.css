@@ -1,6 +1,15 @@
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --accent-color: #C0392B;
+  --accent-color-dark: #96281B;
+  --accent-color-light: #E74C3C;
+  --accent-color-rgb: 192, 57, 43;
+}
 
 * {
   box-sizing: border-box;
@@ -11,7 +20,7 @@
 body {
   background-color: #0A0A0A;
   color: #ffffff;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Geist Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .hide-scrollbar::-webkit-scrollbar {

@@ -5,6 +5,7 @@ import { logout } from '../../api/auth.api';
 import { disconnectSocket } from '../../socket/socket';
 import { useNavigate } from 'react-router-dom';
 import QRCodeModal from './QRCodeModal';
+import LogoutModal from './LogoutModal';
 
 interface TopbarButtonProps {
   onClick: () => void;
@@ -51,6 +52,7 @@ export default function Topbar({ left }: TopbarProps) {
   const { user, logout: clearAuth } = useAuthStore();
   const navigate = useNavigate();
   const [showQR, setShowQR] = useState(false);
+  const [showLogout, setShowLogout] = useState(false);
 
   async function handleLogout() {
     try { await logout(); } catch { /* ignore */ }
@@ -95,7 +97,7 @@ export default function Topbar({ left }: TopbarProps) {
 
           {/* Logout button */}
           {user && (
-            <TopbarButton onClick={handleLogout} tooltip="Logout" danger>
+            <TopbarButton onClick={() => setShowLogout(true)} tooltip="Logout" danger>
               <IconLogout size={18} />
             </TopbarButton>
           )}
@@ -103,6 +105,7 @@ export default function Topbar({ left }: TopbarProps) {
       </header>
 
       {showQR && <QRCodeModal onClose={() => setShowQR(false)} />}
+      {showLogout && <LogoutModal onConfirm={handleLogout} onCancel={() => setShowLogout(false)} />}
     </>
   );
 }

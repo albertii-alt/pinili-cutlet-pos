@@ -93,7 +93,10 @@ export default function MenuPage() {
     <div className="flex flex-col gap-4 w-full">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-white font-semibold text-lg">Menu</h1>
+        <div className="flex items-center gap-2">
+          <IconToolsKitchen2 size={18} color="#C0392B" />
+          <h1 className="text-white font-semibold text-lg">Menu</h1>
+        </div>
         <button
           onClick={() => setEditItem(null)}
           className="flex items-center gap-2 bg-primary hover:bg-primaryDark text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"

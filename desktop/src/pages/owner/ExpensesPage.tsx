@@ -320,7 +320,7 @@ export default function ExpensesPage() {
     if (p !== 'custom') { setAppliedStart(''); setAppliedEnd(''); }
   }
 
-  function handleSaved(expense: Expense) {
+  function handleSaved(_expense: Expense) {
     setShowModal(false);
     setEditTarget(null);
     fetchAll(page);

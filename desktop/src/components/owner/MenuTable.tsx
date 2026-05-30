@@ -1,7 +1,7 @@
 import { IconEdit, IconTrash, IconToolsKitchen2, IconStar, IconStarFilled, IconTag } from '@tabler/icons-react';
 import { MenuItem, Category } from '../../types';
 import { formatCurrency } from '../../utils/formatCurrency';
-import Badge from '../shared/Badge';
+import Badge, { CategoryBadge } from '../shared/Badge';
 
 interface MenuTableProps {
   items: MenuItem[];
@@ -57,16 +57,16 @@ export default function MenuTable({ items, categories, onEdit, onDelete, onToggl
                       }
                     </div>
                     <div>
-                      <p className="text-white text-sm">{item.name}</p>
+                      <p className="text-sm font-medium" style={{ color: 'var(--accent-color, #C0392B)' }}>{item.name}</p>
                       {item.description && (
-                        <p className="text-textMuted text-xs truncate max-w-[200px]">{item.description}</p>
+                        <p className="text-xs truncate max-w-[200px]" style={{ color: '#606060' }}>{item.description}</p>
                       )}
                     </div>
                   </div>
                 </td>
                 {/* Category */}
                 <td className="px-4 py-3">
-                  <Badge variant="category" label={getCategoryName(item.category_id)} />
+                  <CategoryBadge label={getCategoryName(item.category_id)} />
                 </td>
                 {/* Price */}
                 <td className="px-4 py-3">

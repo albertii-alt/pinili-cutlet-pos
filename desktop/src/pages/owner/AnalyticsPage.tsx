@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { IconCalendar, IconReportMoney, IconShoppingCart, IconTag, IconTrendingUp } from '@tabler/icons-react';
+import { IconCalendar, IconReportMoney, IconShoppingCart, IconTag, IconTrendingUp, IconChartBar } from '@tabler/icons-react';
 import { useAnalytics, type AnalyticsPeriod, type DateRange } from '../../hooks/useAnalytics';
 import { formatCurrency } from '../../utils/formatCurrency';
 import SalesCard from '../../components/owner/SalesCard';
@@ -41,7 +41,10 @@ export default function AnalyticsPage() {
     <div className="flex flex-col gap-5 w-full">
       {/* Header + period filter */}
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-white font-semibold text-lg">Analytics</h1>
+        <div className="flex items-center gap-2">
+          <IconChartBar size={18} color="#C0392B" />
+          <h1 className="text-white font-semibold text-lg">Analytics</h1>
+        </div>
         <div className="flex gap-2 flex-wrap">
           {periods.map(p => (
             <button
