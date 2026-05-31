@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import fs from 'fs';
+import path from 'path';
+import sharp from 'sharp';
 import db from '../database/db';
 import { User, AuthPayload } from '../types';
 import { logAudit } from '../utils/auditLogger';
@@ -216,4 +219,71 @@ export function toggleStaffStatus(req: Request, res: Response): void {
   db.prepare('UPDATE users SET is_active = ? WHERE id = ?').run(is_active, id);
   logAudit({ user_id: req.user!.id, username: req.user!.username, action: is_active ? 'STAFF_ENABLED' : 'STAFF_DISABLED', entity_type: 'user', entity_id: String(id), details: `${is_active ? 'Enabled' : 'Disabled'} ${user.role} account: ${user.username}` });
   res.json({ id: Number(id), is_active });
+}
+
+const AVATAR_DIR = path.resolve(process.cwd(), '../server/public/avatars');
+
+function ensureAvatarDir(): void {
+  if (!fs.existsSync(AVATAR_DIR)) fs.mkdirSync(AVATAR_DIR, { recursive: true });
+}
+
+export async function uploadAvatar(req: Request, res: Response): Promise<void> {
+  if (!req.file) { res.status(400).json({ error: 'No file uploaded' }); return; }
+
+  const userId = req.user!.id;
+  const existing = db.prepare('SELECT avatar_path FROM users WHERE id = ?').get(userId) as { avatar_path: string | null } | undefined;
+
+  ensureAvatarDir();
+
+  // Delete old avatar if exists
+  if (existing?.avatar_path) {
+    const oldFile = path.join(AVATAR_DIR, existing.avatar_path);
+    if (fs.existsSync(oldFile)) fs.unlinkSync(oldFile);
+  }
+
+  const filename = `avatar-${userId}-${Date.now()}.png`;
+  const dest     = path.join(AVATAR_DIR, filename);
+
+  try {
+    // Resize to 200x200, circular crop via PNG with transparency
+    await sharp(req.file.buffer)
+      .resize(200, 200, { fit: 'cover', position: 'centre' })
+      .png({ quality: 90 })
+      .toFile(dest);
+  } catch {
+    res.status(500).json({ error: 'Failed to process image' });
+    return;
+  }
+
+  db.prepare('UPDATE users SET avatar_path = ? WHERE id = ?').run(filename, userId);
+
+  logAudit({
+    user_id:  userId,
+    username: req.user!.username,
+    action:   'AVATAR_UPDATED',
+    details:  `Profile picture updated`,
+  });
+
+  res.json({ avatar_path: filename });
+}
+
+export function deleteAvatar(req: Request, res: Response): void {
+  const userId = req.user!.id;
+  const existing = db.prepare('SELECT avatar_path FROM users WHERE id = ?').get(userId) as { avatar_path: string | null } | undefined;
+
+  if (existing?.avatar_path) {
+    const file = path.join(AVATAR_DIR, existing.avatar_path);
+    if (fs.existsSync(file)) fs.unlinkSync(file);
+  }
+
+  db.prepare('UPDATE users SET avatar_path = NULL WHERE id = ?').run(userId);
+
+  logAudit({
+    user_id:  userId,
+    username: req.user!.username,
+    action:   'AVATAR_REMOVED',
+    details:  `Profile picture removed`,
+  });
+
+  res.json({ ok: true });
 }

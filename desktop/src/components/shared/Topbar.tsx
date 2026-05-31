@@ -62,6 +62,8 @@ export default function Topbar({ left }: TopbarProps) {
   }
 
   const avatarLetter = user?.username?.[0]?.toUpperCase() ?? '?';
+  const SERVER_BASE  = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+  const avatarUrl    = user?.avatar_path ? `${SERVER_BASE}/avatars/${user.avatar_path}` : null;
 
   return (
     <>
@@ -78,10 +80,13 @@ export default function Topbar({ left }: TopbarProps) {
             <div className="flex items-center gap-2">
               {/* Avatar */}
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm"
-                style={{ backgroundColor: '#C0392B' }}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden"
+                style={{ backgroundColor: avatarUrl ? 'transparent' : '#C0392B', flexShrink: 0 }}
               >
-                {avatarLetter}
+                {avatarUrl
+                  ? <img src={avatarUrl} alt={user.username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                  : avatarLetter
+                }
               </div>
               {/* Username */}
               <span className="text-textGray text-sm">{user.username}</span>

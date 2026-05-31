@@ -1,8 +1,25 @@
 import { Router } from 'express';
-import { login, logout, changePassword, changeUsername, getAllStaff, createStaff, updateStaff, deleteStaff, toggleStaffStatus } from '../controllers/auth.controller';
+import multer from 'multer';
+import {
+  login, logout, changePassword, changeUsername,
+  getAllStaff, createStaff, updateStaff, deleteStaff, toggleStaffStatus,
+  uploadAvatar, deleteAvatar,
+} from '../controllers/auth.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
 const router = Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (/^image\/(png|jpeg|webp)$/.test(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PNG, JPG, and WebP images are allowed'));
+    }
+  },
+});
 
 router.post('/login', login);
 router.post('/logout',               authenticate,                    logout);
@@ -13,5 +30,7 @@ router.post('/staff',                authenticate, authorize('owner'), createSta
 router.put('/staff/:id',             authenticate, authorize('owner'), updateStaff);
 router.delete('/staff/:id',          authenticate, authorize('owner'), deleteStaff);
 router.patch('/staff/:id/toggle',    authenticate, authorize('owner'), toggleStaffStatus);
+router.post('/avatar',               authenticate, upload.single('avatar'), uploadAvatar);
+router.delete('/avatar',             authenticate, deleteAvatar);
 
 export default router;

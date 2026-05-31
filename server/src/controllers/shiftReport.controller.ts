@@ -64,6 +64,7 @@ export function getShiftReport(req: Request, res: Response): void {
       o.created_by,
       u.username,
       u.role,
+      u.avatar_path,
       COUNT(CASE WHEN o.status = 'completed' THEN 1 END)                          AS total_orders,
       COUNT(CASE WHEN o.status = 'cancelled' THEN 1 END)                          AS cancelled_orders,
       COALESCE(SUM(CASE WHEN o.status = 'completed' THEN o.total_amount END), 0)  AS total_sales,

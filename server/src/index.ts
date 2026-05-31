@@ -40,6 +40,9 @@ app.use('/sounds', express.static(path.resolve(process.cwd(), '../server/public/
 // Static payment logos
 app.use('/payment-logos', express.static(path.resolve(process.cwd(), '../server/public/payment-logos')));
 
+// Static avatars
+app.use('/avatars', express.static(path.resolve(process.cwd(), '../server/public/avatars')));
+
 // Serve client PWA from /app — built output of client/dist
 // __dirname at runtime = server/dist/ → ../../client/dist = client/dist
 const clientDist = path.resolve(process.cwd(), '../client/dist');

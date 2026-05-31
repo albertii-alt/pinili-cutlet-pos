@@ -41,3 +41,16 @@ export async function deleteStaff(id: number): Promise<void> {
 export async function toggleStaffStatus(id: number, is_active: number): Promise<void> {
   await apiClient.patch(`/api/auth/staff/${id}/toggle`, { is_active });
 }
+
+export async function uploadAvatar(file: File): Promise<{ avatar_path: string }> {
+  const formData = new FormData();
+  formData.append('avatar', file);
+  const { data } = await apiClient.post('/api/auth/avatar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+
+export async function deleteAvatar(): Promise<void> {
+  await apiClient.delete('/api/auth/avatar');
+}

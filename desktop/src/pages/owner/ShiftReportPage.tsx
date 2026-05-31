@@ -11,6 +11,8 @@ import { getShiftReport, type ShiftReportPeriod } from '../../api/shiftReport.ap
 import { ShiftReportEntry, ShiftReportSummary } from '../../types';
 import { formatCurrency } from '../../utils/formatCurrency';
 
+const SERVER_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const PERIODS: { label: string; value: ShiftReportPeriod }[] = [
@@ -66,6 +68,7 @@ function StaffCard({ entry, index, totalSales }: StaffCardProps) {
   const pct         = totalSales > 0 ? (entry.total_sales / totalSales) * 100 : 0;
   const rs          = roleStyle(entry.role);
   const ac          = avatarColor(index);
+  const avatarUrl   = entry.avatar_path ? `${SERVER_BASE}/avatars/${entry.avatar_path}` : null;
 
   // Determine if first and last order are on the same date
   const sameDay = entry.first_order_at && entry.last_order_at &&
@@ -80,10 +83,13 @@ function StaffCard({ entry, index, totalSales }: StaffCardProps) {
       <div className="flex items-center gap-3">
         {/* Avatar */}
         <div
-          className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-          style={{ backgroundColor: ac, fontSize: 16, fontWeight: 700, color: '#ffffff' }}
+          className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden"
+          style={{ backgroundColor: avatarUrl ? 'transparent' : ac, fontSize: 16, fontWeight: 700, color: '#ffffff' }}
         >
-          {initial}
+          {avatarUrl
+            ? <img src={avatarUrl} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+            : initial
+          }
         </div>
 
         <div className="flex flex-col gap-0.5 flex-1 min-w-0">

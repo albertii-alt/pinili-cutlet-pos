@@ -8,6 +8,7 @@ interface AuthStore {
   login: (token: string, user: User) => void;
   logout: () => void;
   updateUsername: (token: string, username: string) => void;
+  updateAvatar: (avatarPath: string | null) => void;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
@@ -33,6 +34,14 @@ export const useAuthStore = create<AuthStore>((set) => ({
       if (updatedUser) localStorage.setItem('user', JSON.stringify(updatedUser));
       localStorage.setItem('token', token);
       return { token, user: updatedUser };
+    });
+  },
+
+  updateAvatar: (avatarPath) => {
+    set(state => {
+      const updatedUser = state.user ? { ...state.user, avatar_path: avatarPath } : null;
+      if (updatedUser) localStorage.setItem('user', JSON.stringify(updatedUser));
+      return { user: updatedUser };
     });
   },
 }));

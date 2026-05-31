@@ -6,7 +6,7 @@ import {
   IconPalette, IconReceipt, IconBuildingStore, IconCreditCard, IconBell, IconUpload, IconPlayerPlay,
   IconDatabaseExport, IconDatabaseImport, IconRotateClockwise, IconHistory, IconAlertTriangle, IconSettings,
 } from '@tabler/icons-react';
-import { changePassword, changeUsername } from '../../api/auth.api';
+import { changePassword, changeUsername, uploadAvatar, deleteAvatar } from '../../api/auth.api';
 import { useAuthStore } from '../../store/useAuthStore';
 import { applyAccentColor } from '../../utils/applyAccentColor';
 import {
@@ -138,7 +138,12 @@ export default function SettingsPage() {
   const strength = getStrength(newPass);
 
   // Change username state
-  const { user, updateUsername } = useAuthStore();
+  const { user, updateUsername, updateAvatar } = useAuthStore();
+  const SERVER_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+
+  // Avatar state
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError]         = useState('');
   const [unEditing, setUnEditing]       = useState(false);
   const [newUsername, setNewUsername]   = useState('');
   const [unPassword, setUnPassword]     = useState('');
@@ -169,8 +174,6 @@ export default function SettingsPage() {
   const [deleteMethodTarget, setDeleteMethodTarget] = useState<PaymentMethod | null>(null);
   const [logoUploading, setLogoUploading]     = useState<number | null>(null); // method id being uploaded
   const [logoError, setLogoError]             = useState<Record<number, string>>({});
-
-  const SERVER_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
   // Display & Appearance state
   const ACCENT_PRESETS = [
@@ -371,6 +374,37 @@ export default function SettingsPage() {
       setUnError(msg ?? 'Failed to update username');
     } finally {
       setUnLoading(false);
+    }
+  }
+
+  async function handleAvatarUpload(file: File) {
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError('File must be under 5MB');
+      return;
+    }
+    setAvatarUploading(true);
+    setAvatarError('');
+    try {
+      const { avatar_path } = await uploadAvatar(file);
+      updateAvatar(avatar_path);
+      setSettingsToast('Profile picture updated');
+      setTimeout(() => setSettingsToast(''), 3000);
+    } catch {
+      setAvatarError('Upload failed. Try again.');
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
+
+  async function handleAvatarDelete() {
+    try {
+      await deleteAvatar();
+      updateAvatar(null);
+      setSettingsToast('Profile picture removed');
+      setTimeout(() => setSettingsToast(''), 3000);
+    } catch {
+      setSettingsToast('Failed to remove photo');
+      setTimeout(() => setSettingsToast(''), 3000);
     }
   }
 
@@ -701,35 +735,75 @@ export default function SettingsPage() {
           <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 600 }}>Account Security</span>
         </div>
 
-        <PasswordField label="Current Password"      value={current}  onChange={setCurrent}  placeholder="Enter current password"  focused={f1} onFocus={() => setF1(true)} onBlur={() => setF1(false)} />
+        {/* ── Profile Picture ── */}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <IconUser size={14} color="#606060" />
+            <span style={{ fontSize: 12, color: '#606060', letterSpacing: '0.04em', fontWeight: 600, textTransform: 'uppercase' }}>Profile Picture</span>
+          </div>
 
-        <div className="flex flex-col gap-1.5">
-          <PasswordField label="New Password"         value={newPass}  onChange={setNewPass}  placeholder="Minimum 8 characters"    focused={f2} onFocus={() => setF2(true)} onBlur={() => setF2(false)} />
-          {newPass.length > 0 && (
-            <div className="flex items-center gap-2 mt-1">
-              <div className="flex-1 h-1 rounded-full" style={{ backgroundColor: '#2C2C2C' }}>
-                <div className="h-1 rounded-full transition-all duration-300" style={{ width: strength.width, backgroundColor: strength.color }} />
-              </div>
-              <span style={{ fontSize: 11, color: strength.color, minWidth: 40 }}>{strength.label}</span>
+          <div className="flex items-center gap-4">
+            {/* Avatar preview */}
+            <div
+              className="w-20 h-20 rounded-full flex items-center justify-center overflow-hidden shrink-0"
+              style={{ backgroundColor: '#2C2C2C', border: '2px solid #3C3C3C' }}
+            >
+              {user?.avatar_path ? (
+                <img
+                  src={`${SERVER_BASE}/avatars/${user.avatar_path}`}
+                  alt={user.username}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                />
+              ) : (
+                <span style={{ fontSize: 28, fontWeight: 700, color: '#ffffff' }}>
+                  {user?.username?.[0]?.toUpperCase() ?? '?'}
+                </span>
+              )}
             </div>
-          )}
+
+            {/* Upload / Remove buttons */}
+            <div className="flex flex-col gap-2">
+              <label
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  backgroundColor: avatarUploading ? '#2C2C2C' : '#C0392B',
+                  border: 'none', borderRadius: 8, padding: '7px 14px',
+                  color: avatarUploading ? '#606060' : '#ffffff',
+                  fontSize: 13, fontWeight: 600,
+                  cursor: avatarUploading ? 'not-allowed' : 'pointer',
+                }}
+                onMouseEnter={e => { if (!avatarUploading) (e.currentTarget as HTMLElement).style.backgroundColor = '#96281B'; }}
+                onMouseLeave={e => { if (!avatarUploading) (e.currentTarget as HTMLElement).style.backgroundColor = '#C0392B'; }}
+              >
+                <IconUpload size={13} />
+                {avatarUploading ? 'Uploading…' : user?.avatar_path ? 'Change Photo' : 'Upload Photo'}
+                <input
+                  type="file"
+                  accept=".png,.jpg,.jpeg,.webp"
+                  className="hidden"
+                  disabled={avatarUploading}
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); e.target.value = ''; }}
+                />
+              </label>
+
+              {user?.avatar_path && (
+                <button
+                  onClick={handleAvatarDelete}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, backgroundColor: 'transparent', border: '1px solid rgba(192,57,43,0.3)', borderRadius: 8, padding: '7px 14px', color: '#C0392B', fontSize: 13, cursor: 'pointer' }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.08)')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                >
+                  <IconX size={13} />
+                  Remove Photo
+                </button>
+              )}
+
+              {avatarError && <span style={{ fontSize: 11, color: '#C0392B' }}>{avatarError}</span>}
+              <p style={{ fontSize: 11, color: '#606060' }}>PNG, JPG, or WebP — max 5MB</p>
+            </div>
+          </div>
         </div>
-
-        <PasswordField label="Confirm New Password"  value={confirm}  onChange={setConfirm}  placeholder="Re-enter new password"   focused={f3} onFocus={() => setF3(true)} onBlur={() => setF3(false)} />
-
-        <div style={{ minHeight: 16 }}>
-          {pwError && <p style={{ fontSize: 12, color: '#C0392B' }}>{pwError}</p>}
-        </div>
-
-        <button
-          onClick={handleChangePassword}
-          disabled={pwLoading}
-          style={{ backgroundColor: pwLoading ? '#2C2C2C' : '#C0392B', border: 'none', borderRadius: 8, padding: '10px 20px', color: pwLoading ? '#606060' : '#ffffff', fontSize: 13, fontWeight: 600, cursor: pwLoading ? 'not-allowed' : 'pointer', alignSelf: 'flex-start' }}
-          onMouseEnter={e => { if (!pwLoading) e.currentTarget.style.backgroundColor = '#96281B'; }}
-          onMouseLeave={e => { if (!pwLoading) e.currentTarget.style.backgroundColor = '#C0392B'; }}
-        >
-          {pwLoading ? 'Updating...' : 'Update Password'}
-        </button>
 
         {/* ── Username ── */}
         <div className="flex flex-col gap-3 pt-4" style={{ borderTop: '1px solid #2C2C2C' }}>
@@ -754,7 +828,6 @@ export default function SettingsPage() {
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              {/* New username input */}
               <div className="flex flex-col">
                 <label style={labelStyle}>New Username</label>
                 <input
@@ -768,7 +841,6 @@ export default function SettingsPage() {
                 />
               </div>
 
-              {/* Password confirmation */}
               <PasswordField
                 label="Current Password"
                 value={unPassword}
@@ -802,6 +874,44 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* ── Change Password ── */}
+        <div className="flex flex-col gap-4 pt-4" style={{ borderTop: '1px solid #2C2C2C' }}>
+          <div className="flex items-center gap-2">
+            <IconShieldLock size={14} color="#606060" />
+            <span style={{ fontSize: 12, color: '#606060', letterSpacing: '0.04em', fontWeight: 600, textTransform: 'uppercase' }}>Change Password</span>
+          </div>
+
+          <PasswordField label="Current Password"      value={current}  onChange={setCurrent}  placeholder="Enter current password"  focused={f1} onFocus={() => setF1(true)} onBlur={() => setF1(false)} />
+
+          <div className="flex flex-col gap-1.5">
+            <PasswordField label="New Password"         value={newPass}  onChange={setNewPass}  placeholder="Minimum 8 characters"    focused={f2} onFocus={() => setF2(true)} onBlur={() => setF2(false)} />
+            {newPass.length > 0 && (
+              <div className="flex items-center gap-2 mt-1">
+                <div className="flex-1 h-1 rounded-full" style={{ backgroundColor: '#2C2C2C' }}>
+                  <div className="h-1 rounded-full transition-all duration-300" style={{ width: strength.width, backgroundColor: strength.color }} />
+                </div>
+                <span style={{ fontSize: 11, color: strength.color, minWidth: 40 }}>{strength.label}</span>
+              </div>
+            )}
+          </div>
+
+          <PasswordField label="Confirm New Password"  value={confirm}  onChange={setConfirm}  placeholder="Re-enter new password"   focused={f3} onFocus={() => setF3(true)} onBlur={() => setF3(false)} />
+
+          <div style={{ minHeight: 16 }}>
+            {pwError && <p style={{ fontSize: 12, color: '#C0392B' }}>{pwError}</p>}
+          </div>
+
+          <button
+            onClick={handleChangePassword}
+            disabled={pwLoading}
+            style={{ backgroundColor: pwLoading ? '#2C2C2C' : '#C0392B', border: 'none', borderRadius: 8, padding: '10px 20px', color: pwLoading ? '#606060' : '#ffffff', fontSize: 13, fontWeight: 600, cursor: pwLoading ? 'not-allowed' : 'pointer', alignSelf: 'flex-start' }}
+            onMouseEnter={e => { if (!pwLoading) e.currentTarget.style.backgroundColor = '#96281B'; }}
+            onMouseLeave={e => { if (!pwLoading) e.currentTarget.style.backgroundColor = '#C0392B'; }}
+          >
+            {pwLoading ? 'Updating...' : 'Update Password'}
+          </button>
         </div>
       </div>
 

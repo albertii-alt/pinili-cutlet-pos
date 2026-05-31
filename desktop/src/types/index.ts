@@ -24,6 +24,7 @@ export interface User {
   id: number;
   username: string;
   role: 'owner' | 'cashier' | 'kitchen';
+  avatar_path?: string | null;
 }
 
 export interface StaffUser {
@@ -31,6 +32,7 @@ export interface StaffUser {
   username: string;
   role: 'cashier' | 'kitchen';
   is_active: number;
+  avatar_path?: string | null;
   created_at: string;
 }
 
@@ -185,6 +187,7 @@ export interface ShiftReportEntry {
   created_by: number | null;
   username: string | null;
   role: string | null;
+  avatar_path?: string | null;
   total_orders: number;
   cancelled_orders: number;
   total_sales: number;
