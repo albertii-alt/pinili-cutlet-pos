@@ -10,19 +10,23 @@ import {
   IconUsers,
   IconInfoCircle,
   IconHelp,
+  IconHeartbeat,
+  IconHeadset,
 } from '@tabler/icons-react';
 
 const navItems = [
-  { to: '/owner/dashboard',      label: 'Dashboard',     icon: IconLayoutDashboard },
-  { to: '/owner/menu',           label: 'Menu',           icon: IconToolsKitchen2   },
-  { to: '/owner/history',        label: 'History',        icon: IconHistory         },
-  { to: '/owner/analytics',      label: 'Analytics',      icon: IconChartBar        },
-  { to: '/owner/expenses',       label: 'Expenses',       icon: IconReceipt2        },
-  { to: '/owner/shift-reports',  label: 'Shift Reports',  icon: IconUsers           },
-  { to: '/owner/settings',       label: 'Settings',       icon: IconSettings        },
-  { to: '/owner/audit-logs',     label: 'Audit Logs',     icon: IconShieldCheck     },
-  { to: '/owner/help',           label: 'Help',           icon: IconHelp            },
-  { to: '/owner/about',          label: 'About',          icon: IconInfoCircle      },
+  { to: '/owner/dashboard',      label: 'Dashboard',      icon: IconLayoutDashboard },
+  { to: '/owner/menu',           label: 'Menu',            icon: IconToolsKitchen2   },
+  { to: '/owner/history',        label: 'History',         icon: IconHistory         },
+  { to: '/owner/analytics',      label: 'Analytics',       icon: IconChartBar        },
+  { to: '/owner/expenses',       label: 'Expenses',        icon: IconReceipt2        },
+  { to: '/owner/shift-reports',  label: 'Shift Reports',   icon: IconUsers           },
+  { to: '/owner/settings',       label: 'Settings',        icon: IconSettings        },
+  { to: '/owner/audit-logs',     label: 'Audit Logs',      icon: IconShieldCheck     },
+  { to: '/owner/system-status',  label: 'System Status',   icon: IconHeartbeat       },
+  { to: '/owner/support',        label: 'Support',         icon: IconHeadset         },
+  { to: '/owner/help',           label: 'Help',            icon: IconHelp            },
+  { to: '/owner/about',          label: 'About',           icon: IconInfoCircle      },
 ];
 
 export default function Sidebar() {

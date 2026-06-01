@@ -14,6 +14,8 @@ import ExpensesPage from '../pages/owner/ExpensesPage';
 import ShiftReportPage from '../pages/owner/ShiftReportPage';
 import AboutPage from '../pages/owner/AboutPage';
 import HelpPage from '../pages/owner/HelpPage';
+import SystemStatusPage from '../pages/owner/SystemStatusPage';
+import SupportPage from '../pages/owner/SupportPage';
 import Topbar from '../components/shared/Topbar';
 import Sidebar from '../components/shared/Sidebar';
 
@@ -68,6 +70,8 @@ export const routes: RouteObject[] = [
       { path: 'shift-reports',  element: <ShiftReportPage /> },
       { path: 'about',          element: <AboutPage /> },
       { path: 'help',           element: <HelpPage /> },
+      { path: 'system-status', element: <SystemStatusPage /> },
+      { path: 'support',       element: <SupportPage /> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },

@@ -22,6 +22,7 @@ import cashDrawerRoutes    from './routes/cashDrawer.routes';
 import expenseRoutes       from './routes/expense.routes';
 import shiftReportRoutes   from './routes/shiftReport.routes';
 import notificationRoutes  from './routes/notification.routes';
+import systemRoutes        from './routes/system.routes';
 import { scheduleAutoBackup } from './controllers/backup.controller';
 
 const app    = express();
@@ -112,6 +113,7 @@ app.use('/api/cash-drawer',      cashDrawerRoutes);
 app.use('/api/expenses',         expenseRoutes);
 app.use('/api/shift-report',     shiftReportRoutes);
 app.use('/api/notifications',    notificationRoutes);
+app.use('/api/system',           systemRoutes);
 
 // Global error handler
 app.use(errorHandler);
