@@ -16,6 +16,7 @@ import AboutPage from '../pages/owner/AboutPage';
 import HelpPage from '../pages/owner/HelpPage';
 import SystemStatusPage from '../pages/owner/SystemStatusPage';
 import SupportPage from '../pages/owner/SupportPage';
+import ChangelogPage from '../pages/owner/ChangelogPage';
 import Topbar from '../components/shared/Topbar';
 import Sidebar from '../components/shared/Sidebar';
 
@@ -72,6 +73,7 @@ export const routes: RouteObject[] = [
       { path: 'help',           element: <HelpPage /> },
       { path: 'system-status', element: <SystemStatusPage /> },
       { path: 'support',       element: <SupportPage /> },
+      { path: 'changelog',     element: <ChangelogPage /> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },

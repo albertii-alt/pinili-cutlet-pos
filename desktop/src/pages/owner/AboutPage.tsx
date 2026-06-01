@@ -53,7 +53,7 @@ export default function AboutPage() {
         {/* App info */}
         <Section title="Application" icon={<IconDeviceDesktop size={15} color="#C0392B" />}>
           <InfoRow label="App Name"    value={stallName} />
-          <InfoRow label="Version"     value="1.0.0" mono />
+          <InfoRow label="Version"     value={__APP_VERSION__} mono />
           <InfoRow label="Platform"    value="Desktop (Tauri + React)" />
           <div className="flex flex-col gap-1 pt-1">
             <span style={{ fontSize: 12, color: '#606060' }}>Description</span>

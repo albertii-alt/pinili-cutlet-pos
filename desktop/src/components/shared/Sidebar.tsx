@@ -12,6 +12,7 @@ import {
   IconHelp,
   IconHeartbeat,
   IconHeadset,
+  IconGitCommit,
 } from '@tabler/icons-react';
 
 const navItems = [
@@ -26,6 +27,7 @@ const navItems = [
   { to: '/owner/system-status',  label: 'System Status',   icon: IconHeartbeat       },
   { to: '/owner/support',        label: 'Support',         icon: IconHeadset         },
   { to: '/owner/help',           label: 'Help',            icon: IconHelp            },
+  { to: '/owner/changelog',      label: 'Changelog',       icon: IconGitCommit       },
   { to: '/owner/about',          label: 'About',           icon: IconInfoCircle      },
 ];
 
@@ -60,7 +62,7 @@ export default function Sidebar() {
 
       {/* Version label */}
       <div className="px-5 py-4 border-t border-border">
-        <p className="text-textMuted text-xs">v1.0.0</p>
+        <p className="text-textMuted text-xs">v{__APP_VERSION__}</p>
       </div>
     </aside>
   );

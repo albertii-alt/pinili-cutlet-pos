@@ -12,10 +12,6 @@ import {
 
 const DEVELOPER_EMAIL = 'albertoiidaro0@gmail.com';
 
-type FormType = 'contact' | 'bug' | 'feature';
-
-// ─── Shared components ────────────────────────────────────────────────────────
-
 function Card({ children }: { children: React.ReactNode }) {
   return (
     <div
