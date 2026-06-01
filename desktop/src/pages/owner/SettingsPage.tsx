@@ -113,19 +113,19 @@ function RoleAvatar({ username, role }: { username: string; role: string }) {
 
 type Section = 'account' | 'staff' | 'system' | 'appearance' | 'orders' | 'payment' | 'notifications' | 'data';
 
-const NAV_ITEMS: { id: Section; label: string; icon: React.ReactNode }[] = [
-  { id: 'account',       label: 'Account Security',    icon: <IconShieldLock size={15} /> },
-  { id: 'staff',         label: 'Staff Management',    icon: <IconUsers size={15} /> },
-  { id: 'system',        label: 'System Settings',     icon: <IconBuildingStore size={15} /> },
-  { id: 'appearance',    label: 'Display & Appearance', icon: <IconPalette size={15} /> },
-  { id: 'orders',        label: 'Order Settings',      icon: <IconReceipt size={15} /> },
-  { id: 'payment',       label: 'Payment Methods',     icon: <IconCreditCard size={15} /> },
-  { id: 'notifications', label: 'Notifications',       icon: <IconBell size={15} /> },
-  { id: 'data',          label: 'Data Management',      icon: <IconDatabaseExport size={15} /> },
+const NAV_ITEMS: { id: Section; label: string; icon: React.ReactNode; description: string }[] = [
+  { id: 'account',       label: 'Account Security',     icon: <IconShieldLock size={20} />,    description: 'Password, username & profile picture'  },
+  { id: 'staff',         label: 'Staff Management',     icon: <IconUsers size={20} />,         description: 'Add, edit and manage staff accounts'   },
+  { id: 'system',        label: 'System Settings',      icon: <IconBuildingStore size={20} />, description: 'Stall name and brand logo'              },
+  { id: 'appearance',    label: 'Display & Appearance', icon: <IconPalette size={20} />,       description: 'Accent color and menu display options'  },
+  { id: 'orders',        label: 'Order Settings',       icon: <IconReceipt size={20} />,       description: 'Order prefix and confirmation dialog'  },
+  { id: 'payment',       label: 'Payment Methods',      icon: <IconCreditCard size={20} />,    description: 'Add, remove and configure methods'     },
+  { id: 'notifications', label: 'Notifications',        icon: <IconBell size={20} />,          description: 'Sound alerts for new orders'           },
+  { id: 'data',          label: 'Data Management',      icon: <IconDatabaseExport size={20} />,description: 'Backup, restore and auto-backup'       },
 ];
 
 export default function SettingsPage() {
-  const [activeSection, setActiveSection] = useState<Section>('account');
+  const [activeSection, setActiveSection] = useState<Section | null>(null);
   // Change password state
   const [current, setCurrent]   = useState('');
   const [newPass, setNewPass]   = useState('');
@@ -721,53 +721,72 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex flex-col" style={{ height: '100%', minHeight: 0 }}>
-      {/* Page title */}
-      <div className="px-6 py-4" style={{ borderBottom: '1px solid #2C2C2C' }}>
-        <div className="flex items-center gap-2">
-          <IconSettings size={18} color="#C0392B" />
-          <h1 className="text-white font-semibold text-lg">Settings</h1>
-        </div>
+    <div className="flex flex-col gap-5 w-full">
+      {/* Page header */}
+      <div className="flex items-center gap-2">
+        <IconSettings size={18} color="#C0392B" />
+        <h1 className="text-white font-semibold text-lg">Settings</h1>
       </div>
 
-      {/* Two-column layout */}
-      <div className="flex flex-1 min-h-0" style={{ overflow: 'hidden' }}>
-
-        {/* ── Sidebar ── */}
-        <nav
-          className="flex flex-col py-2"
-          style={{ width: 220, flexShrink: 0, backgroundColor: '#111111', borderRight: '1px solid #2C2C2C', overflowY: 'auto' }}
-        >
-          {NAV_ITEMS.map(item => {
-            const active = activeSection === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id)}
-                className="flex items-center gap-2.5 text-left w-full transition-colors"
-                style={{
-                  padding: '10px 16px',
-                  fontSize: 13,
-                  backgroundColor: active ? 'rgba(192,57,43,0.08)' : 'transparent',
-                  color: active ? '#ffffff' : '#606060',
-                  borderLeft: active ? '3px solid #C0392B' : '3px solid transparent',
-                  border: 'none',
-
-                  cursor: 'pointer',
-                  outline: 'none',
-                }}
-                onMouseEnter={e => { if (!active) e.currentTarget.style.backgroundColor = '#1A1A1A'; }}
-                onMouseLeave={e => { if (!active) e.currentTarget.style.backgroundColor = 'transparent'; }}
+      {/* ── Card grid picker ── */}
+      {activeSection === null && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }}>
+          {NAV_ITEMS.map(item => (
+            <button
+              key={item.id}
+              onClick={() => setActiveSection(item.id)}
+              className="flex flex-col gap-3 rounded-xl p-5 text-left transition-all"
+              style={{
+                backgroundColor: '#111111',
+                border: '1px solid #2C2C2C',
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.backgroundColor = '#1A1A1A';
+                e.currentTarget.style.borderColor = 'rgba(192,57,43,0.4)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.backgroundColor = '#111111';
+                e.currentTarget.style.borderColor = '#2C2C2C';
+              }}
+            >
+              <div
+                className="flex items-center justify-center w-10 h-10 rounded-xl"
+                style={{ backgroundColor: 'rgba(192,57,43,0.1)', border: '1px solid rgba(192,57,43,0.2)' }}
               >
-                {item.icon}
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
+                <span style={{ color: '#C0392B' }}>{item.icon}</span>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#ffffff' }}>{item.label}</span>
+                <span style={{ fontSize: 11, color: '#606060', lineHeight: 1.5 }}>{item.description}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
 
-        {/* ── Content area ── */}
-        <div className="flex-1 p-6" style={{ overflowY: 'auto' }}>
+      {/* ── Section view ── */}
+      {activeSection !== null && (
+        <>
+          {/* Back button */}
+          <button
+            onClick={() => setActiveSection(null)}
+            className="flex items-center gap-2 self-start transition-colors"
+            style={{
+              backgroundColor: '#111111',
+              border: '1px solid #2C2C2C',
+              borderRadius: 8,
+              padding: '6px 12px',
+              color: '#A0A0A0',
+              fontSize: 13,
+              cursor: 'pointer',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1A1A1A'; e.currentTarget.style.color = '#ffffff'; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#111111'; e.currentTarget.style.color = '#A0A0A0'; }}
+          >
+            ← Back to Settings
+          </button>
 
       {/* ── Account Security ── */}
       {activeSection === 'account' && (
@@ -1872,8 +1891,8 @@ export default function SettingsPage() {
       </div>
       )}
 
-        </div>{/* end content area */}
-      </div>{/* end two-column */}
+        </>
+      )}{/* end activeSection !== null */}
 
       {/* Staff modal */}
       {staffModal !== undefined && (

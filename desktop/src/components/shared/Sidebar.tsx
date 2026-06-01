@@ -9,6 +9,7 @@ import {
   IconReceipt2,
   IconUsers,
   IconInfoCircle,
+  IconHelp,
 } from '@tabler/icons-react';
 
 const navItems = [
@@ -20,6 +21,7 @@ const navItems = [
   { to: '/owner/shift-reports',  label: 'Shift Reports',  icon: IconUsers           },
   { to: '/owner/settings',       label: 'Settings',       icon: IconSettings        },
   { to: '/owner/audit-logs',     label: 'Audit Logs',     icon: IconShieldCheck     },
+  { to: '/owner/help',           label: 'Help',           icon: IconHelp            },
   { to: '/owner/about',          label: 'About',          icon: IconInfoCircle      },
 ];
 
