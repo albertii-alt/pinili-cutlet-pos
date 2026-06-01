@@ -29,13 +29,15 @@ function buildDateFilter(query: {
   period?: string;
   start_date?: string;
   end_date?: string;
+  year?: string;
 }): { where: string; params: (string | number)[] } {
-  const { period, start_date, end_date } = query;
+  const { period, start_date, end_date, year } = query;
   let where = 'WHERE 1=1';
   const params: (string | number)[] = [];
 
   if (period === 'all') {
-    // no date filter
+    if (year) { where += " AND strftime('%Y', date) = ?"; params.push(year); }
+    // else no date filter
   } else if (period === 'today') {
     where += " AND date = date('now','localtime')";
   } else if (period === 'week') {
@@ -55,10 +57,11 @@ function buildDateFilter(query: {
 // ─── GET / ────────────────────────────────────────────────────────────────────
 
 export function getExpenses(req: Request, res: Response): void {
-  const { period, start_date, end_date, limit, offset } = req.query as {
+  const { period, start_date, end_date, year, limit, offset } = req.query as {
     period?: string;
     start_date?: string;
     end_date?: string;
+    year?: string;
     limit?: string;
     offset?: string;
   };
@@ -66,7 +69,7 @@ export function getExpenses(req: Request, res: Response): void {
   const pageSize = Math.min(200, Math.max(1, parseInt(limit  ?? '100', 10)));
   const skip     = Math.max(0,              parseInt(offset ?? '0',   10));
 
-  const { where, params } = buildDateFilter({ period, start_date, end_date });
+  const { where, params } = buildDateFilter({ period, start_date, end_date, year });
 
   const total = (db.prepare(`SELECT COUNT(*) as c FROM expenses ${where}`).get(...params) as { c: number }).c;
   const rows  = db.prepare(`SELECT * FROM expenses ${where} ORDER BY date DESC, id DESC LIMIT ? OFFSET ?`)
@@ -78,13 +81,14 @@ export function getExpenses(req: Request, res: Response): void {
 // ─── GET /summary ─────────────────────────────────────────────────────────────
 
 export function getExpenseSummary(req: Request, res: Response): void {
-  const { period, start_date, end_date } = req.query as {
+  const { period, start_date, end_date, year } = req.query as {
     period?: string;
     start_date?: string;
     end_date?: string;
+    year?: string;
   };
 
-  const { where, params } = buildDateFilter({ period, start_date, end_date });
+  const { where, params } = buildDateFilter({ period, start_date, end_date, year });
 
   const totalRow = db.prepare(`SELECT COALESCE(SUM(amount), 0) as total FROM expenses ${where}`)
     .get(...params) as { total: number };

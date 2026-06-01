@@ -8,8 +8,10 @@ import {
   IconTrendingUp,
 } from '@tabler/icons-react';
 import { getShiftReport, type ShiftReportPeriod } from '../../api/shiftReport.api';
+import { getAvailableYears } from '../../api/analytics.api';
 import { ShiftReportEntry, ShiftReportSummary } from '../../types';
 import { formatCurrency } from '../../utils/formatCurrency';
+import YearSelector from '../../components/shared/YearSelector';
 
 const SERVER_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
@@ -205,11 +207,14 @@ function StaffCard({ entry, index, totalSales }: StaffCardProps) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ShiftReportPage() {
-  const [period, setPeriod]           = useState<ShiftReportPeriod>('today');
-  const [startDate, setStartDate]     = useState('');
-  const [endDate, setEndDate]         = useState('');
-  const [appliedStart, setAppliedStart] = useState('');
-  const [appliedEnd, setAppliedEnd]     = useState('');
+  const currentYear                           = String(new Date().getFullYear());
+  const [period, setPeriod]                   = useState<ShiftReportPeriod>('today');
+  const [startDate, setStartDate]             = useState('');
+  const [endDate, setEndDate]                 = useState('');
+  const [appliedStart, setAppliedStart]       = useState('');
+  const [appliedEnd, setAppliedEnd]           = useState('');
+  const [selectedYear, setSelectedYear]       = useState<string>(currentYear);
+  const [availableYears, setAvailableYears]   = useState<string[]>([]);
 
   const [entries, setEntries]         = useState<ShiftReportEntry[]>([]);
   const [summary, setSummary]         = useState<ShiftReportSummary | null>(null);
@@ -217,23 +222,31 @@ export default function ShiftReportPage() {
 
   const awaitingRange = period === 'custom' && (!appliedStart || !appliedEnd);
 
+  // Fetch available years once on mount
+  useEffect(() => {
+    getAvailableYears().then(setAvailableYears).catch(console.error);
+  }, []);
+
   const fetchReport = useCallback(() => {
     if (awaitingRange) return;
     setLoading(true);
     const params = period === 'custom'
       ? { start_date: appliedStart, end_date: appliedEnd }
-      : { period };
+      : period === 'all'
+        ? { period, year: selectedYear }
+        : { period };
     getShiftReport(params)
       .then(res => { setEntries(res.data); setSummary(res.summary); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [period, appliedStart, appliedEnd, awaitingRange]);
+  }, [period, appliedStart, appliedEnd, awaitingRange, selectedYear]);
 
   useEffect(() => { fetchReport(); }, [fetchReport]);
 
   function handlePeriodChange(p: ShiftReportPeriod) {
     setPeriod(p);
     if (p !== 'custom') { setAppliedStart(''); setAppliedEnd(''); }
+    if (p !== 'all') setSelectedYear(currentYear);
   }
 
   function handleApplyCustom() {
@@ -252,6 +265,13 @@ export default function ShiftReportPage() {
           <h1 className="text-white font-semibold text-lg">Shift Reports</h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {period === 'all' && (
+            <YearSelector
+              years={availableYears}
+              selectedYear={selectedYear}
+              onChange={setSelectedYear}
+            />
+          )}
           {PERIODS.map(p => (
             <button key={p.value} onClick={() => handlePeriodChange(p.value)}
               className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${

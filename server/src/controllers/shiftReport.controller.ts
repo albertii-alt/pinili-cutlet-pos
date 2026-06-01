@@ -18,8 +18,9 @@ function resolveDateRange(query: {
   period?: string;
   start_date?: string;
   end_date?: string;
+  year?: string;
 }): { startDate: string; endDate: string } {
-  const { period, start_date, end_date } = query;
+  const { period, start_date, end_date, year } = query;
 
   // Helper: YYYY-MM-DD for a Date object
   function fmt(d: Date): string {
@@ -31,7 +32,7 @@ function resolveDateRange(query: {
   if (period === 'today') return { startDate: today, endDate: today };
 
   if (period === 'all') {
-    // Return a very wide range to cover all data
+    if (year) return { startDate: `${year}-01-01`, endDate: `${year}-12-31` };
     return { startDate: '2000-01-01', endDate: today };
   }
 
@@ -50,11 +51,11 @@ function resolveDateRange(query: {
     const d = new Date();
     d.setDate(1); // go to first of current month
     d.setMonth(d.getMonth() - 1); // go back one month
-    const year  = d.getFullYear();
+    const yr    = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     // Last day of that month
-    const lastDay = new Date(year, d.getMonth() + 1, 0);
-    return { startDate: `${year}-${month}-01`, endDate: fmt(lastDay) };
+    const lastDay = new Date(yr, d.getMonth() + 1, 0);
+    return { startDate: `${yr}-${month}-01`, endDate: fmt(lastDay) };
   }
 
   // custom / fallback
@@ -67,13 +68,14 @@ function resolveDateRange(query: {
 // ─── GET / ────────────────────────────────────────────────────────────────────
 
 export function getShiftReport(req: Request, res: Response): void {
-  const { period, start_date, end_date } = req.query as {
+  const { period, start_date, end_date, year } = req.query as {
     period?: string;
     start_date?: string;
     end_date?: string;
+    year?: string;
   };
 
-  const { startDate, endDate } = resolveDateRange({ period, start_date, end_date });
+  const { startDate, endDate } = resolveDateRange({ period, start_date, end_date, year });
 
   const rows = db.prepare(`
     SELECT

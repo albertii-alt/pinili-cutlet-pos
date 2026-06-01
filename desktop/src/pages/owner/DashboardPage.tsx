@@ -9,7 +9,8 @@ import EndOfDayModal from '../../components/owner/EndOfDayModal';
 import DailySalesTarget from '../../components/owner/DailySalesTarget';
 import CashDrawerCard from '../../components/owner/CashDrawerCard';
 import DateRangePicker, { type DateRangeValue } from '../../components/shared/DateRangePicker';
-import { getDailyTarget } from '../../api/analytics.api';
+import YearSelector from '../../components/shared/YearSelector';
+import { getDailyTarget, getAvailableYears } from '../../api/analytics.api';
 import { getExpenseSummary } from '../../api/expense.api';
 import { usePaymentMethods } from '../../hooks/usePaymentMethods';
 
@@ -23,18 +24,27 @@ const periods: { label: string; value: AnalyticsPeriod }[] = [
 ];
 
 export default function DashboardPage() {
-  const [period, setPeriod]           = useState<AnalyticsPeriod>('today');
-  const [showEOD, setShowEOD]         = useState(false);
-  const [dailyTarget, setDailyTarget] = useState<number>(0);
-  const [todayExpenses, setTodayExpenses] = useState<number>(0);
-  const [dateRange, setDateRange]         = useState<DateRangeValue>({ startDate: '', endDate: '' });
-  const [appliedRange, setAppliedRange]   = useState<DateRange | null>(null);
-  const { summary, dailySales, bestSellers, loading } = useAnalytics(period, appliedRange ?? undefined);
+  const currentYear                           = String(new Date().getFullYear());
+  const [period, setPeriod]                   = useState<AnalyticsPeriod>('today');
+  const [showEOD, setShowEOD]                 = useState(false);
+  const [dailyTarget, setDailyTarget]         = useState<number>(0);
+  const [todayExpenses, setTodayExpenses]     = useState<number>(0);
+  const [dateRange, setDateRange]             = useState<DateRangeValue>({ startDate: '', endDate: '' });
+  const [appliedRange, setAppliedRange]       = useState<DateRange | null>(null);
+  const [selectedYear, setSelectedYear]       = useState<string>(currentYear);
+  const [availableYears, setAvailableYears]   = useState<string[]>([]);
+  const { summary, dailySales, bestSellers, loading } = useAnalytics(period, appliedRange ?? undefined, selectedYear);
   const { getMethodColor, getMethodLogoUrl } = usePaymentMethods();
+
+  // Fetch available years once on mount
+  useEffect(() => {
+    getAvailableYears().then(setAvailableYears).catch(console.error);
+  }, []);
 
   function handlePeriodChange(p: AnalyticsPeriod) {
     setPeriod(p);
     if (p !== 'custom') setAppliedRange(null);
+    if (p !== 'all') setSelectedYear(currentYear);
   }
 
   // Fetch daily target once on mount
@@ -60,6 +70,13 @@ export default function DashboardPage() {
           <h1 className="text-white font-semibold text-lg">Dashboard</h1>
         </div>
         <div className="flex items-center gap-2">
+          {period === 'all' && (
+            <YearSelector
+              years={availableYears}
+              selectedYear={selectedYear}
+              onChange={setSelectedYear}
+            />
+          )}
           {periods.map(p => (
             <button
               key={p.value}

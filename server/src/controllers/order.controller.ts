@@ -51,13 +51,14 @@ export function getActive(req: Request, res: Response): void {
 }
 
 export function getHistory(req: Request, res: Response): void {
-  const { status, date, payment_method, startDate, endDate, period, page, limit } = req.query as {
+  const { status, date, payment_method, startDate, endDate, period, year, page, limit } = req.query as {
     status?: string;
     date?: string;
     payment_method?: string;
     startDate?: string;
     endDate?: string;
     period?: string;
+    year?: string;
     page?: string;
     limit?: string;
   };
@@ -76,7 +77,8 @@ export function getHistory(req: Request, res: Response): void {
     where += ' AND DATE(created_at) >= ? AND DATE(created_at) <= ?';
     params.push(startDate, endDate);
   } else if (period === 'all') {
-    // no date filter
+    if (year) { where += " AND strftime('%Y', created_at) = ?"; params.push(year); }
+    // else no date filter
   } else if (period === 'week') {
     where += " AND DATE(created_at) >= DATE('now', '-6 days', 'localtime')";
   } else if (period === 'month') {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { IconEye, IconShoppingCart, IconReportMoney, IconCreditCard, IconFileExport, IconCheck, IconX, IconChevronLeft, IconChevronRight, IconCalendar, IconClipboardList, IconSearchOff, IconHistory } from '@tabler/icons-react';
 import { getOrderHistory } from '../../api/order.api';
-import { getSummary } from '../../api/analytics.api';
+import { getSummary, getAvailableYears } from '../../api/analytics.api';
 import { Order } from '../../types';
 import type { OrderFilter } from '../../types';
 import { formatCurrency } from '../../utils/formatCurrency';
@@ -11,6 +11,7 @@ import EmptyState from '../../components/shared/EmptyState';
 import SalesCard from '../../components/owner/SalesCard';
 import OrderDetailsModal from '../../components/owner/OrderDetailsModal';
 import DateRangePicker, { type DateRangeValue } from '../../components/shared/DateRangePicker';
+import YearSelector from '../../components/shared/YearSelector';
 import { usePaymentMethods } from '../../hooks/usePaymentMethods';
 const periods: { label: string; value: OrderFilter }[] = [
   { label: 'All',        value: 'all'        },
@@ -74,19 +75,27 @@ function Toast({ message, type, onDone }: { message: string; type: 'success' | '
 }
 
 export default function HistoryPage() {
-  const [period, setPeriod]             = useState<OrderFilter>('today');
-  const [orders, setOrders]             = useState<Order[]>([]);
-  const [total, setTotal]               = useState(0);
-  const [totalPages, setTotalPages]     = useState(1);
-  const [page, setPage]                 = useState(1);
-  const PAGE_SIZE                       = 25;
-  const [loading, setLoading]           = useState(true);
-  const [summary, setSummary]           = useState<{ total_orders: number; total_sales: number; payment_breakdown: { payment_method: string; revenue: number }[] } | null>(null);
-  const [selected, setSelected]         = useState<Order | null>(null);
-  const [exporting, setExporting]       = useState(false);
-  const [toast, setToast]               = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
-  const { getMethodColor, getMethodLogoUrl } = usePaymentMethods();
+  const currentYear                             = String(new Date().getFullYear());
+  const [period, setPeriod]                     = useState<OrderFilter>('today');
+  const [orders, setOrders]                     = useState<Order[]>([]);
+  const [total, setTotal]                       = useState(0);
+  const [totalPages, setTotalPages]             = useState(1);
+  const [page, setPage]                         = useState(1);
+  const PAGE_SIZE                               = 25;
+  const [loading, setLoading]                   = useState(true);
+  const [summary, setSummary]                   = useState<{ total_orders: number; total_sales: number; payment_breakdown: { payment_method: string; revenue: number }[] } | null>(null);
+  const [selected, setSelected]                 = useState<Order | null>(null);
+  const [exporting, setExporting]               = useState(false);
+  const [toast, setToast]                       = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [activeFilter, setActiveFilter]         = useState<string | null>(null);
+  const [selectedYear, setSelectedYear]         = useState<string>(currentYear);
+  const [availableYears, setAvailableYears]     = useState<string[]>([]);
+  const { getMethodColor, getMethodLogoUrl }    = usePaymentMethods();
+
+  // Fetch available years once on mount
+  useEffect(() => {
+    getAvailableYears().then(setAvailableYears).catch(console.error);
+  }, []);
 
   function handleOrderCancelled(id: number) {
     setOrders(prev => prev.map(o =>
@@ -106,15 +115,18 @@ export default function HistoryPage() {
     setPage(1);
     setActiveFilter(null);
     if (p !== 'custom') setAppliedRange(null);
+    if (p !== 'all') setSelectedYear(currentYear);
   }
 
   // Fetch full-period summary for stat cards (independent of page/activeFilter)
   useEffect(() => {
     if (period === 'custom' && !appliedRange) { setSummary(null); return; }
     const dr = period === 'custom' && appliedRange ? { startDate: appliedRange.startDate, endDate: appliedRange.endDate } : undefined;
-    getSummary(period === 'today' ? 'today' : period === 'week' ? 'week' : period === 'month' ? 'month' : period === 'last_month' ? 'last_month' : period === 'all' ? 'all' : 'custom', dr)
+    const analyticsPeriod = (period === 'all' || period === 'today' || period === 'week' || period === 'month' || period === 'last_month' || period === 'custom') ? period : 'today';
+    const y = period === 'all' ? selectedYear : undefined;
+    getSummary(analyticsPeriod, dr, y)
       .then(setSummary).catch(console.error);
-  }, [period, appliedRange]);
+  }, [period, appliedRange, selectedYear]);
 
   useEffect(() => {
     if (period === 'custom' && !appliedRange) {
@@ -134,6 +146,9 @@ export default function HistoryPage() {
       params.endDate   = appliedRange.endDate;
     } else if (period === 'today') {
       params.date = toDateParam();
+    } else if (period === 'all') {
+      params.period = period;
+      params.year   = selectedYear;
     } else {
       params.period = period;
     }
@@ -148,7 +163,7 @@ export default function HistoryPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [period, appliedRange, page, activeFilter]);
+  }, [period, appliedRange, page, activeFilter, selectedYear]);
 
   async function handleExport() {
     if (total === 0 || exporting) return;
@@ -164,6 +179,9 @@ export default function HistoryPage() {
         params.endDate   = appliedRange.endDate;
       } else if (period === 'today') {
         params.date = toDateParam();
+      } else if (period === 'all') {
+        params.period = period;
+        params.year   = selectedYear;
       } else {
         params.period = period;
       }
@@ -201,6 +219,13 @@ export default function HistoryPage() {
           <h1 className="text-white font-semibold text-lg">Order History</h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {period === 'all' && (
+            <YearSelector
+              years={availableYears}
+              selectedYear={selectedYear}
+              onChange={setSelectedYear}
+            />
+          )}
           {periods.map(p => (
             <button
               key={p.value}

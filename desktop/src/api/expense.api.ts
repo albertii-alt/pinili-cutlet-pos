@@ -7,6 +7,7 @@ export interface ExpenseParams {
   period?: ExpensePeriod;
   start_date?: string;
   end_date?: string;
+  year?: string;
   limit?: number;
   offset?: number;
 }

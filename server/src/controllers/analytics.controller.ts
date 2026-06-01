@@ -3,11 +3,19 @@ import db from '../database/db';
 import { AnalyticsSummary, DailySales, BestSeller, RevenueByPayment, PeakHour, CategorySales } from '../types';
 import { createNotification } from '../utils/notificationHelper';
 
+export interface MonthlySales {
+  month: string;  // e.g. "Jan", "Feb", ...
+  total: number;
+}
+
 function buildWhereClause(
-  period?: string, date?: string, startDate?: string, endDate?: string
+  period?: string, date?: string, startDate?: string, endDate?: string, year?: string
 ): { where: string; params: string[] } {
   if (startDate && endDate) return { where: `DATE(created_at) >= ? AND DATE(created_at) <= ?`, params: [startDate, endDate] };
-  if (period === 'all')        return { where: `1=1`, params: [] };
+  if (period === 'all') {
+    if (year) return { where: `strftime('%Y', created_at) = ?`, params: [year] };
+    return { where: `1=1`, params: [] };
+  }
   if (period === 'week')       return { where: `DATE(created_at) >= DATE('now', '-6 days', 'localtime')`, params: [] };
   if (period === 'month')      return { where: `DATE(created_at) >= DATE('now', 'localtime', 'start of month') AND DATE(created_at) <= DATE('now', 'localtime')`, params: [] };
   if (period === 'last_month') return { where: `strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now', 'localtime', '-1 month')`, params: [] };
@@ -15,9 +23,19 @@ function buildWhereClause(
   return                              { where: `DATE(created_at) = DATE('now', 'localtime')`, params: [] };
 }
 
+export function getAvailableYears(_req: Request, res: Response): void {
+  const rows = db.prepare(`
+    SELECT DISTINCT strftime('%Y', created_at) AS year
+    FROM orders
+    WHERE status = 'completed'
+    ORDER BY year DESC
+  `).all() as { year: string }[];
+  res.json(rows.map(r => r.year));
+}
+
 export function getSummary(req: Request, res: Response): void {
-  const { date, period, startDate, endDate } = req.query as Record<string, string | undefined>;
-  const { where, params } = buildWhereClause(period, date, startDate, endDate);
+  const { date, period, startDate, endDate, year } = req.query as Record<string, string | undefined>;
+  const { where, params } = buildWhereClause(period, date, startDate, endDate, year);
 
   const totals = db.prepare(`
     SELECT
@@ -83,8 +101,8 @@ export function getDailySales(req: Request, res: Response): void {
 }
 
 export function getBestSellers(req: Request, res: Response): void {
-  const { limit, date, period, startDate, endDate } = req.query as Record<string, string | undefined>;
-  const { where, params } = buildWhereClause(period, date, startDate, endDate);
+  const { limit, date, period, startDate, endDate, year } = req.query as Record<string, string | undefined>;
+  const { where, params } = buildWhereClause(period, date, startDate, endDate, year);
 
   const sellers = db.prepare(`
     SELECT
@@ -118,8 +136,8 @@ export function getRevenueByPayment(req: Request, res: Response): void {
 }
 
 export function getPeakHours(req: Request, res: Response): void {
-  const { date, period, startDate, endDate } = req.query as Record<string, string | undefined>;
-  const { where, params } = buildWhereClause(period, date, startDate, endDate);
+  const { date, period, startDate, endDate, year } = req.query as Record<string, string | undefined>;
+  const { where, params } = buildWhereClause(period, date, startDate, endDate, year);
   const qualifiedWhere = where.replace(/created_at/g, 'o.created_at');
 
   const rows = db.prepare(`
@@ -136,8 +154,8 @@ export function getPeakHours(req: Request, res: Response): void {
 }
 
 export function getCategorySales(req: Request, res: Response): void {
-  const { date, period, startDate, endDate } = req.query as Record<string, string | undefined>;
-  const { where, params } = buildWhereClause(period, date, startDate, endDate);
+  const { date, period, startDate, endDate, year } = req.query as Record<string, string | undefined>;
+  const { where, params } = buildWhereClause(period, date, startDate, endDate, year);
   const qualifiedWhere = where.replace(/created_at/g, 'o.created_at');
 
   const rows = db.prepare(`
@@ -157,8 +175,8 @@ export function getCategorySales(req: Request, res: Response): void {
 }
 
 export function getAverageOrderValue(req: Request, res: Response): void {
-  const { date, period, startDate, endDate } = req.query as Record<string, string | undefined>;
-  const { where, params } = buildWhereClause(period, date, startDate, endDate);
+  const { date, period, startDate, endDate, year } = req.query as Record<string, string | undefined>;
+  const { where, params } = buildWhereClause(period, date, startDate, endDate, year);
 
   const row = db.prepare(`
     SELECT ROUND(AVG(total_amount), 2) as avg_order_value, COUNT(*) as total_orders
@@ -188,6 +206,51 @@ export function setDailyTarget(req: Request, res: Response): void {
   `).run(String(target));
 
   res.json({ daily_target: Number(target) });
+}
+
+export function getMonthlySales(req: Request, res: Response): void {
+  const { period, startDate, endDate, year } = req.query as Record<string, string | undefined>;
+
+  // Determine the year(s) to scope the monthly breakdown
+  let yearFilter: string;
+  let params: string[] = [];
+
+  if (startDate && endDate) {
+    // Custom range: show months within the range's year span
+    yearFilter = `DATE(created_at) >= ? AND DATE(created_at) <= ?`;
+    params = [startDate, endDate];
+  } else if (period === 'all' && year) {
+    yearFilter = `strftime('%Y', created_at) = ?`;
+    params = [year];
+  } else if (period === 'last_month') {
+    yearFilter = `strftime('%Y', created_at) = strftime('%Y', 'now', 'localtime', '-1 month')`;
+  } else if (period === 'all') {
+    yearFilter = `1=1`;
+  } else {
+    // today, week, month, or default — show current year
+    yearFilter = `strftime('%Y', created_at) = strftime('%Y', 'now', 'localtime')`;
+  }
+
+  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  const rows = db.prepare(`
+    SELECT
+      CAST(strftime('%m', created_at) AS INTEGER) AS month_num,
+      COALESCE(SUM(total_amount), 0) AS total
+    FROM orders
+    WHERE status = 'completed' AND ${yearFilter}
+    GROUP BY strftime('%m', created_at)
+    ORDER BY month_num ASC
+  `).all(...params) as { month_num: number; total: number }[];
+
+  // Build a full 12-month array, filling zeros for months with no data
+  const dataMap = new Map(rows.map(r => [r.month_num, r.total]));
+  const result: MonthlySales[] = MONTH_NAMES.map((name, i) => ({
+    month: name,
+    total: dataMap.get(i + 1) ?? 0,
+  }));
+
+  res.json(result);
 }
 
 export function getEndOfDaySummary(req: Request, res: Response): void {

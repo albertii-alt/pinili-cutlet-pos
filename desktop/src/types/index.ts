@@ -102,6 +102,11 @@ export interface CategorySales {
   total_revenue: number;
 }
 
+export interface MonthlySales {
+  month: string;
+  total: number;
+}
+
 // Filter types
 
 export type OrderFilter = 'all' | 'today' | 'week' | 'month' | 'last_month' | 'custom';

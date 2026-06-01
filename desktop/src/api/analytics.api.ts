@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { AnalyticsSummary, DailySales, BestSeller, RevenueByPayment, PeakHour, CategorySales, PaymentBreakdown } from '../types';
+import { AnalyticsSummary, DailySales, BestSeller, RevenueByPayment, PeakHour, CategorySales, PaymentBreakdown, MonthlySales } from '../types';
 import { AnalyticsPeriod } from '../hooks/useAnalytics';
 
 export interface DateRangeParams {
@@ -7,15 +7,22 @@ export interface DateRangeParams {
   endDate?: string;
 }
 
-function periodParams(period: AnalyticsPeriod, dateRange?: DateRangeParams) {
+function periodParams(period: AnalyticsPeriod, dateRange?: DateRangeParams, year?: string) {
   if (period === 'custom' && dateRange?.startDate && dateRange?.endDate) {
     return { startDate: dateRange.startDate, endDate: dateRange.endDate };
   }
-  return period === 'today' ? {} : { period };
+  const base = period === 'today' ? {} : { period };
+  if (period === 'all' && year) return { ...base, year };
+  return base;
 }
 
-export async function getSummary(period: AnalyticsPeriod = 'today', dateRange?: DateRangeParams): Promise<AnalyticsSummary> {
-  const { data } = await apiClient.get('/api/analytics/summary', { params: periodParams(period, dateRange) });
+export async function getAvailableYears(): Promise<string[]> {
+  const { data } = await apiClient.get('/api/analytics/years');
+  return data;
+}
+
+export async function getSummary(period: AnalyticsPeriod = 'today', dateRange?: DateRangeParams, year?: string): Promise<AnalyticsSummary> {
+  const { data } = await apiClient.get('/api/analytics/summary', { params: periodParams(period, dateRange, year) });
   return data;
 }
 
@@ -24,8 +31,8 @@ export async function getDailySales(): Promise<DailySales[]> {
   return data;
 }
 
-export async function getBestSellers(limit?: number, period: AnalyticsPeriod = 'today', dateRange?: DateRangeParams): Promise<BestSeller[]> {
-  const { data } = await apiClient.get('/api/analytics/best-sellers', { params: { limit, ...periodParams(period, dateRange) } });
+export async function getBestSellers(limit?: number, period: AnalyticsPeriod = 'today', dateRange?: DateRangeParams, year?: string): Promise<BestSeller[]> {
+  const { data } = await apiClient.get('/api/analytics/best-sellers', { params: { limit, ...periodParams(period, dateRange, year) } });
   return data;
 }
 
@@ -34,18 +41,23 @@ export async function getRevenueByPayment(): Promise<RevenueByPayment[]> {
   return data;
 }
 
-export async function getPeakHours(period: AnalyticsPeriod = 'today', dateRange?: DateRangeParams): Promise<PeakHour[]> {
-  const { data } = await apiClient.get('/api/analytics/peak-hours', { params: periodParams(period, dateRange) });
+export async function getPeakHours(period: AnalyticsPeriod = 'today', dateRange?: DateRangeParams, year?: string): Promise<PeakHour[]> {
+  const { data } = await apiClient.get('/api/analytics/peak-hours', { params: periodParams(period, dateRange, year) });
   return data;
 }
 
-export async function getCategorySales(period: AnalyticsPeriod = 'today', dateRange?: DateRangeParams): Promise<CategorySales[]> {
-  const { data } = await apiClient.get('/api/analytics/category-sales', { params: periodParams(period, dateRange) });
+export async function getCategorySales(period: AnalyticsPeriod = 'today', dateRange?: DateRangeParams, year?: string): Promise<CategorySales[]> {
+  const { data } = await apiClient.get('/api/analytics/category-sales', { params: periodParams(period, dateRange, year) });
   return data;
 }
 
-export async function getAverageOrderValue(period: AnalyticsPeriod = 'today', dateRange?: DateRangeParams): Promise<{ avg_order_value: number; total_orders: number }> {
-  const { data } = await apiClient.get('/api/analytics/average-order-value', { params: periodParams(period, dateRange) });
+export async function getMonthlySales(period: AnalyticsPeriod = 'today', dateRange?: DateRangeParams, year?: string): Promise<MonthlySales[]> {
+  const { data } = await apiClient.get('/api/analytics/monthly-sales', { params: periodParams(period, dateRange, year) });
+  return data;
+}
+
+export async function getAverageOrderValue(period: AnalyticsPeriod = 'today', dateRange?: DateRangeParams, year?: string): Promise<{ avg_order_value: number; total_orders: number }> {
+  const { data } = await apiClient.get('/api/analytics/average-order-value', { params: periodParams(period, dateRange, year) });
   return data;
 }
 

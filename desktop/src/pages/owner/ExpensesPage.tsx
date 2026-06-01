@@ -18,9 +18,11 @@ import {
   deleteExpense,
   type ExpensePeriod,
 } from '../../api/expense.api';
+import { getAvailableYears } from '../../api/analytics.api';
 import { Expense, ExpenseSummary, EXPENSE_CATEGORIES } from '../../types';
 import { formatCurrency } from '../../utils/formatCurrency';
 import ConfirmDialog from '../../components/shared/ConfirmDialog';
+import YearSelector from '../../components/shared/YearSelector';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -260,11 +262,14 @@ function ExpenseModal({ initial, onClose, onSaved }: ExpenseModalProps) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ExpensesPage() {
-  const [period, setPeriod]           = useState<ExpensePeriod>('today');
-  const [startDate, setStartDate]     = useState('');
-  const [endDate, setEndDate]         = useState('');
-  const [appliedStart, setAppliedStart] = useState('');
-  const [appliedEnd, setAppliedEnd]     = useState('');
+  const currentYear                           = String(new Date().getFullYear());
+  const [period, setPeriod]                   = useState<ExpensePeriod>('today');
+  const [startDate, setStartDate]             = useState('');
+  const [endDate, setEndDate]                 = useState('');
+  const [appliedStart, setAppliedStart]       = useState('');
+  const [appliedEnd, setAppliedEnd]           = useState('');
+  const [selectedYear, setSelectedYear]       = useState<string>(currentYear);
+  const [availableYears, setAvailableYears]   = useState<string[]>([]);
 
   const [expenses, setExpenses]       = useState<Expense[]>([]);
   const [total, setTotal]             = useState(0);
@@ -278,16 +283,25 @@ export default function ExpensesPage() {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+  // Fetch available years once on mount
+  useEffect(() => {
+    getAvailableYears().then(setAvailableYears).catch(console.error);
+  }, []);
+
   // Build filter params from current state
   function filterParams(p: number) {
     if (period === 'custom') {
       return { start_date: appliedStart || undefined, end_date: appliedEnd || undefined, limit: PAGE_SIZE, offset: (p - 1) * PAGE_SIZE };
+    }
+    if (period === 'all') {
+      return { period, year: selectedYear, limit: PAGE_SIZE, offset: (p - 1) * PAGE_SIZE };
     }
     return { period, limit: PAGE_SIZE, offset: (p - 1) * PAGE_SIZE };
   }
 
   function summaryParams() {
     if (period === 'custom') return { start_date: appliedStart || undefined, end_date: appliedEnd || undefined };
+    if (period === 'all') return { period, year: selectedYear };
     return { period };
   }
 
@@ -305,7 +319,7 @@ export default function ExpensesPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, appliedStart, appliedEnd]);
+  }, [period, appliedStart, appliedEnd, selectedYear]);
 
   useEffect(() => {
     setPage(1);
@@ -320,6 +334,7 @@ export default function ExpensesPage() {
   function handlePeriodChange(p: ExpensePeriod) {
     setPeriod(p);
     if (p !== 'custom') { setAppliedStart(''); setAppliedEnd(''); }
+    if (p !== 'all') setSelectedYear(currentYear);
   }
 
   function handleSaved(_expense: Expense) {
@@ -349,6 +364,13 @@ export default function ExpensesPage() {
           <h1 className="text-white font-semibold text-lg">Expenses</h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {period === 'all' && (
+            <YearSelector
+              years={availableYears}
+              selectedYear={selectedYear}
+              onChange={setSelectedYear}
+            />
+          )}
           {/* Period filters */}
           {PERIODS.map(p => (
             <button key={p.value} onClick={() => handlePeriodChange(p.value)}

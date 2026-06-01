@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { IconCalendar, IconReportMoney, IconShoppingCart, IconTag, IconTrendingUp, IconChartBar } from '@tabler/icons-react';
 import { useAnalytics, type AnalyticsPeriod, type DateRange } from '../../hooks/useAnalytics';
 import { formatCurrency } from '../../utils/formatCurrency';
@@ -6,8 +6,11 @@ import SalesCard from '../../components/owner/SalesCard';
 import SalesChart from '../../components/owner/SalesChart';
 import PeakHoursChart from '../../components/owner/PeakHoursChart';
 import CategorySalesChart from '../../components/owner/CategorySalesChart';
+import MonthlySalesRadarChart from '../../components/owner/MonthlySalesRadarChart';
 import DateRangePicker, { type DateRangeValue } from '../../components/shared/DateRangePicker';
+import YearSelector from '../../components/shared/YearSelector';
 import EmptyState from '../../components/shared/EmptyState';
+import { getAvailableYears } from '../../api/analytics.api';
 
 const periods: { label: string; value: AnalyticsPeriod }[] = [
   { label: 'All',        value: 'all'        },
@@ -19,20 +22,29 @@ const periods: { label: string; value: AnalyticsPeriod }[] = [
 ];
 
 export default function AnalyticsPage() {
-  const [period, setPeriod]               = useState<AnalyticsPeriod>('today');
-  const [dateRange, setDateRange]         = useState<DateRangeValue>({ startDate: '', endDate: '' });
-  const [appliedRange, setAppliedRange]   = useState<DateRange | null>(null);
+  const currentYear                           = String(new Date().getFullYear());
+  const [period, setPeriod]                   = useState<AnalyticsPeriod>('today');
+  const [dateRange, setDateRange]             = useState<DateRangeValue>({ startDate: '', endDate: '' });
+  const [appliedRange, setAppliedRange]       = useState<DateRange | null>(null);
+  const [selectedYear, setSelectedYear]       = useState<string>(currentYear);
+  const [availableYears, setAvailableYears]   = useState<string[]>([]);
 
-  // Reset applied range when switching away from custom
+  // Fetch available years once on mount
+  useEffect(() => {
+    getAvailableYears().then(setAvailableYears).catch(console.error);
+  }, []);
+
+  // Reset applied range when switching away from custom; reset year when leaving All
   function handlePeriodChange(p: AnalyticsPeriod) {
     setPeriod(p);
     if (p !== 'custom') setAppliedRange(null);
+    if (p !== 'all') setSelectedYear(currentYear);
   }
 
   const {
     summary, dailySales, bestSellers,
-    peakHours, categorySales, avgOrderValue, loading,
-  } = useAnalytics(period, appliedRange ?? undefined);
+    peakHours, categorySales, monthlySales, avgOrderValue, loading,
+  } = useAnalytics(period, appliedRange ?? undefined, selectedYear);
 
   const topCategory = categorySales[0]?.category ?? '—';
 
@@ -47,7 +59,14 @@ export default function AnalyticsPage() {
           <IconChartBar size={18} color="#C0392B" />
           <h1 className="text-white font-semibold text-lg">Analytics</h1>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          {period === 'all' && (
+            <YearSelector
+              years={availableYears}
+              selectedYear={selectedYear}
+              onChange={setSelectedYear}
+            />
+          )}
           {periods.map(p => (
             <button
               key={p.value}
@@ -102,38 +121,46 @@ export default function AnalyticsPage() {
           {/* Peak hours — full width */}
           <PeakHoursChart data={peakHours} />
 
-          {/* Best sellers — full width */}
-          <div className="bg-card border border-border rounded-xl p-4">
-            <p className="text-textGray text-xs uppercase tracking-wider mb-3">Best Sellers</p>
-            <div className="flex flex-col">
-              {bestSellers.length === 0 ? (
-                <p className="text-textMuted text-sm text-center py-6">No data yet</p>
-              ) : (
-                bestSellers.map((item, index) => (
-                  <div
-                    key={item.menu_item_id}
-                    className="flex items-center gap-3 py-2.5 border-b border-border last:border-0"
-                    style={index === 0 ? { backgroundColor: 'rgba(244,196,48,0.04)', borderRadius: 6 } : undefined}
-                  >
-                    <span
-                      className="text-sm font-bold w-6 text-center shrink-0"
-                      style={{ color: index === 0 ? '#F4C430' : '#606060' }}
+          {/* Best sellers + Monthly Sales Radar — side by side */}
+          <div className="flex items-stretch gap-4">
+            {/* Best sellers — compressed */}
+            <div className="flex-1 bg-card border border-border rounded-xl p-4">
+              <p className="text-textGray text-xs uppercase tracking-wider mb-3">Best Sellers</p>
+              <div className="flex flex-col">
+                {bestSellers.length === 0 ? (
+                  <p className="text-textMuted text-sm text-center py-6">No data yet</p>
+                ) : (
+                  bestSellers.map((item, index) => (
+                    <div
+                      key={item.menu_item_id}
+                      className="flex items-center gap-3 py-2.5 border-b border-border last:border-0"
+                      style={index === 0 ? { backgroundColor: 'rgba(244,196,48,0.04)', borderRadius: 6 } : undefined}
                     >
-                      {index + 1}
-                    </span>
-                    <span
-                      className="flex-1 text-sm truncate"
-                      style={{ color: index === 0 ? '#F4C430' : '#ffffff' }}
-                    >
-                      {item.item_name}
-                    </span>
-                    <span className="text-textGray text-xs">{item.total_quantity}x sold</span>
-                    <span className="text-primary text-sm font-medium" style={{ minWidth: 70, textAlign: 'right' }}>
-                      {formatCurrency(item.total_revenue)}
-                    </span>
-                  </div>
-                ))
-              )}
+                      <span
+                        className="text-sm font-bold w-6 text-center shrink-0"
+                        style={{ color: index === 0 ? '#F4C430' : '#606060' }}
+                      >
+                        {index + 1}
+                      </span>
+                      <span
+                        className="flex-1 text-sm truncate"
+                        style={{ color: index === 0 ? '#F4C430' : '#ffffff' }}
+                      >
+                        {item.item_name}
+                      </span>
+                      <span className="text-textGray text-xs">{item.total_quantity}x sold</span>
+                      <span className="text-primary text-sm font-medium" style={{ minWidth: 70, textAlign: 'right' }}>
+                        {formatCurrency(item.total_revenue)}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Monthly Sales Radar */}
+            <div className="w-[380px] shrink-0">
+              <MonthlySalesRadarChart data={monthlySales} />
             </div>
           </div>
         </>

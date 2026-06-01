@@ -7,6 +7,7 @@ export interface ShiftReportParams {
   period?: ShiftReportPeriod;
   start_date?: string;
   end_date?: string;
+  year?: string;
 }
 
 export async function getShiftReport(params: ShiftReportParams = {}): Promise<ShiftReportResponse> {

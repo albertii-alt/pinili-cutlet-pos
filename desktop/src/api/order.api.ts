@@ -13,6 +13,7 @@ export interface OrderHistoryParams {
   startDate?: string;
   endDate?: string;
   period?: string;
+  year?: string;
   page?: number;
   limit?: number;
 }
