@@ -21,6 +21,7 @@ import auditRoutes         from './routes/audit.routes';
 import cashDrawerRoutes    from './routes/cashDrawer.routes';
 import expenseRoutes       from './routes/expense.routes';
 import shiftReportRoutes   from './routes/shiftReport.routes';
+import notificationRoutes  from './routes/notification.routes';
 import { scheduleAutoBackup } from './controllers/backup.controller';
 
 const app    = express();
@@ -42,6 +43,9 @@ app.use('/payment-logos', express.static(path.resolve(process.cwd(), '../server/
 
 // Static avatars
 app.use('/avatars', express.static(path.resolve(process.cwd(), '../server/public/avatars')));
+
+// Static stall logos
+app.use('/logos', express.static(path.resolve(process.cwd(), '../server/public/logos')));
 
 // Serve client PWA from /app — built output of client/dist
 // __dirname at runtime = server/dist/ → ../../client/dist = client/dist
@@ -107,6 +111,7 @@ app.use('/api/audit-logs',       auditRoutes);
 app.use('/api/cash-drawer',      cashDrawerRoutes);
 app.use('/api/expenses',         expenseRoutes);
 app.use('/api/shift-report',     shiftReportRoutes);
+app.use('/api/notifications',    notificationRoutes);
 
 // Global error handler
 app.use(errorHandler);

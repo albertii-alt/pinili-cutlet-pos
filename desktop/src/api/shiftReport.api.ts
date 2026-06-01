@@ -1,7 +1,7 @@
 import apiClient from './client';
 import { ShiftReportResponse } from '../types';
 
-export type ShiftReportPeriod = 'today' | 'week' | 'month' | 'custom';
+export type ShiftReportPeriod = 'all' | 'today' | 'week' | 'month' | 'last_month' | 'custom';
 
 export interface ShiftReportParams {
   period?: ShiftReportPeriod;

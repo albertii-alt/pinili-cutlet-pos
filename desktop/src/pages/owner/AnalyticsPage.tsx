@@ -10,10 +10,12 @@ import DateRangePicker, { type DateRangeValue } from '../../components/shared/Da
 import EmptyState from '../../components/shared/EmptyState';
 
 const periods: { label: string; value: AnalyticsPeriod }[] = [
-  { label: 'Today',      value: 'today'  },
-  { label: 'This Week',  value: 'week'   },
-  { label: 'This Month', value: 'month'  },
-  { label: 'Custom',     value: 'custom' },
+  { label: 'All',        value: 'all'        },
+  { label: 'Today',      value: 'today'      },
+  { label: 'This Week',  value: 'week'       },
+  { label: 'This Month', value: 'month'      },
+  { label: 'Last Month', value: 'last_month' },
+  { label: 'Custom',     value: 'custom'     },
 ];
 
 export default function AnalyticsPage() {

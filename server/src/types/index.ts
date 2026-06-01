@@ -57,6 +57,7 @@ export interface AuthPayload {
   id: number;
   username: string;
   role: 'owner' | 'cashier' | 'kitchen';
+  avatar_path?: string | null;
 }
 
 // Request filter types

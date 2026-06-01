@@ -1,7 +1,7 @@
 import apiClient from './client';
 import { Expense, ExpenseSummary } from '../types';
 
-export type ExpensePeriod = 'today' | 'week' | 'month' | 'custom';
+export type ExpensePeriod = 'all' | 'today' | 'week' | 'month' | 'last_month' | 'custom';
 
 export interface ExpenseParams {
   period?: ExpensePeriod;

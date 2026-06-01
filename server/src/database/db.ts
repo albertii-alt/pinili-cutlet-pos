@@ -96,6 +96,7 @@ function migrateUsersAvatar(): void {
 function migrateDefaultSettings(): void {
   db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('daily_target',    '0')`).run();
   db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('stall_name',      'Pinili Cutlet')`).run();
+  db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('stall_logo',      '')`).run();
   db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('default_payment', 'cash')`).run();
   db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('accent_color',    '#C0392B')`).run();
   db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('show_item_description', 'false')`).run();
@@ -162,10 +163,11 @@ function migrateNormalizePaymentCasing(): void {
 // Migration: create performance indexes if missing
 function migrateIndexes(): void {
   db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_orders_created_at    ON orders(created_at);
-    CREATE INDEX IF NOT EXISTS idx_orders_status        ON orders(status);
-    CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
-    CREATE INDEX IF NOT EXISTS idx_menu_items_category  ON menu_items(category_id);
+    CREATE INDEX IF NOT EXISTS idx_orders_created_at        ON orders(created_at);
+    CREATE INDEX IF NOT EXISTS idx_orders_status            ON orders(status);
+    CREATE INDEX IF NOT EXISTS idx_orders_status_created_at ON orders(status, created_at);
+    CREATE INDEX IF NOT EXISTS idx_order_items_order_id     ON order_items(order_id);
+    CREATE INDEX IF NOT EXISTS idx_menu_items_category      ON menu_items(category_id);
   `);
 }
 
@@ -233,6 +235,24 @@ function migrateExpenses(): void {
   `);
 }
 
+// Migration: create notifications table + auto-delete old ones
+function migrateNotifications(): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      type       TEXT    NOT NULL,
+      title      TEXT    NOT NULL,
+      message    TEXT    NOT NULL,
+      is_read    INTEGER DEFAULT 0,
+      created_at TEXT    DEFAULT (datetime('now','localtime'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_notifications_is_read   ON notifications(is_read);
+    CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at);
+  `);
+  // Auto-delete notifications older than 7 days
+  db.prepare(`DELETE FROM notifications WHERE created_at < datetime('now','localtime','-7 days')`).run();
+}
+
 // Initialize schema and seed data
 runSchema(db);
 migrateOrdersTable();
@@ -249,6 +269,7 @@ migrateAuditLogs();
 migrateCashDrawer();
 migrateExpenses();
 migrateUsersAvatar();
+migrateNotifications();
 runSeed(db);
 
 export default db;

@@ -30,6 +30,11 @@ function resolveDateRange(query: {
 
   if (period === 'today') return { startDate: today, endDate: today };
 
+  if (period === 'all') {
+    // Return a very wide range to cover all data
+    return { startDate: '2000-01-01', endDate: today };
+  }
+
   if (period === 'week') {
     const d = new Date();
     d.setDate(d.getDate() - 6);
@@ -39,6 +44,17 @@ function resolveDateRange(query: {
   if (period === 'month') {
     const d = new Date();
     return { startDate: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`, endDate: today };
+  }
+
+  if (period === 'last_month') {
+    const d = new Date();
+    d.setDate(1); // go to first of current month
+    d.setMonth(d.getMonth() - 1); // go back one month
+    const year  = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    // Last day of that month
+    const lastDay = new Date(year, d.getMonth() + 1, 0);
+    return { startDate: `${year}-${month}-01`, endDate: fmt(lastDay) };
   }
 
   // custom / fallback

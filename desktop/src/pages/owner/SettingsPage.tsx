@@ -14,6 +14,7 @@ import {
   getPaymentMethods, addPaymentMethod, deletePaymentMethod,
   setDefaultPaymentMethod, togglePaymentMethod, updatePaymentMethodColor,
   uploadPaymentLogo, deletePaymentLogo,
+  uploadLogo, deleteLogo,
   type PaymentMethod,
 } from '../../api/settings.api';
 import { useStaff } from '../../hooks/useStaff';
@@ -166,6 +167,11 @@ export default function SettingsPage() {
   const [stallError, setStallError]         = useState('');
   const [settingsToast, setSettingsToast]   = useState('');
 
+  // Logo state
+  const [stallLogo, setStallLogo]                 = useState('');
+  const [stallLogoUploading, setStallLogoUploading] = useState(false);
+  const [stallLogoUploadErr, setStallLogoUploadErr] = useState('');
+
   // Payment methods state
   const [paymentMethods, setPaymentMethods]   = useState<PaymentMethod[]>([]);
   const [newMethodName, setNewMethodName]     = useState('');
@@ -205,6 +211,7 @@ export default function SettingsPage() {
   useEffect(() => {
     getSettings().then(s => {
       if (s.stall_name) setStallName(s.stall_name);
+      if (s.stall_logo !== undefined) setStallLogo(s.stall_logo);
       if (s.accent_color) setAccentColor(s.accent_color);
       setShowItemDesc(s.show_item_description === 'true');
       if (s.order_prefix) setOrderPrefix(s.order_prefix.trim().toUpperCase());
@@ -221,8 +228,15 @@ export default function SettingsPage() {
     function handlePaymentMethodsUpdated(methods: PaymentMethod[]) {
       setPaymentMethods(methods);
     }
+    function handleSettingsSocketUpdated({ key, value }: { key: string; value: string }) {
+      if (key === 'stall_logo') setStallLogo(value);
+    }
     socket.on('payment_methods:updated', handlePaymentMethodsUpdated);
-    return () => { socket.off('payment_methods:updated', handlePaymentMethodsUpdated); };
+    socket.on('settings:updated', handleSettingsSocketUpdated);
+    return () => {
+      socket.off('payment_methods:updated', handlePaymentMethodsUpdated);
+      socket.off('settings:updated', handleSettingsSocketUpdated);
+    };
   }, []);
 
   useEffect(() => {
@@ -245,6 +259,34 @@ export default function SettingsPage() {
       setStallError(msg ?? 'Failed to save. Check your connection and try again.');
     } finally {
       setStallSaving(false);
+    }
+  }
+
+  async function handleStallLogoUpload(file: File) {
+    if (file.size > 5 * 1024 * 1024) { setStallLogoUploadErr('File must be under 5MB'); return; }
+    setStallLogoUploading(true);
+    setStallLogoUploadErr('');
+    try {
+      const { filename } = await uploadLogo(file);
+      setStallLogo(filename);
+      setSettingsToast('Logo uploaded');
+      setTimeout(() => setSettingsToast(''), 3000);
+    } catch {
+      setStallLogoUploadErr('Upload failed. Try again.');
+    } finally {
+      setStallLogoUploading(false);
+    }
+  }
+
+  async function handleStallLogoDelete() {
+    try {
+      await deleteLogo();
+      setStallLogo('');
+      setSettingsToast('Logo removed');
+      setTimeout(() => setSettingsToast(''), 3000);
+    } catch {
+      setSettingsToast('Failed to remove logo');
+      setTimeout(() => setSettingsToast(''), 3000);
     }
   }
 
@@ -1092,6 +1134,68 @@ export default function SettingsPage() {
             </div>
           )}
           <p style={{ fontSize: 11, color: '#606060' }}>Displayed in the sidebar and cashier topbar.</p>
+        </div>
+
+        {/* Brand Logo */}
+        <div className="flex flex-col gap-3 pt-3" style={{ borderTop: '1px solid #2C2C2C' }}>
+          <label style={{ fontSize: 12, color: '#606060', letterSpacing: '0.04em' }}>Brand Logo</label>
+          <div className="flex items-center gap-4">
+            {/* Logo preview */}
+            <div
+              className="w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
+              style={{ backgroundColor: stallLogo ? '#1A1A1A' : '#2C2C2C', border: '1px solid #3C3C3C' }}
+            >
+              {stallLogo ? (
+                <img
+                  src={`${SERVER_BASE}/logos/${stallLogo}`}
+                  alt="Brand logo"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4 }}
+                  onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                />
+              ) : (
+                <span style={{ fontSize: 22, fontWeight: 800, color: '#606060' }}>?</span>
+              )}
+            </div>
+
+            {/* Upload / Remove */}
+            <div className="flex flex-col gap-2">
+              <label
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  backgroundColor: stallLogoUploading ? '#2C2C2C' : '#C0392B',
+                  border: 'none', borderRadius: 8, padding: '7px 14px',
+                  color: stallLogoUploading ? '#606060' : '#ffffff',
+                  fontSize: 13, fontWeight: 600,
+                  cursor: stallLogoUploading ? 'not-allowed' : 'pointer',
+                }}
+                onMouseEnter={e => { if (!stallLogoUploading) (e.currentTarget as HTMLElement).style.backgroundColor = '#96281B'; }}
+                onMouseLeave={e => { if (!stallLogoUploading) (e.currentTarget as HTMLElement).style.backgroundColor = '#C0392B'; }}
+              >
+                <IconUpload size={13} />
+                {stallLogoUploading ? 'Uploading…' : stallLogo ? 'Replace Logo' : 'Upload Logo'}
+                <input
+                  type="file"
+                  accept=".png,.jpg,.jpeg,.webp"
+                  className="hidden"
+                  disabled={stallLogoUploading}
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handleStallLogoUpload(f); e.target.value = ''; }}
+                />
+              </label>
+              {stallLogo && (
+                <button
+                  onClick={handleStallLogoDelete}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, backgroundColor: 'transparent', border: '1px solid rgba(192,57,43,0.3)', borderRadius: 8, padding: '7px 14px', color: '#C0392B', fontSize: 13, cursor: 'pointer' }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.08)')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                >
+                  <IconX size={13} />
+                  Remove Logo
+                </button>
+              )}
+              {stallLogoUploadErr && <span style={{ fontSize: 11, color: '#C0392B' }}>{stallLogoUploadErr}</span>}
+              <p style={{ fontSize: 11, color: '#606060' }}>PNG, JPG, or WebP — max 5MB. Shown in the header and cashier app.</p>
+            </div>
+          </div>
         </div>
 
       </div>

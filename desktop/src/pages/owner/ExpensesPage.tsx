@@ -25,10 +25,12 @@ import ConfirmDialog from '../../components/shared/ConfirmDialog';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const PERIODS: { label: string; value: ExpensePeriod }[] = [
-  { label: 'Today',      value: 'today'  },
-  { label: 'This Week',  value: 'week'   },
-  { label: 'This Month', value: 'month'  },
-  { label: 'Custom',     value: 'custom' },
+  { label: 'All',        value: 'all'        },
+  { label: 'Today',      value: 'today'      },
+  { label: 'This Week',  value: 'week'       },
+  { label: 'This Month', value: 'month'      },
+  { label: 'Last Month', value: 'last_month' },
+  { label: 'Custom',     value: 'custom'     },
 ];
 
 const PAGE_SIZE = 50;

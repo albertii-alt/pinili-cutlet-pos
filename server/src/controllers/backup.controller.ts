@@ -4,6 +4,7 @@ import fs from 'fs';
 import cron from 'node-cron';
 import db from '../database/db';
 import { logAudit } from '../utils/auditLogger';
+import { createNotification } from '../utils/notificationHelper';
 
 const DATA_DIR    = path.join(__dirname, '../../data');
 const DB_PATH     = path.join(DATA_DIR, 'pinili_cutlet.db');
@@ -185,6 +186,7 @@ export function scheduleAutoBackup() {
       db.prepare(`UPDATE settings SET value = ?, updated_at = datetime('now','localtime') WHERE key = 'last_backup_at'`)
         .run(new Date().toISOString());
       pruneOldBackups();
+      createNotification('backup', 'Auto Backup Successful', `Database backed up to ${filename}`);
       console.log(`[Backup] Auto backup saved: ${filename}`);
     } catch (err) {
       console.error('[Backup] Auto backup failed:', err);

@@ -5,6 +5,7 @@ import db from '../database/db';
 import { logAudit } from '../utils/auditLogger';
 
 const SOUNDS_DIR = path.resolve(process.cwd(), '../server/public/sounds');
+const LOGOS_DIR  = path.resolve(process.cwd(), '../server/public/logos');
 
 export function getSettings(req: Request, res: Response): void {
   const rows = db.prepare('SELECT key, value FROM settings').all() as { key: string; value: string }[];
@@ -74,6 +75,60 @@ export function deleteNotificationSound(req: Request, res: Response): void {
 
   const { getIO } = require('../socket/events');
   getIO().emit('settings:updated', { key: 'notification_sound', value: '' });
+
+  res.json({ ok: true });
+}
+
+export async function uploadLogo(req: Request, res: Response): Promise<void> {
+  if (!req.file) { res.status(400).json({ error: 'No file uploaded' }); return; }
+
+  if (!fs.existsSync(LOGOS_DIR)) fs.mkdirSync(LOGOS_DIR, { recursive: true });
+
+  // Delete old logo if exists
+  const existing = (db.prepare("SELECT value FROM settings WHERE key = 'stall_logo'").get() as { value: string } | undefined)?.value;
+  if (existing) {
+    const oldPath = path.join(LOGOS_DIR, existing);
+    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+  }
+
+  // Import sharp for processing
+  const sharp = (await import('sharp')).default;
+  const filename = `logo-${Date.now()}.png`;
+  const dest     = path.join(LOGOS_DIR, filename);
+
+  try {
+    await sharp(req.file.buffer)
+      .resize(200, 200, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .png({ quality: 90 })
+      .toFile(dest);
+  } catch {
+    res.status(500).json({ error: 'Failed to process image' });
+    return;
+  }
+
+  db.prepare(`UPDATE settings SET value = ?, updated_at = datetime('now','localtime') WHERE key = 'stall_logo'`).run(filename);
+
+  const { getIO } = require('../socket/events');
+  getIO().emit('settings:updated', { key: 'stall_logo', value: filename });
+
+  logAudit({ user_id: req.user?.id, username: req.user?.username ?? 'owner', action: 'SETTING_CHANGED', entity_type: 'setting', entity_id: 'stall_logo', details: `Uploaded stall logo: ${filename}` });
+
+  res.json({ filename });
+}
+
+export function deleteLogo(req: Request, res: Response): void {
+  const existing = (db.prepare("SELECT value FROM settings WHERE key = 'stall_logo'").get() as { value: string } | undefined)?.value;
+  if (existing) {
+    const oldPath = path.join(LOGOS_DIR, existing);
+    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+  }
+
+  db.prepare(`UPDATE settings SET value = '', updated_at = datetime('now','localtime') WHERE key = 'stall_logo'`).run();
+
+  const { getIO } = require('../socket/events');
+  getIO().emit('settings:updated', { key: 'stall_logo', value: '' });
+
+  logAudit({ user_id: req.user?.id, username: req.user?.username ?? 'owner', action: 'SETTING_CHANGED', entity_type: 'setting', entity_id: 'stall_logo', details: 'Removed stall logo' });
 
   res.json({ ok: true });
 }

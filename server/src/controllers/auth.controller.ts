@@ -7,6 +7,10 @@ import sharp from 'sharp';
 import db from '../database/db';
 import { User, AuthPayload } from '../types';
 import { logAudit } from '../utils/auditLogger';
+import { createNotification } from '../utils/notificationHelper';
+
+// In-memory failed login counter
+const failedLoginAttempts = new Map<string, number>();
 
 function parseUserAgent(ua: string = '') {
   const isMobile  = /mobile/i.test(ua);
@@ -41,6 +45,18 @@ export function login(req: Request, res: Response): void {
 
   if (!user || !bcrypt.compareSync(password, user.password)) {
     logAudit({ username: username || 'unknown', action: 'LOGIN_FAILED', details: `Failed login attempt | role: unknown | os: ${os} | browser: ${browser} | device_type: ${deviceType} | ip: ${ip} | device: ${device}` });
+
+    // Track failed attempts and notify on 3rd
+    const attempts = (failedLoginAttempts.get(username) ?? 0) + 1;
+    failedLoginAttempts.set(username, attempts);
+    if (attempts === 3) {
+      createNotification(
+        'security',
+        'Failed Login Attempts',
+        `3 failed login attempts for "${username}"`
+      );
+    }
+
     res.status(401).json({ error: 'Invalid username or password' });
     return;
   }
@@ -55,7 +71,12 @@ export function login(req: Request, res: Response): void {
 
   logAudit({ user_id: user.id, username: user.username, action: 'LOGIN', details: `Logged in | role: ${user.role} | os: ${os} | browser: ${browser} | device_type: ${deviceType} | ip: ${ip} | device: ${device}` });
 
-  res.json({ token, user: payload });
+  // Reset failed login counter on success
+  failedLoginAttempts.delete(username);
+
+  const userWithAvatar = db.prepare('SELECT avatar_path FROM users WHERE id = ?').get(user.id) as { avatar_path: string | null } | undefined;
+
+  res.json({ token, user: { ...payload, avatar_path: userWithAvatar?.avatar_path ?? null } });
 }
 
 export function logout(req: Request, res: Response): void {

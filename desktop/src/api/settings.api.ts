@@ -3,6 +3,7 @@ import apiClient from './client';
 export interface AppSettings {
   daily_target: string;
   stall_name: string;
+  stall_logo: string;
   default_payment: string;
   [key: string]: string;
 }
@@ -65,4 +66,17 @@ export async function uploadPaymentLogo(id: number, file: File): Promise<{ logo_
 
 export async function deletePaymentLogo(id: number): Promise<void> {
   await apiClient.delete(`/api/payment-methods/${id}/logo`);
+}
+
+export async function uploadLogo(file: File): Promise<{ filename: string }> {
+  const formData = new FormData();
+  formData.append('logo', file);
+  const { data } = await apiClient.post('/api/settings/logo', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+
+export async function deleteLogo(): Promise<void> {
+  await apiClient.delete('/api/settings/logo');
 }

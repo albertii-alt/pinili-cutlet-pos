@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { IconReportMoney, IconShoppingCart, IconCreditCard, IconMoon, IconTrendingUp, IconTrendingDown, IconLayoutDashboard } from '@tabler/icons-react';
-import { useAnalytics, type AnalyticsPeriod } from '../../hooks/useAnalytics';
+import { IconReportMoney, IconShoppingCart, IconCreditCard, IconMoon, IconTrendingUp, IconTrendingDown, IconLayoutDashboard, IconCalendar } from '@tabler/icons-react';
+import { useAnalytics, type AnalyticsPeriod, type DateRange } from '../../hooks/useAnalytics';
 import { formatCurrency } from '../../utils/formatCurrency';
 import SalesCard from '../../components/owner/SalesCard';
 import SalesChart from '../../components/owner/SalesChart';
@@ -8,14 +8,18 @@ import BestSellerList from '../../components/owner/BestSellerList';
 import EndOfDayModal from '../../components/owner/EndOfDayModal';
 import DailySalesTarget from '../../components/owner/DailySalesTarget';
 import CashDrawerCard from '../../components/owner/CashDrawerCard';
+import DateRangePicker, { type DateRangeValue } from '../../components/shared/DateRangePicker';
 import { getDailyTarget } from '../../api/analytics.api';
 import { getExpenseSummary } from '../../api/expense.api';
 import { usePaymentMethods } from '../../hooks/usePaymentMethods';
 
 const periods: { label: string; value: AnalyticsPeriod }[] = [
-  { label: 'Today',      value: 'today' },
-  { label: 'This Week',  value: 'week'  },
-  { label: 'This Month', value: 'month' },
+  { label: 'All',        value: 'all'        },
+  { label: 'Today',      value: 'today'      },
+  { label: 'This Week',  value: 'week'       },
+  { label: 'This Month', value: 'month'      },
+  { label: 'Last Month', value: 'last_month' },
+  { label: 'Custom',     value: 'custom'     },
 ];
 
 export default function DashboardPage() {
@@ -23,8 +27,15 @@ export default function DashboardPage() {
   const [showEOD, setShowEOD]         = useState(false);
   const [dailyTarget, setDailyTarget] = useState<number>(0);
   const [todayExpenses, setTodayExpenses] = useState<number>(0);
-  const { summary, dailySales, bestSellers, loading } = useAnalytics(period);
+  const [dateRange, setDateRange]         = useState<DateRangeValue>({ startDate: '', endDate: '' });
+  const [appliedRange, setAppliedRange]   = useState<DateRange | null>(null);
+  const { summary, dailySales, bestSellers, loading } = useAnalytics(period, appliedRange ?? undefined);
   const { getMethodColor, getMethodLogoUrl } = usePaymentMethods();
+
+  function handlePeriodChange(p: AnalyticsPeriod) {
+    setPeriod(p);
+    if (p !== 'custom') setAppliedRange(null);
+  }
 
   // Fetch daily target once on mount
   useEffect(() => {
@@ -38,6 +49,8 @@ export default function DashboardPage() {
       .catch(() => setTodayExpenses(0));
   }, [period]);
 
+  const awaitingRange = period === 'custom' && !appliedRange;
+
   return (
     <div className="flex flex-col gap-6 w-full">
       {/* Header + filters + EOD button */}
@@ -50,7 +63,7 @@ export default function DashboardPage() {
           {periods.map(p => (
             <button
               key={p.value}
-              onClick={() => setPeriod(p.value)}
+              onClick={() => handlePeriodChange(p.value)}
               className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
                 period === p.value
                   ? 'bg-primary text-white'
@@ -86,7 +99,21 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {loading ? (
+      {/* Custom date range picker */}
+      {period === 'custom' && (
+        <DateRangePicker
+          value={dateRange}
+          onChange={setDateRange}
+          onApply={range => setAppliedRange({ startDate: range.startDate, endDate: range.endDate })}
+        />
+      )}
+
+      {awaitingRange ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <IconCalendar size={48} color="#2C2C2C" />
+          <p style={{ fontSize: 14, color: '#606060' }}>Select a date range and press Apply</p>
+        </div>
+      ) : loading ? (
         <div className="flex justify-center py-16">
           <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
@@ -137,7 +164,6 @@ export default function DashboardPage() {
           {period === 'today' && (
             <CashDrawerCard />
           )}
-
           {/* Chart + best sellers */}
           <div className="flex items-stretch gap-4">
             <div className="flex-1">

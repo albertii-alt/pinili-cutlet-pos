@@ -104,7 +104,7 @@ export interface CategorySales {
 
 // Filter types
 
-export type OrderFilter = 'today' | 'week' | 'month' | 'custom';
+export type OrderFilter = 'all' | 'today' | 'week' | 'month' | 'last_month' | 'custom';
 
 // Frontend-specific types
 
@@ -205,6 +205,15 @@ export interface ShiftReportResponse {
   data: ShiftReportEntry[];
   summary: ShiftReportSummary;
   period: { start_date: string; end_date: string };
+}
+
+export interface Notification {
+  id: number;
+  type: string;
+  title: string;
+  message: string;
+  is_read: number;
+  created_at: string;
 }
 
 export interface AuthState {

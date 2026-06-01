@@ -35,7 +35,7 @@ export default function OrderPage() {
   const { categories } = useCategories();
   const { addItem } = useOrderStore();
   const { orders } = useOrders();
-  const stallName = useBrandName();
+  const { stallName, logoUrl } = useBrandName();
   const { user, logout: clearAuth } = useAuthStore();
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [panelWidth, setPanelWidth] = useState<number>(getSavedWidth);
@@ -120,10 +120,17 @@ export default function OrderPage() {
           className="fixed top-0 left-0 right-0 h-[52px] border-b border-border flex items-center justify-between px-4 z-50"
           style={{ backgroundColor: '#111111' }}
         >
-          {/* Left — stall name + subtitle */}
-          <div className="flex flex-col justify-center" style={{ gap: 2 }}>
-            <StallName name={stallName} />
-            <span style={{ fontSize: 11, color: '#606060', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{user?.role ?? ''}</span>
+          {/* Left — logo + stall name + subtitle */}
+          <div className="flex items-center gap-2.5">
+            {logoUrl && (
+              <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0" style={{ backgroundColor: '#1A1A1A' }}>
+                <img src={logoUrl} alt={stallName} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 2 }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+              </div>
+            )}
+            <div className="flex flex-col justify-center" style={{ gap: 2 }}>
+              <StallName name={stallName} />
+              <span style={{ fontSize: 11, color: '#606060', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{user?.role ?? ''}</span>
+            </div>
           </div>
 
           {/* Right — queue button + avatar + logout */}

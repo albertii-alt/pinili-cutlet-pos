@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import db from '../database/db';
 import { Order, OrderItem, CreateOrderPayload } from '../types';
 import { logAudit } from '../utils/auditLogger';
+import { createNotification } from '../utils/notificationHelper';
 
 function getNextOrderNumber(): string {
   const prefixRow = db.prepare(`SELECT value FROM settings WHERE key = 'order_prefix'`).get() as { value: string } | undefined;
@@ -74,10 +75,14 @@ export function getHistory(req: Request, res: Response): void {
   if (startDate && endDate) {
     where += ' AND DATE(created_at) >= ? AND DATE(created_at) <= ?';
     params.push(startDate, endDate);
+  } else if (period === 'all') {
+    // no date filter
   } else if (period === 'week') {
     where += " AND DATE(created_at) >= DATE('now', '-6 days', 'localtime')";
   } else if (period === 'month') {
-    where += " AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now', 'localtime')";
+    where += " AND DATE(created_at) >= DATE('now', 'localtime', 'start of month') AND DATE(created_at) <= DATE('now', 'localtime')";
+  } else if (period === 'last_month') {
+    where += " AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now', 'localtime', '-1 month')";
   } else if (date) {
     where += ' AND DATE(created_at) = ?';
     params.push(date);
@@ -162,6 +167,21 @@ export function create(req: Request, res: Response): void {
 
   logAudit({ user_id: req.user!.id, username: req.user!.username, action: 'ORDER_CREATED', entity_type: 'order', entity_id: String(order.id), details: `Created order ${order.order_number} — ${items.length} item(s), ${payment_method}, total ₱${total_amount.toFixed(2)}` });
 
+  // Drawer warning — check if this is the first order today and opening cash is not set
+  const todayStr = new Date().toISOString().substring(0, 10);
+  const drawerRow = db.prepare('SELECT opening_amount FROM cash_drawer WHERE date = ?').get(todayStr) as { opening_amount: number } | undefined;
+  const isFirstOrderToday = (db.prepare(
+    "SELECT COUNT(*) as c FROM orders WHERE DATE(created_at) = DATE('now','localtime') AND id != ?"
+  ).get(order.id) as { c: number }).c === 0;
+
+  if (isFirstOrderToday && (!drawerRow || drawerRow.opening_amount === 0)) {
+    createNotification(
+      'drawer_warning',
+      'Cash Drawer Not Set',
+      'First order placed but opening cash not set for today.'
+    );
+  }
+
   res.status(201).json(fullOrder);
 }
 
@@ -229,6 +249,12 @@ export function cancelCompleted(req: Request, res: Response): void {
     .run(reason.trim(), req.params.id);
 
   logAudit({ user_id: req.user!.id, username: req.user!.username, action: 'ORDER_CANCELLED', entity_type: 'order', entity_id: String(order.id), details: `Cancelled completed order ${order.order_number}. Reason: ${reason.trim()}` });
+
+  createNotification(
+    'order_cancelled',
+    'Order Cancelled',
+    `${order.order_number} was cancelled — ${reason.trim()}`
+  );
 
   const { getIO } = require('../socket/events');
   getIO().emit('order:cancelled', Number(req.params.id));

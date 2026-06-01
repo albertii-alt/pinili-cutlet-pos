@@ -34,12 +34,16 @@ function buildDateFilter(query: {
   let where = 'WHERE 1=1';
   const params: (string | number)[] = [];
 
-  if (period === 'today') {
+  if (period === 'all') {
+    // no date filter
+  } else if (period === 'today') {
     where += " AND date = date('now','localtime')";
   } else if (period === 'week') {
     where += " AND date >= date('now','localtime','-6 days')";
   } else if (period === 'month') {
     where += " AND date >= date('now','localtime','start of month')";
+  } else if (period === 'last_month') {
+    where += " AND strftime('%Y-%m', date) = strftime('%Y-%m', 'now', 'localtime', '-1 month')";
   } else {
     if (start_date) { where += ' AND date >= ?'; params.push(start_date); }
     if (end_date)   { where += ' AND date <= ?'; params.push(end_date); }

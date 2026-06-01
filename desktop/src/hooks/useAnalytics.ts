@@ -5,7 +5,7 @@ import {
 } from '../api/analytics.api';
 import { AnalyticsSummary, DailySales, BestSeller, RevenueByPayment, PeakHour, CategorySales } from '../types';
 
-export type AnalyticsPeriod = 'today' | 'week' | 'month' | 'custom';
+export type AnalyticsPeriod = 'all' | 'today' | 'week' | 'month' | 'last_month' | 'custom';
 
 export interface DateRange {
   startDate: string;

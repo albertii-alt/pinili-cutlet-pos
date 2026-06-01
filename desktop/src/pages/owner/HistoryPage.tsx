@@ -13,10 +13,12 @@ import OrderDetailsModal from '../../components/owner/OrderDetailsModal';
 import DateRangePicker, { type DateRangeValue } from '../../components/shared/DateRangePicker';
 import { usePaymentMethods } from '../../hooks/usePaymentMethods';
 const periods: { label: string; value: OrderFilter }[] = [
-  { label: 'Today',      value: 'today'  },
-  { label: 'This Week',  value: 'week'   },
-  { label: 'This Month', value: 'month'  },
-  { label: 'Custom',     value: 'custom' },
+  { label: 'All',        value: 'all'        },
+  { label: 'Today',      value: 'today'      },
+  { label: 'This Week',  value: 'week'       },
+  { label: 'This Month', value: 'month'      },
+  { label: 'Last Month', value: 'last_month' },
+  { label: 'Custom',     value: 'custom'     },
 ];
 
 function generateCSV(orders: Order[]): string {
@@ -110,7 +112,7 @@ export default function HistoryPage() {
   useEffect(() => {
     if (period === 'custom' && !appliedRange) { setSummary(null); return; }
     const dr = period === 'custom' && appliedRange ? { startDate: appliedRange.startDate, endDate: appliedRange.endDate } : undefined;
-    getSummary(period === 'today' ? 'today' : period === 'week' ? 'week' : period === 'month' ? 'month' : 'custom', dr)
+    getSummary(period === 'today' ? 'today' : period === 'week' ? 'week' : period === 'month' ? 'month' : period === 'last_month' ? 'last_month' : period === 'all' ? 'all' : 'custom', dr)
       .then(setSummary).catch(console.error);
   }, [period, appliedRange]);
 

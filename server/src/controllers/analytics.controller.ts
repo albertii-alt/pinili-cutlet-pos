@@ -1,15 +1,18 @@
 import { Request, Response } from 'express';
 import db from '../database/db';
 import { AnalyticsSummary, DailySales, BestSeller, RevenueByPayment, PeakHour, CategorySales } from '../types';
+import { createNotification } from '../utils/notificationHelper';
 
 function buildWhereClause(
   period?: string, date?: string, startDate?: string, endDate?: string
 ): { where: string; params: string[] } {
   if (startDate && endDate) return { where: `DATE(created_at) >= ? AND DATE(created_at) <= ?`, params: [startDate, endDate] };
-  if (period === 'week')    return { where: `DATE(created_at) >= DATE('now', '-6 days', 'localtime')`, params: [] };
-  if (period === 'month')   return { where: `strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now', 'localtime')`, params: [] };
-  if (date)                 return { where: `DATE(created_at) = ?`, params: [date] };
-  return                           { where: `DATE(created_at) = DATE('now', 'localtime')`, params: [] };
+  if (period === 'all')        return { where: `1=1`, params: [] };
+  if (period === 'week')       return { where: `DATE(created_at) >= DATE('now', '-6 days', 'localtime')`, params: [] };
+  if (period === 'month')      return { where: `DATE(created_at) >= DATE('now', 'localtime', 'start of month') AND DATE(created_at) <= DATE('now', 'localtime')`, params: [] };
+  if (period === 'last_month') return { where: `strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now', 'localtime', '-1 month')`, params: [] };
+  if (date)                    return { where: `DATE(created_at) = ?`, params: [date] };
+  return                              { where: `DATE(created_at) = DATE('now', 'localtime')`, params: [] };
 }
 
 export function getSummary(req: Request, res: Response): void {
@@ -35,6 +38,32 @@ export function getSummary(req: Request, res: Response): void {
   `).all(...params) as { payment_method: string; order_count: number; revenue: number }[];
 
   res.json({ ...totals, payment_breakdown: breakdown });
+
+  // Daily target notifications — only for today's data
+  if (!period && !date && !startDate && !endDate) {
+    const targetRow = db.prepare("SELECT value FROM settings WHERE key = 'daily_target'").get() as { value: string } | undefined;
+    const target = targetRow ? parseFloat(targetRow.value) : 0;
+    if (target > 0) {
+      const sales = totals.total_sales;
+      const pct   = (sales / target) * 100;
+      // Check if we just crossed 100%
+      if (pct >= 100) {
+        const alreadyNotified = db.prepare(
+          "SELECT id FROM notifications WHERE type = 'target_achieved' AND DATE(created_at) = DATE('now','localtime')"
+        ).get();
+        if (!alreadyNotified) {
+          createNotification('target_achieved', 'Daily Target Achieved! 🎯', 'Congratulations! Daily sales target reached!');
+        }
+      } else if (pct >= 80) {
+        const alreadyNotified = db.prepare(
+          "SELECT id FROM notifications WHERE type = 'target_warning' AND DATE(created_at) = DATE('now','localtime')"
+        ).get();
+        if (!alreadyNotified) {
+          createNotification('target_warning', '80% Target Reached', 'You are close to your daily sales target!');
+        }
+      }
+    }
+  }
 }
 
 export function getDailySales(req: Request, res: Response): void {

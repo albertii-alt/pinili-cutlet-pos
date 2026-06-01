@@ -38,7 +38,7 @@ export default function OrderPage() {
   const [panelWidth, setPanelWidth] = useState<number>(getSavedWidth);
   const [showQR, setShowQR] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
-  const stallName = useBrandName();
+  const { stallName, logoUrl } = useBrandName();
   const { width } = useWindowSize();
 
   const brandParts = stallName.trim().split(/\s+/);
@@ -124,12 +124,19 @@ export default function OrderPage() {
             className="fixed top-0 left-0 right-0 h-[52px] border-b border-border flex items-center justify-between px-4 z-50"
             style={{ backgroundColor: '#111111' }}
           >
-            <div className="flex flex-col justify-center" style={{ gap: 2 }}>
-              <span style={{ fontSize: 16, fontWeight: 700, lineHeight: 1 }}>
-                <span style={{ color: '#ffffff' }}>{brandFirst}</span>
-                {brandRest && <span style={{ color: 'var(--accent-color, #C0392B)' }}> {brandRest}</span>}
-              </span>
-              <span style={{ fontSize: 11, color: '#606060', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{user?.role ?? ''}</span>
+            <div className="flex items-center gap-2.5">
+              {logoUrl && (
+                <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0" style={{ backgroundColor: '#1A1A1A' }}>
+                  <img src={logoUrl} alt={stallName} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 2 }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                </div>
+              )}
+              <div className="flex flex-col justify-center" style={{ gap: 2 }}>
+                <span style={{ fontSize: 16, fontWeight: 700, lineHeight: 1 }}>
+                  <span style={{ color: '#ffffff' }}>{brandFirst}</span>
+                  {brandRest && <span style={{ color: 'var(--accent-color, #C0392B)' }}> {brandRest}</span>}
+                </span>
+                <span style={{ fontSize: 11, color: '#606060', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{user?.role ?? ''}</span>
+              </div>
             </div>
 
             <div className="flex items-center gap-3">
@@ -225,10 +232,17 @@ export default function OrderPage() {
   return (
     <div className="min-h-screen bg-dark flex flex-col pb-24">
       <header className="sticky top-0 bg-card border-b border-border px-4 h-[52px] flex items-center justify-between z-30">
-        <span className="font-bold tracking-widest text-sm">
-          <span className="text-white">{brandFirst.toUpperCase()}</span>
-          {brandRest && <>{' '}<span className="text-primary">{brandRest.toUpperCase()}</span></>}
-        </span>
+        <div className="flex items-center gap-2">
+          {logoUrl && (
+            <div className="w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center shrink-0" style={{ backgroundColor: '#1A1A1A' }}>
+              <img src={logoUrl} alt={stallName} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 2 }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+            </div>
+          )}
+          <span className="font-bold tracking-widest text-sm">
+            <span className="text-white">{brandFirst.toUpperCase()}</span>
+            {brandRest && <>{' '}<span className="text-primary">{brandRest.toUpperCase()}</span></>}
+          </span>
+        </div>
         <div className="flex items-center gap-3">
           {user && (
             <span className="text-xs text-textGray capitalize bg-cardLight border border-border px-2 py-1 rounded-md">
