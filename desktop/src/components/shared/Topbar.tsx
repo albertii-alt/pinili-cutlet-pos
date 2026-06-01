@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { IconLogout, IconQrcode } from '@tabler/icons-react';
+import { IconLogout, IconQrcode, IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand } from '@tabler/icons-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { logout } from '../../api/auth.api';
 import { disconnectSocket } from '../../socket/socket';
 import { useNavigate } from 'react-router-dom';
-import { useBrandName } from '../../hooks/useBrandName';
 import QRCodeModal from './QRCodeModal';
 import LogoutModal from './LogoutModal';
 import NotificationBell from './NotificationBell';
@@ -18,7 +17,8 @@ interface TopbarButtonProps {
 
 interface TopbarProps {
   left?: React.ReactNode;
-  showBrand?: boolean;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 function TopbarButton({ onClick, tooltip, children, danger = false }: TopbarButtonProps) {
@@ -51,12 +51,11 @@ function TopbarButton({ onClick, tooltip, children, danger = false }: TopbarButt
   );
 }
 
-export default function Topbar({ left, showBrand = false }: TopbarProps) {
+export default function Topbar({ left, collapsed, onToggleCollapse }: TopbarProps) {
   const { user, logout: clearAuth } = useAuthStore();
   const navigate = useNavigate();
   const [showQR, setShowQR] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
-  const { stallName, logoUrl } = useBrandName();
 
   async function handleLogout() {
     try { await logout(); } catch { /* ignore */ }
@@ -69,47 +68,31 @@ export default function Topbar({ left, showBrand = false }: TopbarProps) {
   const SERVER_BASE  = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
   const avatarUrl    = user?.avatar_path ? `${SERVER_BASE}/avatars/${user.avatar_path}` : null;
 
-  // Split stall name for two-tone rendering
-  const parts = stallName.trim().split(/\s+/);
-  const first = parts[0] ?? stallName;
-  const rest  = parts.slice(1).join(' ');
-
   return (
     <>
       <header
-        className="fixed top-0 left-0 right-0 h-[52px] border-b border-border flex items-center justify-between px-4 z-50"
+        className="h-[52px] flex items-center justify-between px-4 shrink-0"
         style={{ backgroundColor: '#111111' }}
       >
-        {/* Left — brand (owner shell) or custom content (cashier pages) */}
-        {showBrand ? (
-          <div className="flex items-center gap-2.5">
-            {/* Logo square */}
-            <div
-              className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0"
-              style={{ backgroundColor: logoUrl ? 'transparent' : 'var(--accent-color, #C0392B)' }}
+        {/* Left — collapse toggle (owner shell) or custom content (cashier pages) */}
+        <div className="flex items-center gap-2">
+          {onToggleCollapse && (
+            <button
+              onClick={onToggleCollapse}
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-border transition-all duration-150"
+              style={{ backgroundColor: '#1A1A1A', color: '#A0A0A0', cursor: 'pointer' }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#242424'; e.currentTarget.style.color = '#ffffff'; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#1A1A1A'; e.currentTarget.style.color = '#A0A0A0'; }}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
-              {logoUrl ? (
-                <img
-                  src={logoUrl}
-                  alt={stallName}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                />
-              ) : (
-                <span style={{ fontSize: 14, fontWeight: 800, color: '#ffffff' }}>
-                  {first.charAt(0).toUpperCase()}
-                </span>
-              )}
-            </div>
-            {/* Stall name */}
-            <span style={{ fontSize: 14, fontWeight: 700, lineHeight: 1 }}>
-              <span style={{ color: '#ffffff' }}>{first}</span>
-              {rest && <span style={{ color: 'var(--accent-color, #C0392B)' }}> {rest}</span>}
-            </span>
-          </div>
-        ) : (
-          <div>{left}</div>
-        )}
+              {collapsed
+                ? <IconLayoutSidebarLeftExpand size={18} />
+                : <IconLayoutSidebarLeftCollapse size={18} />
+              }
+            </button>
+          )}
+          {left && <div>{left}</div>}
+        </div>
 
         {/* Right — user info + action buttons */}
         <div className="flex items-center gap-3">

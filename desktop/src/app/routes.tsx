@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Navigate, Outlet, RouteObject } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
+import { IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand } from '@tabler/icons-react';
 import LoginPage from '../pages/auth/LoginPage';
 import CashierLoginPage from '../pages/auth/CashierLoginPage';
 import OrderPage from '../pages/cashier/OrderPage';
@@ -17,22 +19,79 @@ import HelpPage from '../pages/owner/HelpPage';
 import SystemStatusPage from '../pages/owner/SystemStatusPage';
 import SupportPage from '../pages/owner/SupportPage';
 import ChangelogPage from '../pages/owner/ChangelogPage';
-import Topbar from '../components/shared/Topbar';
 import Sidebar from '../components/shared/Sidebar';
+import FloatingControls from '../components/shared/FloatingControls';
+
+const STORAGE_KEY = 'sidebar_collapsed';
+
+function getSavedCollapsed(): boolean {
+  try { return localStorage.getItem(STORAGE_KEY) === 'true'; }
+  catch { return false; }
+}
 
 function OwnerShell() {
   const { isAuthenticated, user } = useAuthStore();
   if (!isAuthenticated || user?.role !== 'owner') return <Navigate to="/login" replace />;
 
+  const [collapsed, setCollapsed] = useState<boolean>(getSavedCollapsed);
+
+  function toggleCollapsed() {
+    setCollapsed(prev => {
+      const next = !prev;
+      try { localStorage.setItem(STORAGE_KEY, String(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }
+
   return (
-    <div className="flex h-screen overflow-hidden bg-dark">
-      <Sidebar />
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <Topbar showBrand />
-        <main className="flex-1 overflow-y-auto pt-[76px] p-6 hide-scrollbar">
-          <Outlet />
-        </main>
+    <div
+      className="flex h-screen overflow-hidden bg-dark"
+      style={{ '--sidebar-width': collapsed ? '56px' : '220px' } as React.CSSProperties}
+    >
+      {/* Sidebar + collapse toggle on its right edge */}
+      <div className="relative flex-shrink-0">
+        <Sidebar collapsed={collapsed} />
+
+        {/* Collapse toggle — sits on the sidebar/content border, top-aligned */}
+        <button
+          onClick={toggleCollapsed}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="absolute flex items-center justify-center transition-all duration-150"
+          style={{
+            top: 20,
+            right: -12,
+            width: 24,
+            height: 24,
+            borderRadius: '50%',
+            backgroundColor: '#1A1A1A',
+            border: '1px solid #2C2C2C',
+            color: '#606060',
+            cursor: 'pointer',
+            zIndex: 10,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.backgroundColor = '#2C2C2C';
+            e.currentTarget.style.color = '#ffffff';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.backgroundColor = '#1A1A1A';
+            e.currentTarget.style.color = '#606060';
+          }}
+        >
+          {collapsed
+            ? <IconLayoutSidebarLeftExpand size={13} />
+            : <IconLayoutSidebarLeftCollapse size={13} />
+          }
+        </button>
       </div>
+
+      <main className="flex-1 overflow-y-auto p-6 pt-20 hide-scrollbar min-w-0">
+        <Outlet />
+      </main>
+
+      {/* Floating user controls */}
+      <FloatingControls />
     </div>
   );
 }
