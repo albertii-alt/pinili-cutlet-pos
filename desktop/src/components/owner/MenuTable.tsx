@@ -59,7 +59,7 @@ export default function MenuTable({ items, categories, onEdit, onDelete, onToggl
                     <div>
                       <p className="text-sm font-medium" style={{ color: 'var(--accent-color, #C0392B)' }}>{item.name}</p>
                       {item.description && (
-                        <p className="text-xs truncate max-w-[200px]" style={{ color: '#606060' }}>{item.description}</p>
+                        <p className="text-xs truncate max-w-[200px]" style={{ color: '#ffffff' }}>{item.description}</p>
                       )}
                     </div>
                   </div>

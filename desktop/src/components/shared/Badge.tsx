@@ -87,7 +87,7 @@ export function CategoryBadge({ label }: { label?: string }) {
       className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium"
       style={{
         backgroundColor: 'var(--accent-color, #C0392B)',
-        color: '#ffffff',
+        color: '#000000',
       }}
     >
       {label ?? 'Category'}
