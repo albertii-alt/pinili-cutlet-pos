@@ -123,6 +123,9 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
   const [accentColor, setAccentColor] = useState<string>('#C0392B');
   const { stallName, logoUrl }        = useBrandName();
 
+  // One-shot entrance animation — only plays right after login
+  const [animate] = useState(() => sessionStorage.getItem('just_logged_in') === '1');
+
   // Sync accent color from CSS variable, re-read when it changes
   useEffect(() => {
     setAccentColor(getAccentColor());
@@ -142,7 +145,7 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
 
   return (
     <aside
-      className="h-screen flex flex-col shrink-0 overflow-hidden border-r border-border"
+      className={`h-screen flex flex-col shrink-0 overflow-hidden border-r border-border${animate ? ' sidebar-enter' : ''}`}
       style={{
         width,
         minWidth: width,

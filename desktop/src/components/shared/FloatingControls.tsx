@@ -109,7 +109,7 @@ export default function FloatingControls() {
     try { await logout(); } catch { /* ignore */ }
     disconnectSocket();
     clearAuth();
-    navigate('/cashier-login');
+    navigate('/login');
   }
 
   const avatarLetter = user?.username?.[0]?.toUpperCase() ?? '?';

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate, Outlet, RouteObject } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand } from '@tabler/icons-react';
@@ -34,6 +34,11 @@ function OwnerShell() {
   if (!isAuthenticated || user?.role !== 'owner') return <Navigate to="/login" replace />;
 
   const [collapsed, setCollapsed] = useState<boolean>(getSavedCollapsed);
+
+  // Clear the login animation flag once the shell mounts — regardless of which page loads first
+  useEffect(() => {
+    sessionStorage.removeItem('just_logged_in');
+  }, []);
 
   function toggleCollapsed() {
     setCollapsed(prev => {
@@ -147,5 +152,5 @@ export const routes: RouteObject[] = [
       { path: 'changelog',     element: <ChangelogPage /> },
     ],
   },
-  { path: '*', element: <Navigate to="/" replace /> },
+  { path: '*', element: <Navigate to="/login" replace /> },
 ];

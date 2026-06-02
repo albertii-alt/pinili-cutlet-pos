@@ -45,6 +45,9 @@ export default function DashboardPage() {
     return 'Good Evening';
   }, []);
 
+  // One-shot entrance animation — only plays right after login
+  const [animate] = useState(() => sessionStorage.getItem('just_logged_in') === '1');
+
   // Fetch available years once on mount
   useEffect(() => {
     getAvailableYears().then(setAvailableYears).catch(console.error);
@@ -73,7 +76,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-6 w-full">
       {/* Header + filters + EOD button */}
-      <div className="flex items-center justify-between">
+      <div className={`flex items-center justify-between ${animate ? 'dashboard-enter dashboard-enter-1' : ''}`}>
         <div className="flex items-center gap-2">
           <IconLayoutDashboard size={18} color="#C0392B" />
           <h1 className="text-white font-semibold text-lg" style={{ margin: 0 }}>Dashboard</h1>
@@ -147,7 +150,7 @@ export default function DashboardPage() {
         <>
           {/* Greeting */}
           {user && (
-            <p style={{ fontSize: 26, fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.02em' }}>
+            <p className={animate ? 'dashboard-enter dashboard-enter-2' : ''} style={{ fontSize: 26, fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.02em' }}>
               {greeting},{' '}
               <span style={{ color: 'var(--accent-color, #C0392B)' }}>
                 {user.nickname ?? user.username} !
@@ -157,7 +160,7 @@ export default function DashboardPage() {
           )}
 
           {/* Stat cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '12px', width: '100%' }}>
+          <div className={animate ? 'dashboard-enter dashboard-enter-3' : ''} style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '12px', width: '100%' }}>
             <SalesCard label="Total Sales"  value={formatCurrency(summary?.total_sales ?? 0)}  accent icon={IconReportMoney} />
             <SalesCard label="Total Orders" value={String(summary?.total_orders ?? 0)}          icon={IconShoppingCart} />
             {(summary?.payment_breakdown ?? []).map(b => (
@@ -190,19 +193,23 @@ export default function DashboardPage() {
 
           {/* Daily sales target — only shown on Today period */}
           {period === 'today' && (
-            <DailySalesTarget
-              totalSales={summary?.total_sales ?? 0}
-              dailyTarget={dailyTarget}
-              onTargetUpdated={setDailyTarget}
-            />
+            <div className={animate ? 'dashboard-enter dashboard-enter-4' : ''}>
+              <DailySalesTarget
+                totalSales={summary?.total_sales ?? 0}
+                dailyTarget={dailyTarget}
+                onTargetUpdated={setDailyTarget}
+              />
+            </div>
           )}
 
           {/* Cash drawer management — only shown on Today period */}
           {period === 'today' && (
-            <CashDrawerCard />
+            <div className={animate ? 'dashboard-enter dashboard-enter-5' : ''}>
+              <CashDrawerCard />
+            </div>
           )}
           {/* Chart + best sellers */}
-          <div className="flex items-stretch gap-4">
+          <div className={`flex items-stretch gap-4 ${animate ? 'dashboard-enter dashboard-enter-4' : ''}`}>
             <div className="flex-1">
               <SalesChart data={dailySales} />
             </div>

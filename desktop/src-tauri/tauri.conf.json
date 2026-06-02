@@ -28,7 +28,8 @@
             "core:default",
             "dialog:allow-save",
             "fs:allow-write-text-file",
-            "fs:allow-app-write"
+            "fs:allow-app-write",
+            "core:window:allow-set-title"
           ]
         }
       ]

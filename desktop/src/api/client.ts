@@ -18,10 +18,11 @@ apiClient.interceptors.response.use(
   (error) => {
     const status = error.response?.status;
     const isLoginUrl = error.config?.url?.includes('/api/auth/login');
-    if ((status === 401 || status === 403) && !isLoginUrl) {
+    const hasToken = !!localStorage.getItem('token');
+    if ((status === 401 || status === 403) && !isLoginUrl && hasToken) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/cashier-login';
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }

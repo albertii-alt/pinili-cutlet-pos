@@ -46,3 +46,47 @@ body {
   transform-origin: 70% 70%;
   animation: wave 1.6s ease-in-out infinite;
 }
+
+@keyframes fadeSlideRight {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-enter {
+  opacity: 0;
+  animation: fadeSlideUp 0.5s ease-out forwards;
+}
+
+.dashboard-enter-1 { animation-delay: 0.05s; }
+.dashboard-enter-2 { animation-delay: 0.15s; }
+.dashboard-enter-3 { animation-delay: 0.25s; }
+.dashboard-enter-4 { animation-delay: 0.38s; }
+.dashboard-enter-5 { animation-delay: 0.50s; }
+
+.sidebar-enter {
+  animation: fadeSlideRight 0.4s ease-out forwards;
+}
+
+/* Hide browser's native password reveal button */
+input[type='password']::-ms-reveal,
+input[type='password']::-ms-clear,
+input[type='password']::-webkit-credentials-auto-fill-button {
+  display: none;
+}

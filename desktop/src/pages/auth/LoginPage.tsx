@@ -45,6 +45,7 @@ export default function LoginPage() {
       }
       setAuth(token, user);
       connectSocket();
+      sessionStorage.setItem('just_logged_in', '1');
       navigate('/owner/dashboard');
     } catch {
       setError('Invalid username or password');
@@ -128,7 +129,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => setShowPassword(p => !p)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
-                style={{ color: '#606060' }}
+                style={{ color: '#606060', background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')}
                 onMouseLeave={e => (e.currentTarget.style.color = '#606060')}
               >
