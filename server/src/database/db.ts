@@ -92,6 +92,16 @@ function migrateUsersAvatar(): void {
   }
 }
 
+// Migration: add nickname column to users if missing
+function migrateUsersNickname(): void {
+  const cols = db.prepare('PRAGMA table_info(users)').all() as { name: string }[];
+  if (!cols.some(c => c.name === 'nickname')) {
+    console.log('[DB] Adding nickname column to users...');
+    db.prepare('ALTER TABLE users ADD COLUMN nickname TEXT DEFAULT NULL').run();
+    console.log('[DB] Migration complete.');
+  }
+}
+
 // Migration: ensure default settings rows exist (INSERT OR IGNORE — safe to run always)
 function migrateDefaultSettings(): void {
   db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('daily_target',    '0')`).run();
@@ -269,6 +279,7 @@ migrateAuditLogs();
 migrateCashDrawer();
 migrateExpenses();
 migrateUsersAvatar();
+migrateUsersNickname();
 migrateNotifications();
 runSeed(db);
 

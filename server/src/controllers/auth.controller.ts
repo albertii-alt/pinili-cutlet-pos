@@ -74,9 +74,9 @@ export function login(req: Request, res: Response): void {
   // Reset failed login counter on success
   failedLoginAttempts.delete(username);
 
-  const userWithAvatar = db.prepare('SELECT avatar_path FROM users WHERE id = ?').get(user.id) as { avatar_path: string | null } | undefined;
+  const userWithAvatar = db.prepare('SELECT avatar_path, nickname FROM users WHERE id = ?').get(user.id) as { avatar_path: string | null; nickname: string | null } | undefined;
 
-  res.json({ token, user: { ...payload, avatar_path: userWithAvatar?.avatar_path ?? null } });
+  res.json({ token, user: { ...payload, avatar_path: userWithAvatar?.avatar_path ?? null, nickname: userWithAvatar?.nickname ?? null } });
 }
 
 export function logout(req: Request, res: Response): void {
@@ -307,4 +307,26 @@ export function deleteAvatar(req: Request, res: Response): void {
   });
 
   res.json({ ok: true });
+}
+
+export function changeNickname(req: Request, res: Response): void {
+  const { nickname } = req.body as { nickname: string };
+  const trimmed = (nickname ?? '').trim();
+
+  if (trimmed.length > 50) {
+    res.status(400).json({ error: 'Nickname must be 50 characters or fewer' });
+    return;
+  }
+
+  const userId = req.user!.id;
+  db.prepare('UPDATE users SET nickname = ? WHERE id = ?').run(trimmed || null, userId);
+
+  logAudit({
+    user_id:  userId,
+    username: req.user!.username,
+    action:   'NICKNAME_CHANGED',
+    details:  trimmed ? `Nickname set to "${trimmed}"` : 'Nickname cleared',
+  });
+
+  res.json({ nickname: trimmed || null });
 }

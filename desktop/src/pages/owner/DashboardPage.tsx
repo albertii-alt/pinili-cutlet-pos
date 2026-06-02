@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { IconReportMoney, IconShoppingCart, IconCreditCard, IconMoon, IconTrendingUp, IconTrendingDown, IconLayoutDashboard, IconCalendar } from '@tabler/icons-react';
 import { useAnalytics, type AnalyticsPeriod, type DateRange } from '../../hooks/useAnalytics';
 import { formatCurrency } from '../../utils/formatCurrency';
@@ -13,6 +13,7 @@ import YearSelector from '../../components/shared/YearSelector';
 import { getDailyTarget, getAvailableYears } from '../../api/analytics.api';
 import { getExpenseSummary } from '../../api/expense.api';
 import { usePaymentMethods } from '../../hooks/usePaymentMethods';
+import { useAuthStore } from '../../store/useAuthStore';
 
 const periods: { label: string; value: AnalyticsPeriod }[] = [
   { label: 'All',        value: 'all'        },
@@ -35,6 +36,14 @@ export default function DashboardPage() {
   const [availableYears, setAvailableYears]   = useState<string[]>([]);
   const { summary, dailySales, bestSellers, loading } = useAnalytics(period, appliedRange ?? undefined, selectedYear);
   const { getMethodColor, getMethodLogoUrl } = usePaymentMethods();
+  const { user } = useAuthStore();
+
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  }, []);
 
   // Fetch available years once on mount
   useEffect(() => {
@@ -67,7 +76,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <IconLayoutDashboard size={18} color="#C0392B" />
-          <h1 className="text-white font-semibold text-lg">Dashboard</h1>
+          <h1 className="text-white font-semibold text-lg" style={{ margin: 0 }}>Dashboard</h1>
         </div>
         <div className="flex items-center gap-2">
           {period === 'all' && (
@@ -136,6 +145,17 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
+          {/* Greeting */}
+          {user && (
+            <p style={{ fontSize: 26, fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.02em' }}>
+              {greeting},{' '}
+              <span style={{ color: 'var(--accent-color, #C0392B)' }}>
+                {user.nickname ?? user.username} !
+              </span>
+              {' '}<span className="wave-hand">👋</span>
+            </p>
+          )}
+
           {/* Stat cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '12px', width: '100%' }}>
             <SalesCard label="Total Sales"  value={formatCurrency(summary?.total_sales ?? 0)}  accent icon={IconReportMoney} />

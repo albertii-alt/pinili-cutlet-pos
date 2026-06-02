@@ -6,7 +6,7 @@ import {
   IconPalette, IconReceipt, IconBuildingStore, IconCreditCard, IconBell, IconUpload, IconPlayerPlay,
   IconDatabaseExport, IconDatabaseImport, IconRotateClockwise, IconHistory, IconAlertTriangle, IconSettings,
 } from '@tabler/icons-react';
-import { changePassword, changeUsername, uploadAvatar, deleteAvatar } from '../../api/auth.api';
+import { changePassword, changeUsername, uploadAvatar, deleteAvatar, changeNickname } from '../../api/auth.api';
 import { useAuthStore } from '../../store/useAuthStore';
 import { applyAccentColor } from '../../utils/applyAccentColor';
 import {
@@ -139,7 +139,7 @@ export default function SettingsPage() {
   const strength = getStrength(newPass);
 
   // Change username state
-  const { user, updateUsername, updateAvatar } = useAuthStore();
+  const { user, updateUsername, updateAvatar, updateNickname } = useAuthStore();
   const SERVER_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
   // Avatar state
@@ -153,6 +153,14 @@ export default function SettingsPage() {
   const [unSuccess, setUnSuccess]       = useState(false);
   const [unF1, setUnF1] = useState(false);
   const [unF2, setUnF2] = useState(false);
+
+  // Nickname state
+  const [nickEditing, setNickEditing]   = useState(false);
+  const [newNickname, setNewNickname]   = useState('');
+  const [nickLoading, setNickLoading]   = useState(false);
+  const [nickError, setNickError]       = useState('');
+  const [nickSuccess, setNickSuccess]   = useState(false);
+  const [nickF1, setNickF1]             = useState(false);
 
   // Staff state
   const { staff, loading: staffLoading, addStaff, editStaff, removeStaff, toggleStatus } = useStaff();
@@ -416,6 +424,26 @@ export default function SettingsPage() {
       setUnError(msg ?? 'Failed to update username');
     } finally {
       setUnLoading(false);
+    }
+  }
+
+  async function handleChangeNickname() {
+    setNickError('');
+    const trimmed = newNickname.trim();
+    if (trimmed.length > 50) { setNickError('Nickname must be 50 characters or fewer'); return; }
+    setNickLoading(true);
+    try {
+      const { nickname } = await changeNickname(trimmed);
+      updateNickname(nickname);
+      setNickEditing(false);
+      setNewNickname('');
+      setNickSuccess(true);
+      setTimeout(() => setNickSuccess(false), 3000);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setNickError(msg ?? 'Failed to update nickname');
+    } finally {
+      setNickLoading(false);
     }
   }
 
@@ -926,6 +954,75 @@ export default function SettingsPage() {
                 </button>
                 <button
                   onClick={() => { setUnEditing(false); setNewUsername(''); setUnPassword(''); setUnError(''); }}
+                  style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: 8, padding: '9px 14px', color: '#A0A0A0', fontSize: 13, cursor: 'pointer' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#ffffff'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = '#A0A0A0'; }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Nickname ── */}
+        <div className="flex flex-col gap-3 pt-4" style={{ borderTop: '1px solid #2C2C2C' }}>
+          <div className="flex items-center gap-2">
+            <IconPencil size={14} color="#606060" />
+            <span style={{ fontSize: 12, color: '#606060', letterSpacing: '0.04em', fontWeight: 600, textTransform: 'uppercase' }}>Nickname</span>
+          </div>
+
+          {!nickEditing ? (
+            <div className="flex items-center gap-3">
+              <span style={{ fontSize: 14, color: user?.nickname ? '#ffffff' : '#606060', fontWeight: 500 }}>
+                {user?.nickname ?? 'No nickname set'}
+              </span>
+              <button
+                onClick={() => { setNewNickname(user?.nickname ?? ''); setNickError(''); setNickEditing(true); }}
+                className="flex items-center gap-1"
+                style={{ backgroundColor: 'transparent', border: '1px solid #2C2C2C', borderRadius: 6, padding: '4px 10px', color: '#606060', fontSize: 12, cursor: 'pointer' }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1A1A1A'; e.currentTarget.style.color = '#A0A0A0'; }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#606060'; }}
+              >
+                <IconEdit size={12} />
+                {user?.nickname ? 'Edit' : 'Add'}
+              </button>
+              {nickSuccess && (
+                <span className="flex items-center gap-1" style={{ fontSize: 12, color: '#27AE60' }}>
+                  <IconCheck size={13} /> Saved
+                </span>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col">
+                <label style={labelStyle}>Nickname (displayed in topbar &amp; greeting)</label>
+                <input
+                  autoFocus
+                  value={newNickname}
+                  onChange={e => { setNewNickname(e.target.value); setNickError(''); }}
+                  placeholder="e.g. Boss, Ivy, Chef — max 50 characters"
+                  maxLength={50}
+                  style={inputStyle(nickF1)}
+                  onFocus={() => setNickF1(true)}
+                  onBlur={() => setNickF1(false)}
+                />
+              </div>
+
+              {nickError && <p style={{ fontSize: 12, color: '#C0392B' }}>{nickError}</p>}
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleChangeNickname}
+                  disabled={nickLoading}
+                  style={{ backgroundColor: nickLoading ? '#2C2C2C' : '#C0392B', border: 'none', borderRadius: 8, padding: '9px 18px', color: nickLoading ? '#606060' : '#ffffff', fontSize: 13, fontWeight: 600, cursor: nickLoading ? 'not-allowed' : 'pointer' }}
+                  onMouseEnter={e => { if (!nickLoading) e.currentTarget.style.backgroundColor = '#96281B'; }}
+                  onMouseLeave={e => { if (!nickLoading) e.currentTarget.style.backgroundColor = '#C0392B'; }}
+                >
+                  {nickLoading ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  onClick={() => { setNickEditing(false); setNewNickname(''); setNickError(''); }}
                   style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: 8, padding: '9px 14px', color: '#A0A0A0', fontSize: 13, cursor: 'pointer' }}
                   onMouseEnter={e => { e.currentTarget.style.color = '#ffffff'; }}
                   onMouseLeave={e => { e.currentTarget.style.color = '#A0A0A0'; }}

@@ -25,6 +25,7 @@ export interface User {
   username: string;
   role: 'owner' | 'cashier' | 'kitchen';
   avatar_path?: string | null;
+  nickname?: string | null;
 }
 
 export interface StaffUser {

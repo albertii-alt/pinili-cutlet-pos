@@ -103,6 +103,7 @@ export default function FloatingControls() {
   const navigate                    = useNavigate();
   const [showQR, setShowQR]         = useState(false);
   const [showLogout, setShowLogout] = useState(false);
+  const [showAvatar, setShowAvatar] = useState(false);
 
   async function handleLogout() {
     try { await logout(); } catch { /* ignore */ }
@@ -117,12 +118,12 @@ export default function FloatingControls() {
 
   return (
     <>
+      {/* Full-width bar — clock on the left */}
       <div
-        className="fixed z-50 flex items-center justify-between"
+        className="fixed z-50 flex items-center"
         style={{
           top: 12,
           left: 'calc(var(--sidebar-width, 220px) + 16px)',
-          right: 16,
           backgroundColor: 'rgba(17,17,17,0.85)',
           border: '1px solid #2C2C2C',
           borderLeft: '2px solid var(--accent-color, #C0392B)',
@@ -131,36 +132,68 @@ export default function FloatingControls() {
           boxShadow: '0 2px 8px rgba(0,0,0,0.3), 0 8px 32px rgba(0,0,0,0.4)',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
+          width: 'fit-content',
         }}
       >
-        {/* Left — live clock */}
         <LiveClock />
+      </div>
 
-        {/* Right — user controls */}
-        <div className="flex items-center gap-1">
-          {/* Avatar + username */}
+      {/* Compact pill — user controls on the right */}
+      <div
+        className="fixed z-50 flex items-center"
+        style={{
+          top: 12,
+          right: 16,
+          width: 'fit-content',
+          backgroundColor: 'rgba(17,17,17,0.85)',
+          border: '1px solid #2C2C2C',
+          borderLeft: '2px solid var(--accent-color, #C0392B)',
+          borderRadius: 12,
+          padding: '7px 14px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3), 0 8px 32px rgba(0,0,0,0.4)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          gap: 4,
+        }}
+      >
+        {/* Avatar + username */}
           {user && (
             <div
               className="flex items-center gap-2 mr-1 pr-3"
               style={{ borderRight: '1px solid #2C2C2C' }}
             >
-              <div
-                className="w-6 h-6 rounded-full flex items-center justify-center text-white font-bold overflow-hidden shrink-0"
+              {/* Clickable avatar */}
+              <button
+                onClick={() => setShowAvatar(true)}
+                className="shrink-0 rounded-full overflow-hidden flex items-center justify-center text-white font-bold transition-opacity"
                 style={{
-                  fontSize: 10,
+                  width: 30,
+                  height: 30,
+                  fontSize: 12,
                   backgroundColor: avatarUrl ? 'transparent' : 'var(--accent-color, #C0392B)',
                   outline: '2px solid rgba(192,57,43,0.35)',
                   outlineOffset: '1px',
+                  cursor: 'pointer',
+                  border: 'none',
+                  padding: 0,
                 }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+                title="View profile photo"
               >
                 {avatarUrl
                   ? <img src={avatarUrl} alt={user.username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                   : avatarLetter
                 }
+              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 1 }}>
+                <span style={{ fontSize: 12, color: 'var(--accent-color, #C0392B)', fontWeight: 600, lineHeight: '15px', whiteSpace: 'nowrap' }}>
+                  {user.nickname ?? user.username}
+                </span>
+                <span style={{ fontSize: 10, color: '#606060', textTransform: 'capitalize', lineHeight: '13px', whiteSpace: 'nowrap' }}>
+                  {user.role}
+                </span>
               </div>
-              <span style={{ fontSize: 12, color: '#A0A0A0', whiteSpace: 'nowrap' }}>
-                {user.username}
-              </span>
             </div>
           )}
 
@@ -180,8 +213,55 @@ export default function FloatingControls() {
               <IconLogout size={16} />
             </ActionButton>
           )}
-        </div>
       </div>
+
+      {/* Avatar modal */}
+      {showAvatar && user && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}
+          onClick={() => setShowAvatar(false)}
+        >
+          <div
+            className="flex flex-col items-center gap-4"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Photo or initial */}
+            <div
+              className="rounded-2xl overflow-hidden flex items-center justify-center text-white font-bold"
+              style={{
+                width: 200,
+                height: 200,
+                fontSize: 64,
+                backgroundColor: avatarUrl ? 'transparent' : 'var(--accent-color, #C0392B)',
+                boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
+                outline: '3px solid rgba(192,57,43,0.4)',
+                outlineOffset: '3px',
+              }}
+            >
+              {avatarUrl
+                ? <img src={avatarUrl} alt={user.username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : avatarLetter
+              }
+            </div>
+            {/* Nickname/username + role */}
+            <div className="flex flex-col items-center gap-1">
+              <span style={{ fontSize: 16, fontWeight: 700, color: '#ffffff' }}>{user.nickname ?? user.username}</span>
+              {user.nickname && (
+                <span style={{ fontSize: 12, color: '#606060' }}>@{user.username}</span>
+              )}
+              <span style={{
+                fontSize: 11, fontWeight: 600, color: 'var(--accent-color, #C0392B)',
+                textTransform: 'capitalize', letterSpacing: '0.06em',
+              }}>
+                {user.role}
+              </span>
+            </div>
+            {/* Dismiss hint */}
+            <span style={{ fontSize: 11, color: '#404040' }}>Click anywhere to close</span>
+          </div>
+        </div>
+      )}
 
       {showQR     && <QRCodeModal onClose={() => setShowQR(false)} />}
       {showLogout && <LogoutModal onConfirm={handleLogout} onCancel={() => setShowLogout(false)} />}

@@ -3,7 +3,7 @@ import multer from 'multer';
 import {
   login, logout, changePassword, changeUsername,
   getAllStaff, createStaff, updateStaff, deleteStaff, toggleStaffStatus,
-  uploadAvatar, deleteAvatar,
+  uploadAvatar, deleteAvatar, changeNickname,
 } from '../controllers/auth.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
@@ -32,5 +32,6 @@ router.delete('/staff/:id',          authenticate, authorize('owner'), deleteSta
 router.patch('/staff/:id/toggle',    authenticate, authorize('owner'), toggleStaffStatus);
 router.post('/avatar',               authenticate, upload.single('avatar'), uploadAvatar);
 router.delete('/avatar',             authenticate, deleteAvatar);
+router.put('/nickname',              authenticate, changeNickname);
 
 export default router;

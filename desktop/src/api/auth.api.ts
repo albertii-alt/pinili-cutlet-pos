@@ -54,3 +54,8 @@ export async function uploadAvatar(file: File): Promise<{ avatar_path: string }>
 export async function deleteAvatar(): Promise<void> {
   await apiClient.delete('/api/auth/avatar');
 }
+
+export async function changeNickname(nickname: string): Promise<{ nickname: string | null }> {
+  const { data } = await apiClient.put('/api/auth/nickname', { nickname });
+  return data;
+}

@@ -9,6 +9,7 @@ interface AuthStore {
   logout: () => void;
   updateUsername: (token: string, username: string) => void;
   updateAvatar: (avatarPath: string | null) => void;
+  updateNickname: (nickname: string | null) => void;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
@@ -40,6 +41,14 @@ export const useAuthStore = create<AuthStore>((set) => ({
   updateAvatar: (avatarPath) => {
     set(state => {
       const updatedUser = state.user ? { ...state.user, avatar_path: avatarPath } : null;
+      if (updatedUser) localStorage.setItem('user', JSON.stringify(updatedUser));
+      return { user: updatedUser };
+    });
+  },
+
+  updateNickname: (nickname) => {
+    set(state => {
+      const updatedUser = state.user ? { ...state.user, nickname } : null;
       if (updatedUser) localStorage.setItem('user', JSON.stringify(updatedUser));
       return { user: updatedUser };
     });

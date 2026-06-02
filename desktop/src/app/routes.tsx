@@ -58,7 +58,7 @@ function OwnerShell() {
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           className="absolute flex items-center justify-center transition-all duration-150"
           style={{
-            top: 20,
+            top: 0,
             right: -12,
             width: 24,
             height: 24,
@@ -67,7 +67,7 @@ function OwnerShell() {
             border: '1px solid #2C2C2C',
             color: '#606060',
             cursor: 'pointer',
-            zIndex: 10,
+            zIndex: 50,
             boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
           }}
           onMouseEnter={e => {
@@ -86,9 +86,21 @@ function OwnerShell() {
         </button>
       </div>
 
-      <main className="flex-1 overflow-y-auto p-6 pt-20 hide-scrollbar min-w-0">
+      <main className="flex-1 overflow-y-auto p-6 pt-20 hide-scrollbar min-w-0 relative">
         <Outlet />
       </main>
+
+      {/* Top fade — masks content scrolling under the floating bar */}
+      <div
+        className="pointer-events-none fixed z-40"
+        style={{
+          top: 0,
+          left: 'var(--sidebar-width, 220px)',
+          right: 0,
+          height: 100,
+          background: 'linear-gradient(to bottom, #0A0A0A 0%, rgba(10,10,10,0.85) 40%, transparent 100%)',
+        }}
+      />
 
       {/* Floating user controls */}
       <FloatingControls />
