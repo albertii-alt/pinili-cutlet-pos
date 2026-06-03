@@ -85,7 +85,7 @@ export default function QueuePage() {
         {/* Header */}
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/order')}
             style={{
               backgroundColor: '#1A1A1A',
               border: '1px solid #2C2C2C',

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { IconX, IconEye, IconEyeOff } from '@tabler/icons-react';
 import { StaffUser } from '../../types';
 
@@ -63,10 +64,10 @@ export default function StaffModal({ staff, onClose, onSave }: StaffModalProps) 
     }
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
       <div
-        className="w-[420px] flex flex-col hide-scrollbar"
+        className="modal-enter w-[420px] flex flex-col hide-scrollbar"
         style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', borderRadius: 16 }}
       >
         {/* Header */}
@@ -219,5 +220,5 @@ export default function StaffModal({ staff, onClose, onSave }: StaffModalProps) 
         </div>
       </div>
     </div>
-  );
+  , document.body);
 }

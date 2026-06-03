@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { IconX, IconTag } from '@tabler/icons-react';
 import { MenuItem } from '../../types';
 import { formatCurrency } from '../../utils/formatCurrency';
@@ -48,10 +49,10 @@ export default function PromoModal({ item, onSave, onClose }: PromoModalProps) {
     }
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
       <div
-        className="flex flex-col w-[460px]"
+        className="modal-enter flex flex-col w-[460px]"
         style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: 16 }}
       >
         {/* Header */}
@@ -228,5 +229,5 @@ export default function PromoModal({ item, onSave, onClose }: PromoModalProps) {
         </div>
       </div>
     </div>
-  );
+  , document.body);
 }

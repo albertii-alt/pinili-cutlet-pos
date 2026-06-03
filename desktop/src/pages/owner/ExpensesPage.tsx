@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   IconReceipt2,
   IconPlus,
@@ -140,9 +141,9 @@ function ExpenseModal({ initial, onClose, onSaved }: ExpenseModalProps) {
     boxSizing: 'border-box',
   });
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
-      <div style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', borderRadius: 16, width: 440, overflow: 'hidden' }}>
+      <div className="modal-enter" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', borderRadius: 16, width: 440, overflow: 'hidden' }}>
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #2C2C2C' }}>
           <div className="flex items-center gap-2">
@@ -256,7 +257,7 @@ function ExpenseModal({ initial, onClose, onSaved }: ExpenseModalProps) {
         </div>
       </div>
     </div>
-  );
+  , document.body);
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────

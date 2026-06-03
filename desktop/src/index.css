@@ -47,6 +47,27 @@ body {
   animation: wave 1.6s ease-in-out infinite;
 }
 
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter {
+  animation: pageFadeIn 0.22s ease-out forwards;
+}
+
+.page-enter > * {
+  opacity: 0;
+  animation: pageFadeIn 0.22s ease-out forwards;
+}
+
+.page-enter > *:nth-child(1) { animation-delay: 0.03s; }
+.page-enter > *:nth-child(2) { animation-delay: 0.08s; }
+.page-enter > *:nth-child(3) { animation-delay: 0.13s; }
+.page-enter > *:nth-child(4) { animation-delay: 0.18s; }
+.page-enter > *:nth-child(5) { animation-delay: 0.22s; }
+.page-enter > *:nth-child(n+6) { animation-delay: 0.25s; }
+
 @keyframes fadeSlideRight {
   from {
     opacity: 0;
@@ -82,6 +103,21 @@ body {
 
 .sidebar-enter {
   animation: fadeSlideRight 0.4s ease-out forwards;
+}
+
+@keyframes modalSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-24px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-enter {
+  animation: modalSlideDown 0.22s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
 }
 
 /* Hide browser's native password reveal button */

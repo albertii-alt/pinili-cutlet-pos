@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { IconLogout, IconX } from '@tabler/icons-react';
 
 interface LogoutModalProps {
@@ -6,9 +7,10 @@ interface LogoutModalProps {
 }
 
 export default function LogoutModal({ onConfirm, onCancel }: LogoutModalProps) {
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
       <div
+        className="modal-enter"
         style={{
           backgroundColor: '#111111',
           border: '1px solid #2C2C2C',
@@ -88,5 +90,5 @@ export default function LogoutModal({ onConfirm, onCancel }: LogoutModalProps) {
         </div>
       </div>
     </div>
-  );
+  , document.body);
 }

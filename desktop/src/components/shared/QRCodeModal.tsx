@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { IconX } from '@tabler/icons-react';
 import { QRCode } from 'react-qrcode-logo';
 import apiClient from '../../api/client';
@@ -25,9 +26,9 @@ export default function QRCodeModal({ onClose }: QRCodeModalProps) {
 
   const clientURL = network ? network.clientUrl : '';
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
-      <div className="bg-card border border-border rounded-2xl w-[360px]">
+      <div className="modal-enter bg-card border border-border rounded-2xl w-[360px]">
         <div className="border-b border-border p-4 flex items-center justify-between">
           <h2 className="text-white font-semibold">Connect Phone</h2>
           <button onClick={onClose} className="text-textGray hover:text-white transition-colors">
@@ -60,5 +61,5 @@ export default function QRCodeModal({ onClose }: QRCodeModalProps) {
         </div>
       </div>
     </div>
-  );
+  , document.body);
 }

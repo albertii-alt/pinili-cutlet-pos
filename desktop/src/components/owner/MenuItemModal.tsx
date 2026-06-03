@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { IconX, IconPhoto, IconChevronDown } from '@tabler/icons-react';
 import { MenuItem, Category } from '../../types';
 import { addMenuItem, updateMenuItem } from '../../api/menu.api';
@@ -104,10 +105,10 @@ export default function MenuItemModal({ item, categories, onClose, onSaved }: Me
     ? categories.find(c => c.id === Number(categoryId))?.name ?? 'No category'
     : 'No category';
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
       <div
-        className="w-[480px] max-h-[90vh] overflow-y-auto flex flex-col hide-scrollbar"
+        className="modal-enter w-[480px] max-h-[90vh] overflow-y-auto flex flex-col hide-scrollbar"
         style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', borderRadius: 16 }}
       >
         {/* Header */}
@@ -335,5 +336,5 @@ export default function MenuItemModal({ item, categories, onClose, onSaved }: Me
         </div>
       </div>
     </div>
-  );
+  , document.body);
 }

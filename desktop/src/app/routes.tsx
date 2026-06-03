@@ -21,6 +21,7 @@ import SupportPage from '../pages/owner/SupportPage';
 import ChangelogPage from '../pages/owner/ChangelogPage';
 import Sidebar from '../components/shared/Sidebar';
 import FloatingControls from '../components/shared/FloatingControls';
+import PageTransition from '../components/shared/PageTransition';
 
 const STORAGE_KEY = 'sidebar_collapsed';
 
@@ -92,7 +93,7 @@ function OwnerShell() {
       </div>
 
       <main className="flex-1 overflow-y-auto p-6 pt-20 hide-scrollbar min-w-0 relative">
-        <Outlet />
+        <PageTransition />
       </main>
 
       {/* Top fade — masks content scrolling under the floating bar */}
@@ -124,11 +125,12 @@ function CashierShell() {
 export const routes: RouteObject[] = [
   { path: '/cashier-login', element: <CashierLoginPage /> },
   { path: '/login',         element: <LoginPage /> },
+  { index: true,            element: <Navigate to="/login" replace /> },
   {
     path: '/',
     element: <CashierShell />,
     children: [
-      { index: true,    element: <OrderPage /> },
+      { path: 'order',  element: <OrderPage /> },
       { path: 'queue',  element: <QueuePage /> },
     ],
   },

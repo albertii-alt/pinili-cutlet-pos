@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { IconX, IconAlertCircle } from '@tabler/icons-react';
 import { Order } from '../../types';
 import { formatCurrency } from '../../utils/formatCurrency';
@@ -41,10 +42,10 @@ export default function OrderDetailsModal({ order, onClose, onCancelled }: Order
     }
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
       <div
-        className="w-[480px] max-h-[90vh] overflow-y-auto flex flex-col hide-scrollbar"
+        className="modal-enter w-[480px] max-h-[90vh] overflow-y-auto flex flex-col hide-scrollbar"
         style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', borderRadius: 16 }}
       >
         {/* Header */}
@@ -277,5 +278,5 @@ export default function OrderDetailsModal({ order, onClose, onCancelled }: Order
         </div>
       </div>
     </div>
-  );
+  , document.body);
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { IconX, IconMoon, IconDownload } from '@tabler/icons-react';
 import { getEndOfDaySummary, type EndOfDaySummary } from '../../api/analytics.api';
 import { formatCurrency } from '../../utils/formatCurrency';
@@ -89,10 +90,10 @@ export default function EndOfDayModal({ onClose }: EndOfDayModalProps) {
     b.payment_method.toLowerCase() === 'cash'
   ) ?? data?.payment_breakdown[0];
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
       <div
-        className="w-[580px] max-h-[90vh] overflow-y-auto flex flex-col hide-scrollbar"
+        className="modal-enter w-[580px] max-h-[90vh] overflow-y-auto flex flex-col hide-scrollbar"
         style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', borderRadius: 16 }}
       >
         {/* Header */}
@@ -282,6 +283,7 @@ export default function EndOfDayModal({ onClose }: EndOfDayModalProps) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

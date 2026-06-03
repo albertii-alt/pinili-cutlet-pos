@@ -1,3 +1,5 @@
+import { createPortal } from 'react-dom';
+
 interface ConfirmDialogProps {
   title: string;
   message: string;
@@ -15,9 +17,9 @@ export default function ConfirmDialog({
   onCancel,
   destructive = false,
 }: ConfirmDialogProps) {
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
-      <div className="bg-card border border-border rounded-2xl w-[400px]">
+      <div className="modal-enter bg-card border border-border rounded-2xl w-[400px]">
         <div className="border-b border-border p-4">
           <h3 className="text-white font-semibold">{title}</h3>
         </div>
@@ -44,5 +46,5 @@ export default function ConfirmDialog({
         </div>
       </div>
     </div>
-  );
+  , document.body);
 }
