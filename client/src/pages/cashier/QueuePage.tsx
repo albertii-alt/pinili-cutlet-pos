@@ -16,6 +16,19 @@ import { useBrandName } from '../../hooks/useBrandName';
 import { usePaymentMethods } from '../../hooks/usePaymentMethods';
 import { useNotificationSound } from '../../hooks/useNotificationSound';
 import { useWindowSize } from '../../hooks/useWindowSize';
+// ─── Done animation styles ────────────────────────────────────────────────────
+
+const doneKeyframes = `
+@keyframes cardDone {
+  0%   { opacity: 1; transform: translateX(0) scale(1); }
+  20%  { opacity: 1; transform: translateX(0) scale(1.02); background-color: rgba(39,174,96,0.12); }
+  100% { opacity: 0; transform: translateX(60px) scale(0.97); }
+}
+.card-done {
+  animation: cardDone 0.45s ease-in forwards;
+  pointer-events: none;
+}
+`;
 
 // ─── Elapsed badge (desktop only) ────────────────────────────────────────────
 
@@ -66,6 +79,7 @@ export default function QueuePage() {
   const { width } = useWindowSize();
   const [showQR, setShowQR] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
+  const [completingIds, setCompletingIds] = useState<Set<number>>(new Set());
 
   const isDesktop = width >= 1024;
   const gridCols  = isDesktop ? 3 : width >= 600 ? 2 : 1;
@@ -79,7 +93,12 @@ export default function QueuePage() {
   }, [user?.role]);
 
   async function handleComplete(id: number) {
-    try { await completeOrder(id); } catch { /* socket updates UI */ }
+    // Trigger the exit animation first
+    setCompletingIds(prev => new Set(prev).add(id));
+    // After animation completes, call the API
+    setTimeout(async () => {
+      try { await completeOrder(id); } catch { /* socket updates UI */ }
+    }, 400);
   }
 
   async function handleLogout() {
@@ -93,6 +112,7 @@ export default function QueuePage() {
   if (isDesktop) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#0A0A0A' }}>
+        <style>{doneKeyframes}</style>
         {/* Desktop topbar */}
         <header
           className="fixed top-0 left-0 right-0 h-[52px] border-b border-border flex items-center justify-between px-4 z-50"
@@ -213,7 +233,7 @@ export default function QueuePage() {
               {orders.map(order => (
                 <div
                   key={order.id}
-                  className="flex flex-col gap-3"
+                  className={`flex flex-col gap-3${completingIds.has(order.id) ? ' card-done' : ''}`}
                   style={{
                     backgroundColor: '#1A1A1A',
                     border: '1px solid #2C2C2C',
@@ -222,7 +242,7 @@ export default function QueuePage() {
                     boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
                     transition: 'border-color 0.2s',
                   }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent-color, #C0392B)')}
+                  onMouseEnter={e => { if (!completingIds.has(order.id)) e.currentTarget.style.borderColor = 'var(--accent-color, #C0392B)'; }}
                   onMouseLeave={e => (e.currentTarget.style.borderColor = '#2C2C2C')}
                 >
                   <div className="flex items-center justify-between">
@@ -295,6 +315,7 @@ export default function QueuePage() {
   // ── Tablet + Phone: original layout ──────────────────────────────────────────
   return (
     <div className="min-h-screen bg-dark flex flex-col pb-20">
+      <style>{doneKeyframes}</style>
       <header className="sticky top-0 bg-card border-b border-border px-4 h-[52px] flex items-center justify-between z-30">
         <div className="flex items-center gap-2">
           {logoUrl && (
@@ -339,7 +360,7 @@ export default function QueuePage() {
         ) : (
           <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
             {orders.map(order => (
-              <div key={order.id} className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
+              <div key={order.id} className={`bg-card border border-border rounded-xl p-4 flex flex-col gap-3${completingIds.has(order.id) ? ' card-done' : ''}`}>
                 <div className="flex items-center justify-between">
                   <span className="text-primary font-bold text-xl">{order.order_number}</span>
                   <PaymentBadge method={order.payment_method} color={getMethodColor(order.payment_method)} logoUrl={getMethodLogoUrl(order.payment_method)} />
