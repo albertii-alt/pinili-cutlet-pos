@@ -14,6 +14,8 @@ import { useMenuStore } from '../../store/useMenuStore';
 import { getMenuItems } from '../../api/menu.api';
 import { getCategories } from '../../api/category.api';
 
+import Toast from '../../components/shared/Toast';
+
 export default function MenuPage() {
   const { menuItems, setPromoPrice } = useMenu();
   const { categories } = useCategories();
@@ -94,7 +96,7 @@ export default function MenuPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <IconToolsKitchen2 size={18} color="#C0392B" />
+          <IconToolsKitchen2 size={18} color="var(--accent-color, #C0392B)" />
           <h1 className="text-white font-semibold text-lg">Menu</h1>
         </div>
         <button
@@ -150,7 +152,7 @@ export default function MenuPage() {
                   key={c.id ?? 'all'}
                   onClick={() => { setFilterCat(c.id); setDropdownOpen(false); }}
                   className="w-full text-left px-3 py-2 text-sm transition-colors hover:bg-cardLight"
-                  style={{ color: filterCat === c.id ? '#C0392B' : '#ffffff' }}
+                  style={{ color: filterCat === c.id ? 'var(--accent-color, #C0392B)' : '#ffffff' }}
                 >
                   {c.name}
                 </button>
@@ -208,7 +210,7 @@ export default function MenuPage() {
 
       {/* Success toast */}
       {toast && (
-        <BulkToast message={toast} onDone={() => setToast(null)} />
+        <Toast message={toast} onDone={() => setToast(null)} />
       )}
 
       {promoItem && (
@@ -224,28 +226,3 @@ export default function MenuPage() {
   );
 }
 
-function BulkToast({ message, onDone }: { message: string; onDone: () => void }) {
-  useEffect(() => {
-    const t = setTimeout(onDone, 3000);
-    return () => clearTimeout(t);
-  }, []);
-
-  return (
-    <div
-      className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-3 rounded-xl z-50"
-      style={{
-        backgroundColor: '#111111',
-        border: '1px solid rgba(39,174,96,0.4)',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-      }}
-    >
-      <div
-        className="w-5 h-5 rounded-full flex items-center justify-center"
-        style={{ backgroundColor: 'rgba(39,174,96,0.2)' }}
-      >
-        <IconCheck size={12} color="#27AE60" />
-      </div>
-      <span style={{ fontSize: 13, color: '#27AE60' }}>{message}</span>
-    </div>
-  );
-}

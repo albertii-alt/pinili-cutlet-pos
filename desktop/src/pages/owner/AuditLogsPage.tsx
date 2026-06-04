@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { IconShieldCheck, IconSearch, IconChevronLeft, IconChevronRight, IconRefresh, IconDeviceDesktop, IconDeviceMobile, IconTrash } from '@tabler/icons-react';
-import { getAuditLogs, deleteAuditLog, deleteAllAuditLogs } from '../../api/audit.api';
+import { getAuditLogs, deleteAuditLog, deleteAllAuditLogs, deleteManyAuditLogs } from '../../api/audit.api';
 import { AuditLog } from '../../types';
 import { formatDateTime } from '../../utils/formatDate';
 import ConfirmDialog from '../../components/shared/ConfirmDialog';
@@ -59,6 +59,13 @@ export default function AuditLogsPage() {
   const [deleteId, setDeleteId]   = useState<number | null>(null);
   const [confirmAll, setConfirmAll] = useState(false);
 
+  // Selection state
+  const [selected, setSelected]         = useState<Set<number>>(new Set());
+  const [confirmBulk, setConfirmBulk]   = useState(false);
+
+  const allSelected = logs.length > 0 && logs.every(l => selected.has(l.id));
+  const someSelected = selected.size > 0;
+
   // Filters
   const [search, setSearch]       = useState('');
   const [action, setAction]       = useState('');
@@ -78,7 +85,7 @@ export default function AuditLogsPage() {
       start_date: filters.startDate || undefined,
       end_date: filters.endDate || undefined,
     })
-      .then(res => { setLogs(res.data); setTotal(res.total); })
+      .then(res => { setLogs(res.data); setTotal(res.total); setSelected(new Set()); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -110,12 +117,35 @@ export default function AuditLogsPage() {
     fetchLogs(1, applied);
   }
 
+  function toggleOne(id: number) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (allSelected) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(logs.map(l => l.id)));
+    }
+  }
+
+  async function handleDeleteSelected() {
+    await deleteManyAuditLogs([...selected]);
+    setConfirmBulk(false);
+    setSelected(new Set());
+    fetchLogs(page, applied);
+  }
+
   return (
     <div className="flex flex-col gap-4 w-full">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <IconShieldCheck size={18} color="#C0392B" />
+          <IconShieldCheck size={18} color="var(--accent-color, #C0392B)" />
           <h1 className="text-white font-semibold text-lg">Audit Logs</h1>
         </div>
         <div className="flex items-center gap-2">
@@ -128,6 +158,17 @@ export default function AuditLogsPage() {
             <IconRefresh size={14} />
             Refresh
           </button>
+          {someSelected && (
+            <button
+              onClick={() => setConfirmBulk(true)}
+              style={{ backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.3)', borderRadius: 8, padding: '6px 12px', color: '#C0392B', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.15)')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(192,57,43,0.08)')}
+            >
+              <IconTrash size={14} />
+              Delete Selected ({selected.size})
+            </button>
+          )}
           {total > 0 && (
             <button
               onClick={() => setConfirmAll(true)}
@@ -153,7 +194,7 @@ export default function AuditLogsPage() {
             onKeyDown={e => e.key === 'Enter' && handleApply()}
             placeholder="Search username..."
             style={{ flex: 1, backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: 6, padding: '6px 10px', color: '#ffffff', fontSize: 12, outline: 'none' }}
-            onFocus={e => (e.currentTarget.style.borderColor = '#C0392B')}
+            onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent-color, #C0392B)')}
             onBlur={e => (e.currentTarget.style.borderColor = '#2C2C2C')}
           />
         </div>
@@ -171,18 +212,18 @@ export default function AuditLogsPage() {
         {/* Date range */}
         <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
           style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: 6, padding: '6px 10px', color: startDate ? '#ffffff' : '#606060', fontSize: 12, outline: 'none', colorScheme: 'dark' }}
-          onFocus={e => (e.currentTarget.style.borderColor = '#C0392B')}
+          onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent-color, #C0392B)')}
           onBlur={e => (e.currentTarget.style.borderColor = '#2C2C2C')}
         />
         <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
           style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: 6, padding: '6px 10px', color: endDate ? '#ffffff' : '#606060', fontSize: 12, outline: 'none', colorScheme: 'dark' }}
-          onFocus={e => (e.currentTarget.style.borderColor = '#C0392B')}
+          onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent-color, #C0392B)')}
           onBlur={e => (e.currentTarget.style.borderColor = '#2C2C2C')}
         />
 
-        <button onClick={handleApply} style={{ backgroundColor: '#C0392B', border: 'none', borderRadius: 6, padding: '6px 14px', color: '#ffffff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#96281B')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#C0392B')}
+        <button onClick={handleApply} style={{ backgroundColor: 'var(--accent-color, #C0392B)', border: 'none', borderRadius: 6, padding: '6px 14px', color: '#ffffff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+          onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--accent-color-dark, #96281B)')}
+          onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--accent-color, #C0392B)')}
         >Apply</button>
         <button onClick={handleReset} style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: 6, padding: '6px 14px', color: '#A0A0A0', fontSize: 12, cursor: 'pointer' }}
           onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#242424'; e.currentTarget.style.color = '#ffffff'; }}
@@ -200,6 +241,15 @@ export default function AuditLogsPage() {
           <table className="w-full">
             <thead>
               <tr style={{ backgroundColor: '#1A1A1A', borderBottom: '1px solid #2C2C2C' }}>
+                <th className="px-4 py-3" style={{ width: 40 }}>
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleAll}
+                    style={{ cursor: 'pointer', accentColor: 'var(--accent-color, #C0392B)', width: 14, height: 14 }}
+                    title={allSelected ? 'Deselect all' : 'Select all'}
+                  />
+                </th>
                 {['Timestamp', 'User', 'Action', 'Details', ''].map((h, i) => (
                   <th key={i} className="text-left px-4 py-3" style={{ fontSize: 11, color: '#606060', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500, width: h === '' ? 40 : undefined }}>
                     {h}
@@ -210,7 +260,7 @@ export default function AuditLogsPage() {
             <tbody>
               {logs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: 'center', padding: '32px', color: '#606060', fontSize: 13 }}>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '32px', color: '#606060', fontSize: 13 }}>
                     No audit logs found
                   </td>
                 </tr>
@@ -219,10 +269,18 @@ export default function AuditLogsPage() {
                   <tr
                     key={log.id}
                     className="border-b border-border last:border-0 transition-colors"
-                    style={{ backgroundColor: i % 2 === 0 ? '#111111' : '#0A0A0A' }}
-                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#1A1A1A')}
-                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#111111' : '#0A0A0A')}
+                    style={{ backgroundColor: selected.has(log.id) ? 'rgba(var(--accent-color-rgb, 192,57,43),0.06)' : i % 2 === 0 ? '#111111' : '#0A0A0A' }}
+                    onMouseEnter={e => { if (!selected.has(log.id)) e.currentTarget.style.backgroundColor = '#1A1A1A'; }}
+                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = selected.has(log.id) ? 'rgba(var(--accent-color-rgb, 192,57,43),0.06)' : i % 2 === 0 ? '#111111' : '#0A0A0A'; }}
                   >
+                    <td className="px-4 py-2.5" style={{ width: 40 }}>
+                      <input
+                        type="checkbox"
+                        checked={selected.has(log.id)}
+                        onChange={() => toggleOne(log.id)}
+                        style={{ cursor: 'pointer', accentColor: 'var(--accent-color, #C0392B)', width: 14, height: 14 }}
+                      />
+                    </td>
                     <td className="px-4 py-2.5" style={{ fontSize: 12, color: '#606060', whiteSpace: 'nowrap' }}>
                       {formatDateTime(log.created_at)}
                     </td>
@@ -331,6 +389,18 @@ export default function AuditLogsPage() {
           destructive
           onConfirm={handleDeleteOne}
           onCancel={() => setDeleteId(null)}
+        />
+      )}
+
+      {/* Confirm: delete selected logs */}
+      {confirmBulk && (
+        <ConfirmDialog
+          title={`Delete ${selected.size} Log ${selected.size === 1 ? 'Entry' : 'Entries'}`}
+          message={`Are you sure you want to delete ${selected.size} selected log ${selected.size === 1 ? 'entry' : 'entries'}? This action cannot be undone.`}
+          confirmLabel="Delete Selected"
+          destructive
+          onConfirm={handleDeleteSelected}
+          onCancel={() => setConfirmBulk(false)}
         />
       )}
 

@@ -30,11 +30,11 @@ const PERIODS: { label: string; value: ShiftReportPeriod }[] = [
 const ROLE_COLORS: Record<string, { bg: string; color: string }> = {
   cashier: { bg: 'rgba(52,152,219,0.12)',  color: '#3498DB' },
   kitchen: { bg: 'rgba(243,156,18,0.12)',  color: '#F39C12' },
-  owner:   { bg: 'rgba(192,57,43,0.12)',   color: '#C0392B' },
+  owner:   { bg: 'rgba(var(--accent-color-rgb, 192,57,43),0.12)', color: 'var(--accent-color, #C0392B)' },
 };
 
 // Avatar background colors (cycle through for variety)
-const AVATAR_COLORS = ['#C0392B', '#3498DB', '#27AE60', '#F39C12', '#9B59B6', '#1ABC9C', '#E67E22'];
+const AVATAR_COLORS = ['var(--accent-color, #C0392B)', '#3498DB', '#27AE60', '#F39C12', '#9B59B6', '#1ABC9C', '#E67E22'];
 
 function avatarColor(index: number): string {
   return AVATAR_COLORS[index % AVATAR_COLORS.length];
@@ -127,10 +127,10 @@ function StaffCard({ entry, index, totalSales }: StaffCardProps) {
         {/* Total Sales */}
         <div className="flex flex-col gap-1 rounded-lg px-3 py-2.5" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C' }}>
           <div className="flex items-center gap-1.5">
-            <IconReportMoney size={11} color="#C0392B" />
+            <IconReportMoney size={11} color="var(--accent-color, #C0392B)" />
             <span style={{ fontSize: 10, color: '#606060', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Sales</span>
           </div>
-          <span style={{ fontSize: 16, fontWeight: 700, color: '#C0392B' }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent-color, #C0392B)' }}>
             {formatCurrency(entry.total_sales)}
           </span>
         </div>
@@ -261,7 +261,7 @@ export default function ShiftReportPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <IconUsers size={18} color="#C0392B" />
+          <IconUsers size={18} color="var(--accent-color, #C0392B)" />
           <h1 className="text-white font-semibold text-lg">Shift Reports</h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -300,9 +300,9 @@ export default function ShiftReportPage() {
             onBlur={e => (e.currentTarget.style.borderColor = '#2C2C2C')}
           />
           <button onClick={handleApplyCustom} disabled={!startDate || !endDate}
-            style={{ backgroundColor: (!startDate || !endDate) ? 'rgba(192,57,43,0.3)' : '#C0392B', border: 'none', borderRadius: 6, padding: '6px 14px', color: '#ffffff', fontSize: 12, fontWeight: 600, cursor: (!startDate || !endDate) ? 'not-allowed' : 'pointer' }}
-            onMouseEnter={e => { if (startDate && endDate) e.currentTarget.style.backgroundColor = '#96281B'; }}
-            onMouseLeave={e => { if (startDate && endDate) e.currentTarget.style.backgroundColor = '#C0392B'; }}
+            style={{ backgroundColor: (!startDate || !endDate) ? 'rgba(var(--accent-color-rgb, 192,57,43),0.3)' : 'var(--accent-color, #C0392B)', border: 'none', borderRadius: 6, padding: '6px 14px', color: '#ffffff', fontSize: 12, fontWeight: 600, cursor: (!startDate || !endDate) ? 'not-allowed' : 'pointer' }}
+            onMouseEnter={e => { if (startDate && endDate) e.currentTarget.style.backgroundColor = 'var(--accent-color-dark, #96281B)'; }}
+            onMouseLeave={e => { if (startDate && endDate) e.currentTarget.style.backgroundColor = 'var(--accent-color, #C0392B)'; }}
           >
             Apply
           </button>
@@ -356,9 +356,9 @@ export default function ShiftReportPage() {
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <IconReportMoney size={14} color="#C0392B" />
+                <IconReportMoney size={14} color="var(--accent-color, #C0392B)" />
                 <span style={{ fontSize: 13, color: '#A0A0A0' }}>
-                  <span style={{ color: '#C0392B', fontWeight: 700 }}>{formatCurrency(totalSales)}</span> total sales
+                  <span style={{ color: 'var(--accent-color, #C0392B)', fontWeight: 700 }}>{formatCurrency(totalSales)}</span> total sales
                 </span>
               </div>
             </div>

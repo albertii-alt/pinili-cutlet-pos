@@ -78,7 +78,7 @@ export default function DashboardPage() {
       {/* Header + filters + EOD button */}
       <div className={`flex items-center justify-between ${animate ? 'dashboard-enter dashboard-enter-1' : ''}`}>
         <div className="flex items-center gap-2">
-          <IconLayoutDashboard size={18} color="#C0392B" />
+          <IconLayoutDashboard size={18} color="var(--accent-color, #C0392B)" />
           <h1 className="text-white font-semibold text-lg" style={{ margin: 0 }}>Dashboard</h1>
         </div>
         <div className="flex items-center gap-2">

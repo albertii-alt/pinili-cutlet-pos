@@ -56,7 +56,7 @@ export default function AnalyticsPage() {
       {/* Header + period filter */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <IconChartBar size={18} color="#C0392B" />
+          <IconChartBar size={18} color="var(--accent-color, #C0392B)" />
           <h1 className="text-white font-semibold text-lg">Analytics</h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

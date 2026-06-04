@@ -41,3 +41,14 @@ export function deleteAllAuditLogs(req: Request, res: Response): void {
   db.prepare('DELETE FROM audit_logs').run();
   res.json({ ok: true });
 }
+
+export function deleteManyAuditLogs(req: Request, res: Response): void {
+  const { ids } = req.body as { ids: number[] };
+  if (!Array.isArray(ids) || ids.length === 0) {
+    res.status(400).json({ error: 'ids must be a non-empty array' });
+    return;
+  }
+  const placeholders = ids.map(() => '?').join(',');
+  db.prepare(`DELETE FROM audit_logs WHERE id IN (${placeholders})`).run(...ids);
+  res.json({ ok: true, deleted: ids.length });
+}

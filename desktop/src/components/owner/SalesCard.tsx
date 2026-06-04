@@ -16,7 +16,7 @@ interface SalesCardProps {
 
 export default function SalesCard({ label, value, accent = false, accentColor, icon: Icon, logoUrl, isZero = false, clickable = false, active = false, onClick }: SalesCardProps) {
   const [hovered, setHovered] = useState(false);
-  const color = accentColor ?? '#C0392B';
+  const color = accentColor ?? 'var(--accent-color, #C0392B)';
   const valueColor = isZero ? '#606060' : accent ? color : '#ffffff';
 
   const borderColor = active

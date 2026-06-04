@@ -64,9 +64,9 @@ function StatCard({
         </span>
         <div
           className="w-8 h-8 rounded-lg flex items-center justify-center"
-          style={{ backgroundColor: 'rgba(192,57,43,0.1)' }}
+          style={{ backgroundColor: 'rgba(var(--accent-color-rgb, 192,57,43),0.1)' }}
         >
-          <span style={{ color: '#C0392B' }}>{icon}</span>
+          <span style={{ color: 'var(--accent-color, #C0392B)' }}>{icon}</span>
         </div>
       </div>
       <span style={{ fontSize: 22, fontWeight: 700, color: '#ffffff', lineHeight: 1.2 }}>{value}</span>
@@ -78,7 +78,7 @@ function StatCard({
               style={{
                 height: '100%',
                 width: `${barPct}%`,
-                backgroundColor: barColor ?? '#C0392B',
+                backgroundColor: barColor ?? 'var(--accent-color, #C0392B)',
                 borderRadius: 99,
                 transition: 'width 0.5s ease',
               }}
@@ -157,7 +157,7 @@ export default function SystemStatusPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <IconHeartbeat size={18} color="#C0392B" />
+          <IconHeartbeat size={18} color="var(--accent-color, #C0392B)" />
           <h1 className="text-white font-semibold text-lg">System Status</h1>
           {status && !error && (
             <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md"

@@ -9,6 +9,7 @@ import {
   IconBrandFacebook,
   IconPhone,
 } from '@tabler/icons-react';
+import Toast from '../../components/shared/Toast';
 
 const DEVELOPER_EMAIL = 'albertoiidaro0@gmail.com';
 
@@ -26,7 +27,7 @@ function Card({ children }: { children: React.ReactNode }) {
 function SectionTitle({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
-      <span style={{ color: '#C0392B' }}>{icon}</span>
+      <span style={{ color: 'var(--accent-color, #C0392B)' }}>{icon}</span>
       <span style={{ fontSize: 13, fontWeight: 600, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         {children}
       </span>
@@ -57,28 +58,6 @@ function Field({
         {required && <span style={{ color: '#C0392B', marginLeft: 3 }}>*</span>}
       </label>
       {children}
-    </div>
-  );
-}
-
-// ─── Success toast ────────────────────────────────────────────────────────────
-
-function SuccessToast({ message, onDone }: { message: string; onDone: () => void }) {
-  useState(() => { setTimeout(onDone, 3500); });
-  return (
-    <div
-      className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-3 rounded-xl z-50"
-      style={{
-        backgroundColor: '#111111',
-        border: '1px solid rgba(39,174,96,0.4)',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-      }}
-    >
-      <div className="w-5 h-5 rounded-full flex items-center justify-center"
-        style={{ backgroundColor: 'rgba(39,174,96,0.2)' }}>
-        <IconCheck size={12} color="#27AE60" />
-      </div>
-      <span style={{ fontSize: 13, color: '#27AE60' }}>{message}</span>
     </div>
   );
 }
@@ -177,7 +156,7 @@ function ContactForm() {
           onClick={handleSend}
           className="flex items-center gap-2"
           style={{
-            backgroundColor: '#C0392B',
+            backgroundColor: 'var(--accent-color, #C0392B)',
             border: 'none',
             borderRadius: 8,
             padding: '8px 18px',
@@ -186,8 +165,8 @@ function ContactForm() {
             fontWeight: 600,
             cursor: 'pointer',
           }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#96281B')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#C0392B')}
+          onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--accent-color-dark, #96281B)')}
+          onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--accent-color, #C0392B)')}
         >
           <IconMail size={14} />
           Send Message
@@ -213,7 +192,7 @@ function ContactForm() {
         </div>
       </div>
 
-      {toast && <SuccessToast message="Email client opened — message ready to send" onDone={() => setToast(false)} />}
+      {toast && <Toast message="Email client opened — message ready to send" onDone={() => setToast(false)} />}
     </Card>
   );
 }
@@ -351,20 +330,20 @@ function BugReportForm() {
           onClick={handleSubmit}
           className="flex items-center gap-2"
           style={{
-            backgroundColor: '#C0392B',
+            backgroundColor: 'var(--accent-color, #C0392B)',
             border: 'none', borderRadius: 8,
             padding: '8px 18px',
             color: '#ffffff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
           }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#96281B')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#C0392B')}
+          onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--accent-color-dark, #96281B)')}
+          onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--accent-color, #C0392B)')}
         >
           <IconBug size={14} />
           Submit Bug Report
         </button>
       </div>
 
-      {toast && <SuccessToast message="Bug report ready — email client opened" onDone={() => setToast(false)} />}
+      {toast && <Toast message="Bug report ready — email client opened" onDone={() => setToast(false)} />}
     </Card>
   );
 }
@@ -492,20 +471,20 @@ function FeatureRequestForm() {
           onClick={handleSubmit}
           className="flex items-center gap-2"
           style={{
-            backgroundColor: '#C0392B',
+            backgroundColor: 'var(--accent-color, #C0392B)',
             border: 'none', borderRadius: 8,
             padding: '8px 18px',
             color: '#ffffff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
           }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#96281B')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#C0392B')}
+          onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--accent-color-dark, #96281B)')}
+          onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--accent-color, #C0392B)')}
         >
           <IconBulb size={14} />
           Submit Request
         </button>
       </div>
 
-      {toast && <SuccessToast message="Feature request ready — email client opened" onDone={() => setToast(false)} />}
+      {toast && <Toast message="Feature request ready — email client opened" onDone={() => setToast(false)} />}
     </Card>
   );
 }
@@ -528,7 +507,7 @@ export default function SupportPage() {
 
       {/* Header */}
       <div className="flex items-center gap-2">
-        <IconHeadset size={18} color="#C0392B" />
+        <IconHeadset size={18} color="var(--accent-color, #C0392B)" />
         <h1 className="text-white font-semibold text-lg">Support & Feedback</h1>
       </div>
 

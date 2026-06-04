@@ -21,6 +21,7 @@ import { useStaff } from '../../hooks/useStaff';
 import { StaffUser } from '../../types';
 import StaffModal from '../../components/owner/StaffModal';
 import ConfirmDialog from '../../components/shared/ConfirmDialog';
+import Toast from '../../components/shared/Toast';
 import socket from '../../socket/socket';
 import {
   listBackups, deleteBackup, configAutoBackup,
@@ -32,8 +33,8 @@ import {
 
 const inputStyle = (focused: boolean): React.CSSProperties => ({
   backgroundColor: '#1A1A1A',
-  border: `1px solid ${focused ? '#C0392B' : '#2C2C2C'}`,
-  boxShadow: focused ? '0 0 0 3px rgba(192,57,43,0.15)' : 'none',
+  border: `1px solid ${focused ? 'var(--accent-color, #C0392B)' : '#2C2C2C'}`,
+  boxShadow: focused ? '0 0 0 3px rgba(var(--accent-color-rgb, 192,57,43),0.15)' : 'none',
   borderRadius: 8,
   padding: '9px 40px 9px 12px',
   color: '#ffffff',
@@ -752,7 +753,7 @@ export default function SettingsPage() {
     <div className="flex flex-col gap-5 w-full">
       {/* Page header */}
       <div className="flex items-center gap-2">
-        <IconSettings size={18} color="#C0392B" />
+        <IconSettings size={18} color="var(--accent-color, #C0392B)" />
         <h1 className="text-white font-semibold text-lg">Settings</h1>
       </div>
 
@@ -772,7 +773,7 @@ export default function SettingsPage() {
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.backgroundColor = '#1A1A1A';
-                e.currentTarget.style.borderColor = 'rgba(192,57,43,0.4)';
+                e.currentTarget.style.borderColor = 'rgba(var(--accent-color-rgb, 192,57,43),0.4)';
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.backgroundColor = '#111111';
@@ -781,9 +782,9 @@ export default function SettingsPage() {
             >
               <div
                 className="flex items-center justify-center w-10 h-10 rounded-xl"
-                style={{ backgroundColor: 'rgba(192,57,43,0.1)', border: '1px solid rgba(192,57,43,0.2)' }}
+                style={{ backgroundColor: 'rgba(var(--accent-color-rgb, 192,57,43),0.1)', border: '1px solid rgba(var(--accent-color-rgb, 192,57,43),0.2)' }}
               >
-                <span style={{ color: '#C0392B' }}>{item.icon}</span>
+                <span style={{ color: 'var(--accent-color, #C0392B)' }}>{item.icon}</span>
               </div>
               <div className="flex flex-col gap-0.5">
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#ffffff' }}>{item.label}</span>
@@ -820,7 +821,7 @@ export default function SettingsPage() {
       {activeSection === 'account' && (
       <div className="flex flex-col gap-5 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', maxWidth: 600 }}>
         <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
-          <IconShieldLock size={16} color="#C0392B" />
+          <IconShieldLock size={16} color="var(--accent-color, #C0392B)" />
           <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 600 }}>Account Security</span>
         </div>
 
@@ -856,14 +857,14 @@ export default function SettingsPage() {
               <label
                 style={{
                   display: 'flex', alignItems: 'center', gap: 6,
-                  backgroundColor: avatarUploading ? '#2C2C2C' : '#C0392B',
+                  backgroundColor: avatarUploading ? '#2C2C2C' : 'var(--accent-color, #C0392B)',
                   border: 'none', borderRadius: 8, padding: '7px 14px',
                   color: avatarUploading ? '#606060' : '#ffffff',
                   fontSize: 13, fontWeight: 600,
                   cursor: avatarUploading ? 'not-allowed' : 'pointer',
                 }}
-                onMouseEnter={e => { if (!avatarUploading) (e.currentTarget as HTMLElement).style.backgroundColor = '#96281B'; }}
-                onMouseLeave={e => { if (!avatarUploading) (e.currentTarget as HTMLElement).style.backgroundColor = '#C0392B'; }}
+                onMouseEnter={e => { if (!avatarUploading) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--accent-color-dark, #96281B)'; }}
+                onMouseLeave={e => { if (!avatarUploading) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--accent-color, #C0392B)'; }}
               >
                 <IconUpload size={13} />
                 {avatarUploading ? 'Uploading…' : user?.avatar_path ? 'Change Photo' : 'Upload Photo'}
@@ -946,9 +947,9 @@ export default function SettingsPage() {
                 <button
                   onClick={handleChangeUsername}
                   disabled={unLoading}
-                  style={{ backgroundColor: unLoading ? '#2C2C2C' : '#C0392B', border: 'none', borderRadius: 8, padding: '9px 18px', color: unLoading ? '#606060' : '#ffffff', fontSize: 13, fontWeight: 600, cursor: unLoading ? 'not-allowed' : 'pointer' }}
-                  onMouseEnter={e => { if (!unLoading) e.currentTarget.style.backgroundColor = '#96281B'; }}
-                  onMouseLeave={e => { if (!unLoading) e.currentTarget.style.backgroundColor = '#C0392B'; }}
+                  style={{ backgroundColor: unLoading ? '#2C2C2C' : 'var(--accent-color, #C0392B)', border: 'none', borderRadius: 8, padding: '9px 18px', color: unLoading ? '#606060' : '#ffffff', fontSize: 13, fontWeight: 600, cursor: unLoading ? 'not-allowed' : 'pointer' }}
+                  onMouseEnter={e => { if (!unLoading) e.currentTarget.style.backgroundColor = 'var(--accent-color-dark, #96281B)'; }}
+                  onMouseLeave={e => { if (!unLoading) e.currentTarget.style.backgroundColor = 'var(--accent-color, #C0392B)'; }}
                 >
                   {unLoading ? 'Saving...' : 'Save'}
                 </button>
@@ -1015,9 +1016,9 @@ export default function SettingsPage() {
                 <button
                   onClick={handleChangeNickname}
                   disabled={nickLoading}
-                  style={{ backgroundColor: nickLoading ? '#2C2C2C' : '#C0392B', border: 'none', borderRadius: 8, padding: '9px 18px', color: nickLoading ? '#606060' : '#ffffff', fontSize: 13, fontWeight: 600, cursor: nickLoading ? 'not-allowed' : 'pointer' }}
-                  onMouseEnter={e => { if (!nickLoading) e.currentTarget.style.backgroundColor = '#96281B'; }}
-                  onMouseLeave={e => { if (!nickLoading) e.currentTarget.style.backgroundColor = '#C0392B'; }}
+                  style={{ backgroundColor: nickLoading ? '#2C2C2C' : 'var(--accent-color, #C0392B)', border: 'none', borderRadius: 8, padding: '9px 18px', color: nickLoading ? '#606060' : '#ffffff', fontSize: 13, fontWeight: 600, cursor: nickLoading ? 'not-allowed' : 'pointer' }}
+                  onMouseEnter={e => { if (!nickLoading) e.currentTarget.style.backgroundColor = 'var(--accent-color-dark, #96281B)'; }}
+                  onMouseLeave={e => { if (!nickLoading) e.currentTarget.style.backgroundColor = 'var(--accent-color, #C0392B)'; }}
                 >
                   {nickLoading ? 'Saving...' : 'Save'}
                 </button>
@@ -1064,9 +1065,9 @@ export default function SettingsPage() {
           <button
             onClick={handleChangePassword}
             disabled={pwLoading}
-            style={{ backgroundColor: pwLoading ? '#2C2C2C' : '#C0392B', border: 'none', borderRadius: 8, padding: '10px 20px', color: pwLoading ? '#606060' : '#ffffff', fontSize: 13, fontWeight: 600, cursor: pwLoading ? 'not-allowed' : 'pointer', alignSelf: 'flex-start' }}
-            onMouseEnter={e => { if (!pwLoading) e.currentTarget.style.backgroundColor = '#96281B'; }}
-            onMouseLeave={e => { if (!pwLoading) e.currentTarget.style.backgroundColor = '#C0392B'; }}
+            style={{ backgroundColor: pwLoading ? '#2C2C2C' : 'var(--accent-color, #C0392B)', border: 'none', borderRadius: 8, padding: '10px 20px', color: pwLoading ? '#606060' : '#ffffff', fontSize: 13, fontWeight: 600, cursor: pwLoading ? 'not-allowed' : 'pointer', alignSelf: 'flex-start' }}
+            onMouseEnter={e => { if (!pwLoading) e.currentTarget.style.backgroundColor = 'var(--accent-color-dark, #96281B)'; }}
+            onMouseLeave={e => { if (!pwLoading) e.currentTarget.style.backgroundColor = 'var(--accent-color, #C0392B)'; }}
           >
             {pwLoading ? 'Updating...' : 'Update Password'}
           </button>
@@ -1081,15 +1082,15 @@ export default function SettingsPage() {
       <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', maxWidth: 600 }}>
         <div className="flex items-center justify-between pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
           <div className="flex items-center gap-2">
-            <IconUsers size={16} color="#C0392B" />
+            <IconUsers size={16} color="var(--accent-color, #C0392B)" />
             <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 600 }}>Staff Management</span>
           </div>
           <button
             onClick={() => setStaffModal(null)}
             className="flex items-center gap-1.5 transition-colors"
-            style={{ backgroundColor: '#C0392B', border: 'none', borderRadius: 8, padding: '7px 14px', color: '#ffffff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#96281B')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#C0392B')}
+            style={{ backgroundColor: 'var(--accent-color, #C0392B)', border: 'none', borderRadius: 8, padding: '7px 14px', color: '#ffffff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--accent-color-dark, #96281B)')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--accent-color, #C0392B)')}
           >
             <IconUserPlus size={14} />
             Add Staff
@@ -1191,7 +1192,7 @@ export default function SettingsPage() {
       {activeSection === 'system' && (
       <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', maxWidth: 600 }}>
         <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
-          <IconBuildingStore size={16} color="#C0392B" />
+          <IconBuildingStore size={16} color="var(--accent-color, #C0392B)" />
           <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 600 }}>System Settings</span>
         </div>
 
@@ -1208,7 +1209,7 @@ export default function SettingsPage() {
                   onKeyDown={e => { if (e.key === 'Enter') handleSaveStallName(); if (e.key === 'Escape') { setEditingStall(false); setStallError(''); } }}
                   style={{
                     flex: 1, backgroundColor: '#1A1A1A',
-                    border: `1px solid ${stallError ? '#C0392B' : '#C0392B'}`,
+                    border: `1px solid ${stallError ? '#C0392B' : 'var(--accent-color, #C0392B)'}`,
                     borderRadius: 8, padding: '8px 12px',
                     color: '#ffffff', fontSize: 13, outline: 'none',
                   }}
@@ -1217,7 +1218,7 @@ export default function SettingsPage() {
                   onClick={handleSaveStallName}
                   disabled={stallSaving || !stallNameInput.trim()}
                   style={{
-                    backgroundColor: stallSaving || !stallNameInput.trim() ? '#2C2C2C' : '#C0392B',
+                    backgroundColor: stallSaving || !stallNameInput.trim() ? '#2C2C2C' : 'var(--accent-color, #C0392B)',
                     border: 'none', borderRadius: 8, padding: '8px 14px',
                     color: stallSaving || !stallNameInput.trim() ? '#606060' : '#ffffff',
                     fontSize: 13, fontWeight: 600, cursor: stallSaving || !stallNameInput.trim() ? 'not-allowed' : 'pointer',
@@ -1278,14 +1279,14 @@ export default function SettingsPage() {
               <label
                 style={{
                   display: 'flex', alignItems: 'center', gap: 6,
-                  backgroundColor: stallLogoUploading ? '#2C2C2C' : '#C0392B',
+                  backgroundColor: stallLogoUploading ? '#2C2C2C' : 'var(--accent-color, #C0392B)',
                   border: 'none', borderRadius: 8, padding: '7px 14px',
                   color: stallLogoUploading ? '#606060' : '#ffffff',
                   fontSize: 13, fontWeight: 600,
                   cursor: stallLogoUploading ? 'not-allowed' : 'pointer',
                 }}
-                onMouseEnter={e => { if (!stallLogoUploading) (e.currentTarget as HTMLElement).style.backgroundColor = '#96281B'; }}
-                onMouseLeave={e => { if (!stallLogoUploading) (e.currentTarget as HTMLElement).style.backgroundColor = '#C0392B'; }}
+                onMouseEnter={e => { if (!stallLogoUploading) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--accent-color-dark, #96281B)'; }}
+                onMouseLeave={e => { if (!stallLogoUploading) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--accent-color, #C0392B)'; }}
               >
                 <IconUpload size={13} />
                 {stallLogoUploading ? 'Uploading…' : stallLogo ? 'Replace Logo' : 'Upload Logo'}
@@ -1321,7 +1322,7 @@ export default function SettingsPage() {
       {activeSection === 'payment' && (
       <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', maxWidth: 600 }}>
         <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
-          <IconCreditCard size={16} color="#C0392B" />
+          <IconCreditCard size={16} color="var(--accent-color, #C0392B)" />
           <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 600 }}>Payment Methods</span>
         </div>
 
@@ -1334,7 +1335,7 @@ export default function SettingsPage() {
                 className="flex flex-col gap-2 p-3 rounded-lg"
                 style={{
                   backgroundColor: '#1A1A1A',
-                  border: `1px solid ${m.is_default ? 'rgba(192,57,43,0.4)' : '#2C2C2C'}`,
+                  border: `1px solid ${m.is_default ? 'rgba(var(--accent-color-rgb, 192,57,43),0.4)' : '#2C2C2C'}`,
                   opacity: m.is_active ? 1 : 0.5,
                 }}
               >
@@ -1376,7 +1377,7 @@ export default function SettingsPage() {
                     {m.name}
                   </span>
                   {m.is_default && (
-                    <span style={{ fontSize: 10, color: '#C0392B', backgroundColor: 'rgba(192,57,43,0.1)', border: '1px solid rgba(192,57,43,0.3)', borderRadius: 4, padding: '1px 6px', fontWeight: 600 }}>
+                    <span style={{ fontSize: 10, color: 'var(--accent-color, #C0392B)', backgroundColor: 'rgba(var(--accent-color-rgb, 192,57,43),0.1)', border: '1px solid rgba(var(--accent-color-rgb, 192,57,43),0.3)', borderRadius: 4, padding: '1px 6px', fontWeight: 600 }}>
                       Default
                     </span>
                   )}
@@ -1461,16 +1462,16 @@ export default function SettingsPage() {
                 onKeyDown={e => e.key === 'Enter' && handleAddPaymentMethod()}
                 placeholder="New payment method name"
                 style={{ flex: 1, backgroundColor: '#1A1A1A', border: `1px solid ${addMethodError ? '#C0392B' : '#2C2C2C'}`, borderRadius: 8, padding: '7px 12px', color: '#ffffff', fontSize: 13, outline: 'none' }}
-                onFocus={e => (e.currentTarget.style.borderColor = '#C0392B')}
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent-color, #C0392B)')}
                 onBlur={e => (e.currentTarget.style.borderColor = addMethodError ? '#C0392B' : '#2C2C2C')}
               />
               <button
                 onClick={handleAddPaymentMethod}
                 disabled={addingMethod || !newMethodName.trim()}
                 className="flex items-center gap-1"
-                style={{ backgroundColor: addingMethod || !newMethodName.trim() ? '#2C2C2C' : '#C0392B', border: 'none', borderRadius: 8, padding: '7px 14px', color: addingMethod || !newMethodName.trim() ? '#606060' : '#ffffff', fontSize: 13, fontWeight: 600, cursor: addingMethod || !newMethodName.trim() ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
-                onMouseEnter={e => { if (!addingMethod && newMethodName.trim()) e.currentTarget.style.backgroundColor = '#96281B'; }}
-                onMouseLeave={e => { if (!addingMethod && newMethodName.trim()) e.currentTarget.style.backgroundColor = '#C0392B'; }}
+                style={{ backgroundColor: addingMethod || !newMethodName.trim() ? '#2C2C2C' : 'var(--accent-color, #C0392B)', border: 'none', borderRadius: 8, padding: '7px 14px', color: addingMethod || !newMethodName.trim() ? '#606060' : '#ffffff', fontSize: 13, fontWeight: 600, cursor: addingMethod || !newMethodName.trim() ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
+                onMouseEnter={e => { if (!addingMethod && newMethodName.trim()) e.currentTarget.style.backgroundColor = 'var(--accent-color-dark, #96281B)'; }}
+                onMouseLeave={e => { if (!addingMethod && newMethodName.trim()) e.currentTarget.style.backgroundColor = 'var(--accent-color, #C0392B)'; }}
               >
                 <IconPlus size={13} />
                 Add
@@ -1489,7 +1490,7 @@ export default function SettingsPage() {
       {activeSection === 'appearance' && (
       <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', maxWidth: 600 }}>
         <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
-          <IconPalette size={16} color="#C0392B" />
+          <IconPalette size={16} color="var(--accent-color, #C0392B)" />
           <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 600 }}>Display &amp; Appearance</span>
         </div>
 
@@ -1538,7 +1539,7 @@ export default function SettingsPage() {
               width: 44,
               height: 24,
               borderRadius: 12,
-              backgroundColor: showItemDesc ? '#C0392B' : '#2C2C2C',
+              backgroundColor: showItemDesc ? 'var(--accent-color, #C0392B)' : '#2C2C2C',
               border: 'none',
               cursor: 'pointer',
               position: 'relative',
@@ -1568,7 +1569,7 @@ export default function SettingsPage() {
       {activeSection === 'orders' && (
       <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', maxWidth: 600 }}>
         <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
-          <IconReceipt size={16} color="#C0392B" />
+          <IconReceipt size={16} color="var(--accent-color, #C0392B)" />
           <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 600 }}>Order Settings</span>
         </div>
 
@@ -1594,7 +1595,7 @@ export default function SettingsPage() {
                   placeholder="1–4 letters"
                   style={{
                     flex: 1, backgroundColor: '#1A1A1A',
-                    border: `1px solid ${prefixError ? '#C0392B' : '#C0392B'}`,
+                    border: `1px solid ${prefixError ? '#C0392B' : 'var(--accent-color, #C0392B)'}`,
                     borderRadius: 8, padding: '8px 12px',
                     color: '#ffffff', fontSize: 13, outline: 'none',
                     textTransform: 'uppercase',
@@ -1604,7 +1605,7 @@ export default function SettingsPage() {
                   onClick={handleSaveOrderPrefix}
                   disabled={prefixSaving || !orderPrefixInput.trim()}
                   style={{
-                    backgroundColor: prefixSaving || !orderPrefixInput.trim() ? '#2C2C2C' : '#C0392B',
+                    backgroundColor: prefixSaving || !orderPrefixInput.trim() ? '#2C2C2C' : 'var(--accent-color, #C0392B)',
                     border: 'none', borderRadius: 8, padding: '8px 14px',
                     color: prefixSaving || !orderPrefixInput.trim() ? '#606060' : '#ffffff',
                     fontSize: 13, fontWeight: 600,
@@ -1656,7 +1657,7 @@ export default function SettingsPage() {
               width: 44,
               height: 24,
               borderRadius: 12,
-              backgroundColor: orderConfirm ? '#C0392B' : '#2C2C2C',
+              backgroundColor: orderConfirm ? 'var(--accent-color, #C0392B)' : '#2C2C2C',
               border: 'none',
               cursor: 'pointer',
               position: 'relative',
@@ -1688,7 +1689,7 @@ export default function SettingsPage() {
       {activeSection === 'notifications' && (
       <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', maxWidth: 600 }}>
         <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
-          <IconBell size={16} color="#C0392B" />
+          <IconBell size={16} color="var(--accent-color, #C0392B)" />
           <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 600 }}>Notifications</span>
         </div>
 
@@ -1702,7 +1703,7 @@ export default function SettingsPage() {
             role="switch"
             aria-checked={notifEnabled}
             onClick={() => handleToggleNotifEnabled(!notifEnabled)}
-            style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: notifEnabled ? '#C0392B' : '#2C2C2C', border: 'none', cursor: 'pointer', position: 'relative', flexShrink: 0, transition: 'background-color 0.2s' }}
+            style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: notifEnabled ? 'var(--accent-color, #C0392B)' : '#2C2C2C', border: 'none', cursor: 'pointer', position: 'relative', flexShrink: 0, transition: 'background-color 0.2s' }}
           >
             <span style={{ position: 'absolute', top: 3, left: notifEnabled ? 23 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#ffffff', transition: 'left 0.2s' }} />
           </button>
@@ -1746,14 +1747,14 @@ export default function SettingsPage() {
             <label
               className="flex items-center gap-2 self-start"
               style={{
-                backgroundColor: notifUploading ? '#2C2C2C' : '#C0392B',
+                backgroundColor: notifUploading ? '#2C2C2C' : 'var(--accent-color, #C0392B)',
                 border: 'none', borderRadius: 8, padding: '8px 14px',
                 color: notifUploading ? '#606060' : '#ffffff',
                 fontSize: 13, fontWeight: 600,
                 cursor: notifUploading ? 'not-allowed' : 'pointer',
               }}
-              onMouseEnter={e => { if (!notifUploading) (e.currentTarget as HTMLElement).style.backgroundColor = '#96281B'; }}
-              onMouseLeave={e => { if (!notifUploading) (e.currentTarget as HTMLElement).style.backgroundColor = '#C0392B'; }}
+              onMouseEnter={e => { if (!notifUploading) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--accent-color-dark, #96281B)'; }}
+              onMouseLeave={e => { if (!notifUploading) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--accent-color, #C0392B)'; }}
             >
               <IconUpload size={13} />
               {notifUploading ? `Uploading… ${notifUploadPct}%` : 'Upload Sound'}
@@ -1776,7 +1777,7 @@ export default function SettingsPage() {
       {activeSection === 'data' && (
       <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ backgroundColor: '#111111', border: '1px solid #2C2C2C', maxWidth: 600 }}>
         <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid #2C2C2C' }}>
-          <IconDatabaseExport size={16} color="#C0392B" />
+          <IconDatabaseExport size={16} color="var(--accent-color, #C0392B)" />
           <span style={{ fontSize: 13, color: '#ffffff', fontWeight: 600 }}>Data Management</span>
         </div>
 
@@ -1793,14 +1794,14 @@ export default function SettingsPage() {
               disabled={manualBacking}
               className="flex items-center gap-1.5 shrink-0"
               style={{
-                backgroundColor: manualBacking ? '#2C2C2C' : '#C0392B',
+                backgroundColor: manualBacking ? '#2C2C2C' : 'var(--accent-color, #C0392B)',
                 border: 'none', borderRadius: 8, padding: '8px 14px',
                 color: manualBacking ? '#606060' : '#ffffff',
                 fontSize: 13, fontWeight: 600,
                 cursor: manualBacking ? 'not-allowed' : 'pointer',
               }}
-              onMouseEnter={e => { if (!manualBacking) e.currentTarget.style.backgroundColor = '#96281B'; }}
-              onMouseLeave={e => { if (!manualBacking) e.currentTarget.style.backgroundColor = manualBacking ? '#2C2C2C' : '#C0392B'; }}
+              onMouseEnter={e => { if (!manualBacking) e.currentTarget.style.backgroundColor = 'var(--accent-color-dark, #96281B)'; }}
+              onMouseLeave={e => { if (!manualBacking) e.currentTarget.style.backgroundColor = manualBacking ? '#2C2C2C' : 'var(--accent-color, #C0392B)'; }}
             >
               {manualBacking
                 ? <div className="w-3.5 h-3.5 border-2 border-textMuted border-t-transparent rounded-full animate-spin" />
@@ -1825,7 +1826,7 @@ export default function SettingsPage() {
               onClick={() => setAutoBackupEnabled(v => !v)}
               style={{
                 width: 44, height: 24, borderRadius: 12,
-                backgroundColor: autoBackupEnabled ? '#C0392B' : '#2C2C2C',
+                backgroundColor: autoBackupEnabled ? 'var(--accent-color, #C0392B)' : '#2C2C2C',
                 border: 'none', cursor: 'pointer', position: 'relative', flexShrink: 0,
                 transition: 'background-color 0.2s',
               }}
@@ -1851,21 +1852,21 @@ export default function SettingsPage() {
                 color: '#ffffff', fontSize: 13, outline: 'none',
                 colorScheme: 'dark',
               }}
-              onFocus={e => (e.currentTarget.style.borderColor = '#C0392B')}
+              onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent-color, #C0392B)')}
               onBlur={e => (e.currentTarget.style.borderColor = '#2C2C2C')}
             />
             <button
               onClick={handleSaveAutoConfig}
               disabled={autoConfigSaving}
               style={{
-                backgroundColor: autoConfigSaving ? '#2C2C2C' : '#C0392B',
+                backgroundColor: autoConfigSaving ? '#2C2C2C' : 'var(--accent-color, #C0392B)',
                 border: 'none', borderRadius: 8, padding: '7px 14px',
                 color: autoConfigSaving ? '#606060' : '#ffffff',
                 fontSize: 13, fontWeight: 600,
                 cursor: autoConfigSaving ? 'not-allowed' : 'pointer',
               }}
-              onMouseEnter={e => { if (!autoConfigSaving) e.currentTarget.style.backgroundColor = '#96281B'; }}
-              onMouseLeave={e => { if (!autoConfigSaving) e.currentTarget.style.backgroundColor = autoConfigSaving ? '#2C2C2C' : '#C0392B'; }}
+              onMouseEnter={e => { if (!autoConfigSaving) e.currentTarget.style.backgroundColor = 'var(--accent-color-dark, #96281B)'; }}
+              onMouseLeave={e => { if (!autoConfigSaving) e.currentTarget.style.backgroundColor = autoConfigSaving ? '#2C2C2C' : 'var(--accent-color, #C0392B)'; }}
             >
               {autoConfigSaving ? 'Saving...' : 'Save'}
             </button>
@@ -2047,39 +2048,15 @@ export default function SettingsPage() {
 
       {/* Success toast */}
       {pwSuccess && (
-        <div
-          className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-3 rounded-xl z-50"
-          style={{ backgroundColor: '#111111', border: '1px solid rgba(39,174,96,0.4)', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}
-        >
-          <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(39,174,96,0.2)' }}>
-            <IconCheck size={12} color="#27AE60" />
-          </div>
-          <span style={{ fontSize: 13, color: '#27AE60' }}>Password updated successfully</span>
-        </div>
+        <Toast message="Password updated successfully" onDone={() => setPwSuccess(false)} />
       )}
 
       {unSuccess && (
-        <div
-          className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-3 rounded-xl z-50"
-          style={{ backgroundColor: '#111111', border: '1px solid rgba(39,174,96,0.4)', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}
-        >
-          <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(39,174,96,0.2)' }}>
-            <IconCheck size={12} color="#27AE60" />
-          </div>
-          <span style={{ fontSize: 13, color: '#27AE60' }}>Username updated successfully</span>
-        </div>
+        <Toast message="Username updated successfully" onDone={() => setUnSuccess(false)} />
       )}
 
       {settingsToast && (
-        <div
-          className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-3 rounded-xl z-50"
-          style={{ backgroundColor: '#111111', border: '1px solid rgba(39,174,96,0.4)', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}
-        >
-          <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(39,174,96,0.2)' }}>
-            <IconCheck size={12} color="#27AE60" />
-          </div>
-          <span style={{ fontSize: 13, color: '#27AE60' }}>{settingsToast}</span>
-        </div>
+        <Toast message={settingsToast} onDone={() => setSettingsToast('')} />
       )}
     </div>
   );

@@ -45,9 +45,9 @@ function Step({ number, title, description }: { number: number; title: string; d
         className="flex items-center justify-center shrink-0"
         style={{
           width: 24, height: 24, borderRadius: '50%',
-          backgroundColor: 'rgba(192,57,43,0.15)',
-          border: '1px solid rgba(192,57,43,0.3)',
-          fontSize: 11, fontWeight: 700, color: '#C0392B',
+          backgroundColor: 'rgba(var(--accent-color-rgb, 192,57,43),0.15)',
+          border: '1px solid rgba(var(--accent-color-rgb, 192,57,43),0.3)',
+          fontSize: 11, fontWeight: 700, color: 'var(--accent-color, #C0392B)',
         }}
       >
         {number}
@@ -464,7 +464,7 @@ export default function HelpPage() {
 
       {/* Header */}
       <div className="flex items-center gap-2">
-        <IconHelp size={18} color="#C0392B" />
+        <IconHelp size={18} color="var(--accent-color, #C0392B)" />
         <h1 className="text-white font-semibold text-lg">Help & User Guide</h1>
       </div>
 

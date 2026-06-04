@@ -71,9 +71,9 @@ export default function DailySalesTarget({ totalSales, dailyTarget, onTargetUpda
         <div className="flex items-center gap-2">
           <div
             className="w-7 h-7 rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: 'rgba(192,57,43,0.1)' }}
+            style={{ backgroundColor: 'rgba(var(--accent-color-rgb, 192,57,43),0.1)' }}
           >
-            <IconTarget size={16} color="#C0392B" />
+            <IconTarget size={16} color="var(--accent-color, #C0392B)" />
           </div>
           <span style={{ fontSize: 12, color: '#A0A0A0', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             Daily Sales Target
@@ -107,7 +107,7 @@ export default function DailySalesTarget({ totalSales, dailyTarget, onTargetUpda
               onClick={handleSave}
               disabled={saving}
               style={{
-                backgroundColor: '#C0392B',
+                backgroundColor: 'var(--accent-color, #C0392B)',
                 border: 'none',
                 borderRadius: 6,
                 padding: '4px 8px',
@@ -115,8 +115,8 @@ export default function DailySalesTarget({ totalSales, dailyTarget, onTargetUpda
                 display: 'flex',
                 alignItems: 'center',
               }}
-              onMouseEnter={e => { if (!saving) e.currentTarget.style.backgroundColor = '#96281B'; }}
-              onMouseLeave={e => { if (!saving) e.currentTarget.style.backgroundColor = '#C0392B'; }}
+              onMouseEnter={e => { if (!saving) e.currentTarget.style.backgroundColor = 'var(--accent-color-dark, #96281B)'; }}
+              onMouseLeave={e => { if (!saving) e.currentTarget.style.backgroundColor = 'var(--accent-color, #C0392B)'; }}
             >
               {saving
                 ? <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />

@@ -147,7 +147,7 @@ function ExpenseModal({ initial, onClose, onSaved }: ExpenseModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #2C2C2C' }}>
           <div className="flex items-center gap-2">
-            <IconReceipt2 size={16} color="#C0392B" />
+            <IconReceipt2 size={16} color="var(--accent-color, #C0392B)" />
             <span style={{ fontSize: 14, fontWeight: 600, color: '#ffffff' }}>
               {isEdit ? 'Edit Expense' : 'Add Expense'}
             </span>
@@ -177,7 +177,7 @@ function ExpenseModal({ initial, onClose, onSaved }: ExpenseModalProps) {
               onChange={e => { setDescription(e.target.value); setErrors(p => ({ ...p, description: '' })); }}
               onKeyDown={e => e.key === 'Enter' && handleSave()}
               style={inputStyle(!!errors.description)}
-              onFocus={e => (e.currentTarget.style.borderColor = '#C0392B')}
+              onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent-color, #C0392B)')}
               onBlur={e => (e.currentTarget.style.borderColor = errors.description ? '#C0392B' : '#2C2C2C')}
             />
             {errors.description && <span style={{ fontSize: 11, color: '#C0392B' }}>{errors.description}</span>}
@@ -197,7 +197,7 @@ function ExpenseModal({ initial, onClose, onSaved }: ExpenseModalProps) {
                 onChange={e => { setAmount(e.target.value); setErrors(p => ({ ...p, amount: '' })); }}
                 onKeyDown={e => e.key === 'Enter' && handleSave()}
                 style={{ ...inputStyle(!!errors.amount), flex: 1, width: 'auto' }}
-                onFocus={e => (e.currentTarget.style.borderColor = '#C0392B')}
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent-color, #C0392B)')}
                 onBlur={e => (e.currentTarget.style.borderColor = errors.amount ? '#C0392B' : '#2C2C2C')}
               />
             </div>
@@ -212,7 +212,7 @@ function ExpenseModal({ initial, onClose, onSaved }: ExpenseModalProps) {
                 value={category}
                 onChange={e => setCategory(e.target.value)}
                 style={{ ...inputStyle(), cursor: 'pointer' }}
-                onFocus={e => (e.currentTarget.style.borderColor = '#C0392B')}
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent-color, #C0392B)')}
                 onBlur={e => (e.currentTarget.style.borderColor = '#2C2C2C')}
               >
                 {EXPENSE_CATEGORIES.map(c => (
@@ -227,7 +227,7 @@ function ExpenseModal({ initial, onClose, onSaved }: ExpenseModalProps) {
                 value={date}
                 onChange={e => setDate(e.target.value)}
                 style={{ ...inputStyle(), colorScheme: 'dark' }}
-                onFocus={e => (e.currentTarget.style.borderColor = '#C0392B')}
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent-color, #C0392B)')}
                 onBlur={e => (e.currentTarget.style.borderColor = '#2C2C2C')}
               />
             </div>
@@ -244,9 +244,9 @@ function ExpenseModal({ initial, onClose, onSaved }: ExpenseModalProps) {
             Cancel
           </button>
           <button onClick={handleSave} disabled={saving}
-            style={{ backgroundColor: saving ? 'rgba(192,57,43,0.4)' : '#C0392B', border: 'none', borderRadius: 8, padding: '7px 16px', color: '#ffffff', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
-            onMouseEnter={e => { if (!saving) e.currentTarget.style.backgroundColor = '#96281B'; }}
-            onMouseLeave={e => { if (!saving) e.currentTarget.style.backgroundColor = '#C0392B'; }}
+            style={{ backgroundColor: saving ? 'rgba(var(--accent-color-rgb, 192,57,43),0.4)' : 'var(--accent-color, #C0392B)', border: 'none', borderRadius: 8, padding: '7px 16px', color: '#ffffff', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+            onMouseEnter={e => { if (!saving) e.currentTarget.style.backgroundColor = 'var(--accent-color-dark, #96281B)'; }}
+            onMouseLeave={e => { if (!saving) e.currentTarget.style.backgroundColor = 'var(--accent-color, #C0392B)'; }}
           >
             {saving
               ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -361,7 +361,7 @@ export default function ExpensesPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <IconReceipt2 size={18} color="#C0392B" />
+          <IconReceipt2 size={18} color="var(--accent-color, #C0392B)" />
           <h1 className="text-white font-semibold text-lg">Expenses</h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -385,9 +385,9 @@ export default function ExpensesPage() {
           <div className="w-px h-5 bg-border mx-1" />
           {/* Add Expense */}
           <button onClick={() => { setEditTarget(null); setShowModal(true); }}
-            style={{ backgroundColor: '#C0392B', border: 'none', borderRadius: 8, padding: '6px 14px', color: '#ffffff', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#96281B')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#C0392B')}
+            style={{ backgroundColor: 'var(--accent-color, #C0392B)', border: 'none', borderRadius: 8, padding: '6px 14px', color: '#ffffff', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--accent-color-dark, #96281B)')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--accent-color, #C0392B)')}
           >
             <IconPlus size={14} />
             Add Expense
@@ -401,19 +401,19 @@ export default function ExpensesPage() {
           <IconCalendar size={13} color="#606060" />
           <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
             style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: 6, padding: '6px 10px', color: startDate ? '#ffffff' : '#606060', fontSize: 12, outline: 'none', colorScheme: 'dark' }}
-            onFocus={e => (e.currentTarget.style.borderColor = '#C0392B')}
+            onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent-color, #C0392B)')}
             onBlur={e => (e.currentTarget.style.borderColor = '#2C2C2C')}
           />
           <span style={{ fontSize: 12, color: '#606060' }}>to</span>
           <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
             style={{ backgroundColor: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: 6, padding: '6px 10px', color: endDate ? '#ffffff' : '#606060', fontSize: 12, outline: 'none', colorScheme: 'dark' }}
-            onFocus={e => (e.currentTarget.style.borderColor = '#C0392B')}
+            onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent-color, #C0392B)')}
             onBlur={e => (e.currentTarget.style.borderColor = '#2C2C2C')}
           />
           <button onClick={handleApplyCustom} disabled={!startDate || !endDate}
-            style={{ backgroundColor: (!startDate || !endDate) ? 'rgba(192,57,43,0.3)' : '#C0392B', border: 'none', borderRadius: 6, padding: '6px 14px', color: '#ffffff', fontSize: 12, fontWeight: 600, cursor: (!startDate || !endDate) ? 'not-allowed' : 'pointer' }}
-            onMouseEnter={e => { if (startDate && endDate) e.currentTarget.style.backgroundColor = '#96281B'; }}
-            onMouseLeave={e => { if (startDate && endDate) e.currentTarget.style.backgroundColor = '#C0392B'; }}
+            style={{ backgroundColor: (!startDate || !endDate) ? 'rgba(var(--accent-color-rgb, 192,57,43),0.3)' : 'var(--accent-color, #C0392B)', border: 'none', borderRadius: 6, padding: '6px 14px', color: '#ffffff', fontSize: 12, fontWeight: 600, cursor: (!startDate || !endDate) ? 'not-allowed' : 'pointer' }}
+            onMouseEnter={e => { if (startDate && endDate) e.currentTarget.style.backgroundColor = 'var(--accent-color-dark, #96281B)'; }}
+            onMouseLeave={e => { if (startDate && endDate) e.currentTarget.style.backgroundColor = 'var(--accent-color, #C0392B)'; }}
           >
             Apply
           </button>
@@ -437,11 +437,11 @@ export default function ExpensesPage() {
             <div className="rounded-xl p-4 flex flex-col gap-2" style={{ backgroundColor: '#161616', border: '1px solid #2C2C2C' }}>
               <div className="flex items-center justify-between">
                 <span style={{ fontSize: 11, color: '#606060', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Total Expenses</span>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(192,57,43,0.1)' }}>
-                  <IconReceipt2 size={18} color="#C0392B" />
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(var(--accent-color-rgb, 192,57,43),0.1)' }}>
+                  <IconReceipt2 size={18} color="var(--accent-color, #C0392B)" />
                 </div>
               </div>
-              <span style={{ fontSize: 24, fontWeight: 700, color: summary && summary.total > 0 ? '#C0392B' : '#606060' }}>
+              <span style={{ fontSize: 24, fontWeight: 700, color: summary && summary.total > 0 ? 'var(--accent-color, #C0392B)' : '#606060' }}>
                 {formatCurrency(summary?.total ?? 0)}
               </span>
               <span style={{ fontSize: 11, color: '#606060' }}>{total} {total === 1 ? 'entry' : 'entries'}</span>
@@ -511,7 +511,7 @@ export default function ExpensesPage() {
                       <td className="px-4 py-2.5">
                         <CategoryBadge category={exp.category} />
                       </td>
-                      <td className="px-4 py-2.5" style={{ fontSize: 13, fontWeight: 600, color: '#C0392B', whiteSpace: 'nowrap' }}>
+                      <td className="px-4 py-2.5" style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-color, #C0392B)', whiteSpace: 'nowrap' }}>
                         {formatCurrency(exp.amount)}
                       </td>
                       <td className="px-4 py-2.5">

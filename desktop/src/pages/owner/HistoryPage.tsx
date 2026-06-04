@@ -13,6 +13,7 @@ import OrderDetailsModal from '../../components/owner/OrderDetailsModal';
 import DateRangePicker, { type DateRangeValue } from '../../components/shared/DateRangePicker';
 import YearSelector from '../../components/shared/YearSelector';
 import { usePaymentMethods } from '../../hooks/usePaymentMethods';
+import Toast from '../../components/shared/Toast';
 const periods: { label: string; value: OrderFilter }[] = [
   { label: 'All',        value: 'all'        },
   { label: 'Today',      value: 'today'      },
@@ -43,35 +44,6 @@ function generateCSV(orders: Order[]): string {
 
   const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
   return [header, ...rows, summary].map(r => r.map(escape).join(',')).join('\n');
-}
-
-function Toast({ message, type, onDone }: { message: string; type: 'success' | 'error'; onDone: () => void }) {
-  useEffect(() => {
-    const t = setTimeout(onDone, 3000);
-    return () => clearTimeout(t);
-  }, []);
-
-  return (
-    <div
-      className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-3 rounded-xl z-50"
-      style={{
-        backgroundColor: '#111111',
-        border: `1px solid ${type === 'success' ? 'rgba(39,174,96,0.4)' : 'rgba(192,57,43,0.4)'}`,
-        boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-      }}
-    >
-      <div
-        className="w-5 h-5 rounded-full flex items-center justify-center"
-        style={{ backgroundColor: type === 'success' ? 'rgba(39,174,96,0.2)' : 'rgba(192,57,43,0.2)' }}
-      >
-        {type === 'success'
-          ? <IconCheck size={12} color="#27AE60" />
-          : <IconX size={12} color="#C0392B" />
-        }
-      </div>
-      <span style={{ fontSize: 13, color: type === 'success' ? '#27AE60' : '#C0392B' }}>{message}</span>
-    </div>
-  );
 }
 
 export default function HistoryPage() {
@@ -215,7 +187,7 @@ export default function HistoryPage() {
       {/* Header + filters + export */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <IconHistory size={18} color="#C0392B" />
+          <IconHistory size={18} color="var(--accent-color, #C0392B)" />
           <h1 className="text-white font-semibold text-lg">Order History</h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -348,7 +320,7 @@ export default function HistoryPage() {
                     onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#1A1A1A')}
                     onMouseLeave={e => (e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#111111' : '#0A0A0A')}
                   >
-                    <td className="px-4 py-3" style={{ color: '#C0392B', fontWeight: 600, fontSize: 13 }}>{order.order_number}</td>
+                    <td className="px-4 py-3" style={{ color: 'var(--accent-color, #C0392B)', fontWeight: 600, fontSize: 13 }}>{order.order_number}</td>
                     <td className="px-4 py-3" style={{ color: '#A0A0A0', fontSize: 13 }}>{formatDateTime(order.created_at)}</td>
                     <td className="px-4 py-3"><PaymentBadge method={order.payment_method} color={getMethodColor(order.payment_method)} logoUrl={getMethodLogoUrl(order.payment_method)} /></td>
                     <td className="px-4 py-3">

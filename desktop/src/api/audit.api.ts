@@ -29,3 +29,7 @@ export async function deleteAuditLog(id: number): Promise<void> {
 export async function deleteAllAuditLogs(): Promise<void> {
   await apiClient.delete('/api/audit-logs/all');
 }
+
+export async function deleteManyAuditLogs(ids: number[]): Promise<void> {
+  await apiClient.post('/api/audit-logs/bulk-delete', { ids });
+}
